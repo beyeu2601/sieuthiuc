@@ -5,6 +5,7 @@ import { searchCatalog, type CatalogItem } from "@/app/(app)/[store]/catalog-act
 import { formatMoney, formatNumber } from "@/lib/format";
 import { GOODS_TYPE_LABEL } from "@/lib/text";
 import { Input } from "@/components/ui/input";
+import { CameraScanButton } from "@/components/camera-scan-button";
 
 // O tim san pham: go ten (khong dau duoc) hoac quet ma vach roi Enter.
 // Quet dung 1 ma vach -> chon ngay, khong can bam.
@@ -14,6 +15,7 @@ export function ProductPicker({
   placeholder = "Quét mã vạch hoặc gõ tên sản phẩm, Enter để tìm",
   autoFocus,
   showStock = true,
+  camera,
   id,
 }: {
   storeId: string;
@@ -21,6 +23,8 @@ export function ProductPicker({
   placeholder?: string;
   autoFocus?: boolean;
   showStock?: boolean;
+  // hien nut quet ma bang camera tren dien thoai
+  camera?: boolean;
   id?: string;
 }) {
   const [q, setQ] = useState("");
@@ -64,8 +68,7 @@ export function ProductPicker({
     if (timer.current) clearTimeout(timer.current);
   }, []);
 
-  return (
-    <div className="relative">
+  const input = (
       <Input
         id={id}
         ref={inputRef}
@@ -93,6 +96,24 @@ export function ProductPicker({
           }
         }}
       />
+  );
+
+  return (
+    <div className="relative">
+      {camera ? (
+        <div className="flex gap-2">
+          {input}
+          <CameraScanButton
+            className="size-11 md:hidden"
+            onDetected={(code) => {
+              setQ(code);
+              run(code, true);
+            }}
+          />
+        </div>
+      ) : (
+        input
+      )}
       {pending && <span className="absolute top-3 right-3 text-xs text-muted-foreground">Đang tìm...</span>}
       {error && <p className="mt-1 text-sm text-destructive">{error}</p>}
       {items && (

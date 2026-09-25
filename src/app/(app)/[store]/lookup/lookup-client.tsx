@@ -29,7 +29,7 @@ export function LookupClient({ storeId }: { storeId: string }) {
 
   return (
     <div className="space-y-4">
-      <ProductPicker storeId={storeId} onPick={pick} autoFocus />
+      <ProductPicker storeId={storeId} onPick={pick} autoFocus camera />
       {item && (
         <article className="space-y-3 rounded-xl border bg-card p-4" aria-live="polite">
           <div>

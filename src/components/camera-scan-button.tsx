@@ -2,15 +2,30 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ScanBarcodeIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-// Quet ma vach bang camera sau cua dien thoai. Doc duoc ma thi ghi vao o `name` cua form chua nut va gui form.
-export function CameraScanButton({ name = "q" }: { name?: string }) {
+// Quet ma vach bang camera sau cua dien thoai. Doc duoc ma thi goi onDetected;
+// khong truyen onDetected thi ghi vao o `name` cua form chua nut va gui form.
+export function CameraScanButton({
+  name = "q",
+  onDetected,
+  className,
+}: {
+  name?: string;
+  onDetected?: (code: string) => void;
+  className?: string;
+}) {
   const btnRef = useRef<HTMLButtonElement>(null);
   const [video, setVideo] = useState<HTMLVideoElement | null>(null);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // giu ham moi nhat ma khong khoi dong lai camera moi lan component cha ve lai
+  const onDetectedRef = useRef(onDetected);
+  useEffect(() => {
+    onDetectedRef.current = onDetected;
+  }, [onDetected]);
 
   useEffect(() => {
     if (!video) return;
@@ -26,13 +41,17 @@ export function CameraScanButton({ name = "q" }: { name?: string }) {
           (result, _err, ctl) => {
             if (!result) return;
             ctl.stop();
+            setOpen(false);
+            if (onDetectedRef.current) {
+              onDetectedRef.current(result.getText());
+              return;
+            }
             const form = btnRef.current?.closest("form");
             const input = form?.elements.namedItem(name);
             if (form && input instanceof HTMLInputElement) {
               input.value = result.getText();
               form.requestSubmit();
             }
-            setOpen(false);
           }
         );
         if (cancelled) controls.stop();
@@ -54,7 +73,7 @@ export function CameraScanButton({ name = "q" }: { name?: string }) {
         type="button"
         variant="outline"
         size="icon"
-        className="size-10 shrink-0"
+        className={cn("size-10 shrink-0", className)}
         aria-label="Quét mã vạch bằng camera"
         onClick={() => {
           setError(null);
