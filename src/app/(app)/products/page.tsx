@@ -3,12 +3,16 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { GOODS_TYPE_LABEL, ilikeTerm } from "@/lib/text";
+import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
+import { AutoSubmitForm } from "@/components/auto-submit-form";
+import { CameraScanButton } from "@/components/camera-scan-button";
 import { Pagination } from "@/components/pagination";
 import { EmptyState } from "@/components/empty-state";
 import { NativeSelect } from "@/components/native-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -32,7 +36,9 @@ type Row = {
   inventory: { qty_on_hand: number }[];
 };
 
-type SP = { q?: string; type?: string; status?: string; cat?: string; page?: string };
+type SP = { q?: string; type?: string; status?: string; cat?: string; missing?: string; page?: string };
+
+const stockOf = (p: Row) => p.inventory.reduce((s, i) => s + Number(i.qty_on_hand), 0);
 
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<SP> }) {
   const ctx = await requireRole("sadmin", "admin", "accountant");
@@ -63,6 +69,11 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   if (sp.type === "cont" || sp.type === "air") query = query.eq("goods_type", sp.type);
   if (status === "active" || status === "inactive") query = query.eq("status", status);
   if (sp.cat) query = query.eq("category_id", sp.cat);
+  // du lieu con thieu sau import ton dau ky: DVT "Chua ro", gia von hoac gia ban bang 0
+  if (sp.missing === "unit") query = query.eq("unit", "Chưa rõ");
+  else if (sp.missing === "cost") query = query.eq("cost_price_ref", 0);
+  else if (sp.missing === "price") query = query.eq("sell_price", 0);
+  else if (sp.missing === "any") query = query.or('unit.eq."Chưa rõ",cost_price_ref.eq.0,sell_price.eq.0');
 
   const { data, count, error } = await query.returns<Row[]>();
   const rows = data ?? [];
@@ -71,24 +82,47 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
     <div>
       <PageHeader
         title="Sản phẩm"
-        description="Danh mục dùng chung cho mọi cửa hàng. Tồn là tổng các cửa hàng bạn được xem."
+        description={<span className="hidden md:inline">Danh mục dùng chung cho mọi cửa hàng. Tồn là tổng các cửa hàng bạn được xem.</span>}
         actions={
           canEdit && (
             <>
-              <Button variant="outline" render={<Link href="/products/price-suggestions" />}>
+              <Button variant="outline" className="hidden md:inline-flex" render={<Link href="/products/price-suggestions" />}>
                 Gợi ý giá
               </Button>
-              <Button variant="outline" render={<Link href="/products/import" />}>
+              <Button variant="outline" className="hidden md:inline-flex" render={<Link href="/products/import" />}>
                 Import Excel
               </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger render={<Button variant="outline" className="md:hidden" />}>Khác</DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-44">
+                  <DropdownMenuItem className="h-10" render={<Link href="/products/price-suggestions" />}>
+                    Gợi ý giá
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="h-10" render={<Link href="/products/import" />}>
+                    Import Excel
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button render={<Link href="/products/new" />}>Thêm sản phẩm</Button>
             </>
           )
         }
       />
 
-      <form className="mb-3 grid gap-2 sm:grid-cols-[1fr_140px_160px_200px_auto]" role="search">
-        <Input name="q" defaultValue={sp.q} placeholder="Tìm tên, SKU hoặc quét mã vạch" aria-label="Tìm sản phẩm" />
+      <AutoSubmitForm action="/products" className="mb-3 grid grid-cols-2 gap-2 lg:grid-cols-[1fr_120px_130px_170px_160px_auto]" role="search">
+        <div className="col-span-2 flex gap-2 lg:col-span-1">
+          <Input
+            type="search"
+            enterKeyHint="search"
+            name="q"
+            defaultValue={sp.q}
+            placeholder="Tìm tên, SKU hoặc mã vạch"
+            aria-label="Tìm sản phẩm"
+          />
+          <span className="md:hidden">
+            <CameraScanButton />
+          </span>
+        </div>
         <NativeSelect name="type" defaultValue={sp.type ?? ""} aria-label="Loại hàng">
           <option value="">Mọi loại hàng</option>
           <option value="cont">Cont</option>
@@ -107,10 +141,17 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
             </option>
           ))}
         </NativeSelect>
-        <Button type="submit" variant="secondary">
+        <NativeSelect name="missing" defaultValue={sp.missing ?? ""} aria-label="Thiếu thông tin">
+          <option value="">Mọi dữ liệu</option>
+          <option value="any">Thiếu thông tin</option>
+          <option value="unit">Chưa rõ ĐVT</option>
+          <option value="cost">Thiếu giá vốn</option>
+          <option value="price">Thiếu giá bán</option>
+        </NativeSelect>
+        <Button type="submit" variant="secondary" className="hidden lg:inline-flex">
           Lọc
         </Button>
-      </form>
+      </AutoSubmitForm>
 
       {error ? (
         <p role="alert" className="text-sm text-destructive">
@@ -119,7 +160,37 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       ) : rows.length === 0 ? (
         <EmptyState title="Không có sản phẩm phù hợp">Thử bỏ bớt bộ lọc hoặc tìm bằng từ khác.</EmptyState>
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-card">
+        <>
+        <p className="mb-2 text-sm text-muted-foreground">{formatNumber(count ?? rows.length)} sản phẩm</p>
+        <ul className="space-y-2 md:hidden" aria-label="Danh sách sản phẩm">
+          {rows.map((p) => {
+            const stock = stockOf(p);
+            return (
+              <li key={p.id}>
+                <Link href={`/products/${p.id}`} className="flex items-start justify-between gap-3 rounded-xl border bg-card p-3.5 active:bg-muted">
+                  <div className="min-w-0">
+                    <div className="line-clamp-2 font-medium">{p.name}</div>
+                    <div className="mt-0.5 text-xs text-muted-foreground">
+                      {GOODS_TYPE_LABEL[p.goods_type]} - {p.unit} - {p.sku}
+                    </div>
+                    {p.status === "inactive" && (
+                      <Badge variant="outline" className="mt-1">
+                        Ngừng bán
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <div className="font-semibold tabular-nums">{formatMoney(p.sell_price)}</div>
+                    <div className={cn("text-sm tabular-nums", stock <= 0 ? "font-medium text-destructive" : "text-muted-foreground")}>
+                      Tồn {formatNumber(stock)}
+                    </div>
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -138,7 +209,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
             <TableBody>
               {rows.map((p) => {
                 const primary = p.product_barcodes.find((b) => b.is_primary) ?? p.product_barcodes[0];
-                const stock = p.inventory.reduce((s, i) => s + Number(i.qty_on_hand), 0);
+                const stock = stockOf(p);
                 const pct = p.benefit_pct ?? p.categories?.benefit_pct ?? null;
                 return (
                   <TableRow key={p.id}>
@@ -173,13 +244,14 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
             </TableBody>
           </Table>
         </div>
+        </>
       )}
       <Pagination
         page={page}
         pageSize={PAGE_SIZE}
         total={count ?? 0}
         basePath="/products"
-        params={{ q: sp.q, type: sp.type, status: sp.status, cat: sp.cat }}
+        params={{ q: sp.q, type: sp.type, status: sp.status, cat: sp.cat, missing: sp.missing }}
       />
     </div>
   );

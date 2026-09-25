@@ -51,8 +51,9 @@ export default async function BestSellersPage({
         to={r.period.to}
         allStores={r.allStores}
         canAllStores={r.canAll}
+        keep={{ order }}
         extra={
-          <label className="space-y-1 text-sm">
+          <label className="block space-y-1 text-sm">
             Xếp theo
             <NativeSelect name="order" defaultValue={order}>
               {Object.entries(ORDERS).map(([k, v]) => (

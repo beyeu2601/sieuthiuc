@@ -36,8 +36,10 @@ Web app (PWA) quản lý bán hàng, kho, công nợ nhà cung cấp, thu chi v�
 - Mọi logic thay đổi số liệu nghiệp vụ (tồn, giá vốn, công nợ, tiền ca, doanh thu) nằm trong hàm PostgreSQL. Client chỉ gọi RPC và hiển thị.
 - Server Action của Next.js gọi RPC với phiên người dùng. Riêng tạo và sửa người dùng dùng service role ở server sau khi kiểm tra quyền.
 - Máy quét mã vạch USB (Kiosk Việt) hoạt động như bàn phím: ô tìm sản phẩm nhận mã rồi Enter, khớp đúng một mã thì thêm ngay.
+- Trên điện thoại, ô tìm ở màn Sản phẩm có nút quét mã bằng camera sau (`@zxing/browser`, chỉ tải khi bấm nút). Cần HTTPS và quyền camera.
 - In hóa đơn 80mm và tem mã vạch bằng trang in của trình duyệt. Chưa làm ESC/POS, QZ Tray, ngăn kéo tiền.
 - Giao diện theo bộ nhận diện trong `docs/THUONG-HIEU.md`: màu, font, logo, khung điều hướng (thanh bên trên máy tính, tab dưới đáy trên điện thoại), chế độ tối.
+- Bộ lọc màn Sản phẩm và các báo cáo dùng `AutoSubmitForm`: đổi ô chọn là lọc ngay, ô chữ gửi bằng Enter. Trên điện thoại (dưới `md`), bảng nhiều cột hiện thành danh sách thẻ.
 
 ## 3. Cấu trúc thư mục
 
