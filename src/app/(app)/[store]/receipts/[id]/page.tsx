@@ -198,7 +198,7 @@ export default async function ReceiptPage({
             )}
           </dl>
           {r.status === "confirmed" && remaining > 0 && ctx.profile.role !== "staff" && (
-            <Link href="/payables" className="mt-2 inline-block text-sm underline underline-offset-4">
+            <Link href={`/${store.code}/payables`} className="mt-2 inline-block text-sm underline underline-offset-4">
               Xem công nợ
             </Link>
           )}
