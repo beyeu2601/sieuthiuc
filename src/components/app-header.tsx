@@ -89,6 +89,7 @@ export function AppHeader({ fullName, role, stores, defaultStoreCode }: Props) {
             <DropdownMenuContent align="end">
               <div className="px-2 py-1.5 text-xs text-muted-foreground">{ROLE_LABEL[role]}</div>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => router.push("/account")}>Tài khoản</DropdownMenuItem>
               <DropdownMenuItem onClick={() => logout()}>
                 <LogOutIcon className="size-4" />
                 Đăng xuất

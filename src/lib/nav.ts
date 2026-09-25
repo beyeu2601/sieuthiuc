@@ -10,5 +10,7 @@ export type NavItem = {
 // Chi liet ke man hinh da xay xong. Sprint sau bo sung.
 export const NAV_ITEMS: NavItem[] = [
   { label: "Tổng quan", href: "/{store}", roles: ["sadmin", "admin", "accountant", "staff"] },
+  { label: "Sản phẩm", href: "/products", roles: ["sadmin", "admin", "accountant"] },
+  { label: "Nhà cung cấp", href: "/suppliers", roles: ["sadmin", "admin", "accountant"] },
   { label: "Cài đặt", href: "/settings", roles: ["sadmin", "admin"] },
 ];

@@ -12,6 +12,10 @@ dotenv.config({ path: '.env.local', quiet: true });
 const dir = path.join('supabase', 'tests');
 const files = fs.readdirSync(dir).filter((f) => f.endsWith('.test.sql')).sort();
 
+function expandIncludes(sql) {
+  return sql.replace(/^-- @include (.+)$/gm, (_, f) => fs.readFileSync(path.join('supabase', 'tests', 'include', f.trim()), 'utf8'));
+}
+
 async function main() {
   if (!process.env.SUPABASE_DB_URL) throw new Error('Thiếu SUPABASE_DB_URL');
   const client = new pg.Client({ connectionString: process.env.SUPABASE_DB_URL, ssl: { rejectUnauthorized: false } });
@@ -19,7 +23,7 @@ async function main() {
   let failed = 0;
   try {
     for (const f of files) {
-      const sql = fs.readFileSync(path.join(dir, f), 'utf8');
+      const sql = expandIncludes(fs.readFileSync(path.join(dir, f), 'utf8'));
       console.log(`# ${f}`);
       const results = await client.query(sql);
       const lines = (Array.isArray(results) ? results : [results])

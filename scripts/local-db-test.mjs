@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
 import { pg_trgm } from '@electric-sql/pglite/contrib/pg_trgm';
+import { unaccent } from '@electric-sql/pglite/contrib/unaccent';
 import { pgtap } from '@electric-sql/pglite-pgtap';
 
 const SHIM = `
@@ -42,9 +43,13 @@ function list(dir, suffix) {
   return fs.readdirSync(dir).filter((f) => f.endsWith(suffix)).sort().map((f) => path.join(dir, f));
 }
 
+function expandIncludes(sql) {
+  return sql.replace(/^-- @include (.+)$/gm, (_, f) => fs.readFileSync(path.join('supabase', 'tests', 'include', f.trim()), 'utf8'));
+}
+
 async function main() {
   const only = process.argv[2];
-  const db = await PGlite.create({ extensions: { pg_trgm, pgtap } });
+  const db = await PGlite.create({ extensions: { pg_trgm, unaccent, pgtap } });
   await db.exec(SHIM);
 
   for (const f of list('supabase/migrations', '.sql')) {
@@ -63,7 +68,7 @@ async function main() {
     if (only && !f.includes(only)) continue;
     console.log(`# ${path.basename(f)}`);
     try {
-      const results = await db.exec(fs.readFileSync(f, 'utf8'));
+      const results = await db.exec(expandIncludes(fs.readFileSync(f, 'utf8')));
       const lines = results
         .flatMap((r) => r.rows ?? [])
         .flatMap((row) => Object.values(row))
