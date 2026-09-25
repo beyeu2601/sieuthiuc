@@ -48,3 +48,6 @@ next-env.d.ts
 /supabase/.branches/
 /SPEC_He_Thong_Quan_Ly_Cua_Hang.md
 /Feature_List_Cai_Tien.xlsx
+
+.vercel
+.env*

@@ -1,0 +1,8 @@
+.env*
+!.env.example
+*.xlsx
+data/
+SPEC_*.md
+supabase/.temp/
+node_modules/
+.next/
