@@ -30,7 +30,8 @@ export async function confirmReceipt(
   id: string,
   paid: number,
   method: "cash" | "transfer" | "other" | null,
-  dueDate: string | null
+  dueDate: string | null,
+  recordInShift = false
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.rpc("confirm_purchase_receipt", {
@@ -38,6 +39,7 @@ export async function confirmReceipt(
     p_paid_amount: paid,
     p_payment_method: paid > 0 ? method : null,
     p_due_date: dueDate,
+    p_record_in_shift: recordInShift && method === "cash" && paid > 0,
   });
   if (error) return { ok: false, error: errorMessage(error) };
   revalidatePath(`/${storeCode}/receipts`);

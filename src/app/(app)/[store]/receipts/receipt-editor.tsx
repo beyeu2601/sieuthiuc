@@ -395,6 +395,7 @@ export function ConfirmDialog({
   const [paid, setPaid] = useState<number | null>(termsDays === 0 ? total : 0);
   const [method, setMethod] = useState<"cash" | "transfer" | "other">("transfer");
   const [due, setDue] = useState(addDays(receiptDate, termsDays));
+  const [inShift, setInShift] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const remaining = total - (paid ?? 0);
@@ -403,7 +404,7 @@ export function ConfirmDialog({
     e.preventDefault();
     if ((paid ?? 0) > total) return setError("Số tiền trả không được lớn hơn tổng phiếu");
     start(async () => {
-      const res = await confirmReceipt(storeCode, receiptId, paid ?? 0, method, remaining > 0 ? due : null);
+      const res = await confirmReceipt(storeCode, receiptId, paid ?? 0, method, remaining > 0 ? due : null, inShift);
       if (!res.ok) return setError(res.error);
       toast.success("Đã nhập kho");
       onOpenChange(false);
@@ -447,6 +448,12 @@ export function ConfirmDialog({
                 <option value="cash">Tiền mặt</option>
                 <option value="other">Khác</option>
               </NativeSelect>
+              {method === "cash" && (
+                <label className="flex items-center gap-2 pt-1 text-sm">
+                  <input type="checkbox" className="size-4" checked={inShift} onChange={(e) => setInShift(e.target.checked)} />
+                  Lấy tiền từ két ca đang mở của tôi (trừ vào tiền mặt ca)
+                </label>
+              )}
             </div>
           )}
           {remaining > 0 && (
