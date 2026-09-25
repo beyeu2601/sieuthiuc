@@ -18,7 +18,7 @@ export default async function NewProductPage() {
   return (
     <div className="max-w-3xl">
       <PageHeader title="Thêm sản phẩm" description="SKU tự sinh. Mỗi loại hàng Cont/Air là một mã sản phẩm riêng." />
-      <div className="rounded-xl border bg-background p-4">
+      <div className="rounded-xl border bg-card p-4">
         <ProductForm
           id={null}
           readOnly={false}

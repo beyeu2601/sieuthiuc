@@ -9,9 +9,9 @@ import { Badge } from "@/components/ui/badge";
 
 const EXPIRY_BADGE = {
   none: { label: "Không hạn", cls: "bg-muted text-foreground" },
-  normal: { label: "Còn hạn", cls: "bg-green-100 text-green-900" },
-  near: { label: "Gần hết hạn", cls: "bg-amber-100 text-amber-900" },
-  expired: { label: "Hết hạn", cls: "bg-red-100 text-red-900" },
+  normal: { label: "Còn hạn", cls: "bg-success-soft text-success" },
+  near: { label: "Gần hết hạn", cls: "bg-warning-soft text-warning" },
+  expired: { label: "Hết hạn", cls: "bg-danger-soft text-destructive" },
 } as const;
 
 export function LookupClient({ storeId }: { storeId: string }) {
@@ -31,7 +31,7 @@ export function LookupClient({ storeId }: { storeId: string }) {
     <div className="space-y-4">
       <ProductPicker storeId={storeId} onPick={pick} autoFocus />
       {item && (
-        <article className="space-y-3 rounded-xl border bg-background p-4" aria-live="polite">
+        <article className="space-y-3 rounded-xl border bg-card p-4" aria-live="polite">
           <div>
             <h2 className="text-lg font-semibold">{item.name}</h2>
             <p className="text-sm text-muted-foreground">

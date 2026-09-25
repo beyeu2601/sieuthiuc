@@ -24,7 +24,7 @@ export default async function PosPage({ params }: { params: Promise<{ store: str
 
   if (!shift) {
     return (
-      <div className="mx-auto max-w-lg space-y-4 rounded-xl border bg-background p-6">
+      <div className="mx-auto max-w-lg space-y-4 rounded-xl border bg-card p-6">
         <PageHeader title="Chưa mở ca" description="Mở ca và đếm tiền mặt đầu ca trước khi bán hàng." />
         <OpenShiftForm storeCode={store.code} storeId={store.id} />
       </div>

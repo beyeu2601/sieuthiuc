@@ -77,7 +77,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         }
       />
 
-      <section className="rounded-xl border bg-background p-4" aria-labelledby="info">
+      <section className="rounded-xl border bg-card p-4" aria-labelledby="info">
         <h2 id="info" className="mb-3 font-medium">
           Thông tin
         </h2>
@@ -107,14 +107,14 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         />
       </section>
 
-      <section className="rounded-xl border bg-background p-4" aria-labelledby="barcodes">
+      <section className="rounded-xl border bg-card p-4" aria-labelledby="barcodes">
         <h2 id="barcodes" className="mb-3 font-medium">
           Mã vạch
         </h2>
         <BarcodePanel productId={p.id} barcodes={barcodes ?? []} canEdit={canEdit} />
       </section>
 
-      <section className="rounded-xl border bg-background p-4" aria-labelledby="lots">
+      <section className="rounded-xl border bg-card p-4" aria-labelledby="lots">
         <h2 id="lots" className="mb-3 font-medium">
           Lô đang còn hàng
         </h2>
@@ -150,7 +150,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         )}
       </section>
 
-      <section className="rounded-xl border bg-background p-4" aria-labelledby="history">
+      <section className="rounded-xl border bg-card p-4" aria-labelledby="history">
         <h2 id="history" className="mb-3 font-medium">
           Lịch sử giá
         </h2>

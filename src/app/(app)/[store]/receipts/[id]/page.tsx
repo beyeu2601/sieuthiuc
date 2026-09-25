@@ -131,7 +131,7 @@ export default async function ReceiptPage({
       {r.status === "cancelled" && (
         <p className="rounded-lg bg-muted px-3 py-2 text-sm">Đã hủy. Lý do: {r.cancel_reason}</p>
       )}
-      <div className="overflow-x-auto rounded-xl border bg-background">
+      <div className="overflow-x-auto rounded-xl border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -150,7 +150,7 @@ export default async function ReceiptPage({
             {rows.map((i) => (
               <TableRow key={i.id}>
                 <TableCell>{i.line_no}</TableCell>
-                <TableCell>
+                <TableCell className="min-w-56 whitespace-normal">
                   {i.products?.name}
                   <div className="text-xs text-muted-foreground">
                     {i.products?.sku} - {GOODS_TYPE_LABEL[i.goods_type]}
@@ -171,7 +171,7 @@ export default async function ReceiptPage({
         </Table>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-xl border bg-background p-4 text-sm">
+        <div className="rounded-xl border bg-card p-4 text-sm">
           <dl className="grid grid-cols-2 gap-y-1">
             <dt>Tiền hàng</dt>
             <dd className="text-right tabular-nums">{formatMoney(r.subtotal)}</dd>
@@ -203,7 +203,7 @@ export default async function ReceiptPage({
             </Link>
           )}
         </div>
-        <div className="rounded-xl border bg-background p-4 text-sm text-muted-foreground">
+        <div className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">
           <p>Người tạo: {(r.creator as unknown as { full_name: string } | null)?.full_name ?? "-"} - {formatDateTime(r.created_at)}</p>
           {r.confirmed_at && (
             <p>

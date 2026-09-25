@@ -61,7 +61,7 @@ export function TransferEditor({
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 rounded-xl border bg-background p-4 sm:grid-cols-2">
+      <div className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="to">Cửa hàng nhận *</Label>
           <NativeSelect id="to" value={to} onChange={(e) => setTo(e.target.value)}>
@@ -78,7 +78,7 @@ export function TransferEditor({
           <Input id="note" value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
       </div>
-      <div className="space-y-3 rounded-xl border bg-background p-4">
+      <div className="space-y-3 rounded-xl border bg-card p-4">
         <ProductPicker storeId={storeId} onPick={pick} />
         {choices && (
           <div className="rounded-lg border p-2">

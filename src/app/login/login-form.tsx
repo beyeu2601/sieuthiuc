@@ -19,7 +19,7 @@ export function LoginForm({ notice }: { notice?: string }) {
         </p>
       )}
       {state.error && (
-        <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-destructive">
           {state.error}
         </p>
       )}
@@ -34,7 +34,7 @@ export function LoginForm({ notice }: { notice?: string }) {
           spellCheck={false}
           required
           defaultValue={state.username}
-          className="h-11 text-base"
+          className="h-12 text-base"
         />
       </div>
       <div className="space-y-1.5">
@@ -45,10 +45,10 @@ export function LoginForm({ notice }: { notice?: string }) {
           type="password"
           autoComplete="current-password"
           required
-          className="h-11 text-base"
+          className="h-12 text-base"
         />
       </div>
-      <Button type="submit" className="h-11 w-full text-base" disabled={pending}>
+      <Button type="submit" className="h-12 w-full text-base" disabled={pending}>
         {pending ? "Đang đăng nhập..." : "Đăng nhập"}
       </Button>
     </form>

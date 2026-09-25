@@ -225,11 +225,11 @@ export function PosClient({
         </div>
         <ProductPicker id="pos-search" storeId={storeId} onPick={addItem} autoFocus />
         {cart.lines.length === 0 ? (
-          <p className="rounded-xl border border-dashed bg-background px-4 py-10 text-center text-sm text-muted-foreground">
+          <p className="rounded-xl border border-dashed bg-card px-4 py-10 text-center text-sm text-muted-foreground">
             Quét mã vạch để thêm hàng. Quét lại cùng mã sẽ tăng số lượng.
           </p>
         ) : (
-          <ul className="divide-y rounded-xl border bg-background">
+          <ul className="divide-y rounded-xl border bg-card">
             {cart.lines.map((l) => (
               <li key={l.product_id} className="grid grid-cols-[1fr_auto] gap-2 p-3 sm:grid-cols-[1fr_150px_120px_110px_auto] sm:items-center">
                 <div>
@@ -286,8 +286,8 @@ export function PosClient({
         )}
       </section>
 
-      <aside className="space-y-3 lg:sticky lg:top-32 lg:self-start" aria-label="Thanh toán">
-        <div className="space-y-3 rounded-xl border bg-background p-4">
+      <aside className="space-y-3 lg:sticky lg:top-6 lg:self-start" aria-label="Thanh toán">
+        <div className="space-y-3 rounded-xl border bg-card p-4">
           <dl className="grid grid-cols-2 gap-y-1 text-sm">
             <dt>Tiền hàng</dt>
             <dd className="text-right tabular-nums">{formatMoney(subtotal + lineDiscount)}</dd>
@@ -334,7 +334,7 @@ export function PosClient({
           </div>
         </div>
 
-        <div className="space-y-3 rounded-xl border bg-background p-4">
+        <div className="space-y-3 rounded-xl border bg-card p-4">
           <div className="flex gap-2">
             <Button type="button" variant="outline" className="flex-1" onClick={() => set({ cash: total, transfer: null, other: null })}>
               Tất cả tiền mặt

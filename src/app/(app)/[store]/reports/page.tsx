@@ -114,9 +114,9 @@ export default async function PnlPage({ params, searchParams }: { params: Promis
             ].map((k) => {
               const c = k.pv == null ? null : change(k.v, k.pv);
               return (
-                <div key={k.label} className="rounded-xl border bg-background p-4">
+                <div key={k.label} className="rounded-xl border bg-card p-4">
                   <div className="text-sm text-muted-foreground">{k.label}</div>
-                  <div className={cn("text-xl font-semibold tabular-nums", k.v < 0 && "text-red-700")}>
+                  <div className={cn("text-xl font-semibold tabular-nums", k.v < 0 && "text-destructive")}>
                     {k.count ? formatNumber(k.v) : formatMoney(k.v)}
                   </div>
                   <div className="text-xs text-muted-foreground">
@@ -130,7 +130,7 @@ export default async function PnlPage({ params, searchParams }: { params: Promis
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-            <section className="overflow-x-auto rounded-xl border bg-background">
+            <section className="overflow-x-auto rounded-xl border bg-card">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -160,7 +160,7 @@ export default async function PnlPage({ params, searchParams }: { params: Promis
                             </>
                           )}
                         </TableCell>
-                        <TableCell className={cn("text-right tabular-nums", v < 0 && "text-red-700")}>{formatMoney(v)}</TableCell>
+                        <TableCell className={cn("text-right tabular-nums", v < 0 && "text-destructive")}>{formatMoney(v)}</TableCell>
                         <TableCell className="text-right text-muted-foreground tabular-nums">{formatMoney(pv)}</TableCell>
                         <TableCell className="text-right text-muted-foreground tabular-nums">{c == null ? "-" : `${c > 0 ? "+" : ""}${c}%`}</TableCell>
                       </TableRow>
@@ -180,7 +180,7 @@ export default async function PnlPage({ params, searchParams }: { params: Promis
               </p>
             </section>
 
-            <section className="space-y-3 rounded-xl border bg-background p-4 text-sm">
+            <section className="space-y-3 rounded-xl border bg-card p-4 text-sm">
               <h2 className="font-medium">Cơ cấu doanh thu</h2>
               {breakdown && (
                 <>
@@ -208,7 +208,7 @@ export default async function PnlPage({ params, searchParams }: { params: Promis
             </section>
           </div>
 
-          <section className="rounded-xl border bg-background p-4">
+          <section className="rounded-xl border bg-card p-4">
             <h2 className="mb-2 font-medium">Doanh thu thuần theo ngày</h2>
             <DailyBars label="Doanh thu thuần" data={days.map((d) => ({ day: d.day, value: d.net_revenue }))} />
             <details className="mt-2 text-sm">

@@ -67,7 +67,7 @@ export default async function BestSellersPage({
       {rows.length === 0 ? (
         <EmptyState title="Chưa có dữ liệu bán trong kỳ" />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-background">
+        <div className="overflow-x-auto rounded-xl border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
@@ -82,7 +82,7 @@ export default async function BestSellersPage({
               {rows.map((x, i) => (
                 <TableRow key={x.product_id}>
                   <TableCell>{i + 1}</TableCell>
-                  <TableCell>
+                  <TableCell className="min-w-56 whitespace-normal">
                     {x.name}
                     <div className="text-xs text-muted-foreground">{x.sku}</div>
                   </TableCell>

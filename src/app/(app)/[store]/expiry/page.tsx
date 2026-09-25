@@ -68,7 +68,7 @@ export default async function ExpiryPage({
               {rows.length} lô, giá trị theo giá vốn <strong>{formatMoney(value)}</strong>. Hủy hàng hết hạn làm ở phiếu hủy hàng (giai đoạn 2).
             </p>
           )}
-          <div className="overflow-x-auto rounded-xl border bg-background">
+          <div className="overflow-x-auto rounded-xl border bg-card">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -83,7 +83,7 @@ export default async function ExpiryPage({
               <TableBody>
                 {rows.map((r) => (
                   <TableRow key={r.lot_id}>
-                    <TableCell>
+                    <TableCell className="min-w-56 whitespace-normal">
                       {r.name}
                       <div className="text-xs text-muted-foreground">{r.sku}</div>
                     </TableCell>

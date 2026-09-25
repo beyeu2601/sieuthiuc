@@ -100,15 +100,15 @@ export default async function CashPage({ params, searchParams }: { params: Promi
 
       {canFinance && (
         <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border bg-background p-4">
+          <div className="rounded-xl border bg-card p-4">
             <div className="text-sm text-muted-foreground">Tổng chi (đã duyệt)</div>
             <div className="text-xl font-semibold tabular-nums">{formatMoney(totalExp)}</div>
           </div>
-          <div className="rounded-xl border bg-background p-4">
+          <div className="rounded-xl border bg-card p-4">
             <div className="text-sm text-muted-foreground">Tổng thu khác (đã duyệt)</div>
             <div className="text-xl font-semibold tabular-nums">{formatMoney(totalInc)}</div>
           </div>
-          <div className="rounded-xl border bg-background p-4 text-sm">
+          <div className="rounded-xl border bg-card p-4 text-sm">
             <div className="mb-1 text-muted-foreground">Chi theo nhóm</div>
             {[...byCat.entries()]
               .sort((a, b) => b[1] - a[1])
@@ -126,7 +126,7 @@ export default async function CashPage({ params, searchParams }: { params: Promi
       {rows.length === 0 ? (
         <EmptyState title="Không có khoản thu chi trong khoảng đã chọn" />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-background">
+        <div className="overflow-x-auto rounded-xl border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
@@ -159,7 +159,7 @@ export default async function CashPage({ params, searchParams }: { params: Promi
                     </TableCell>
                     <TableCell>{(r.expense_categories as unknown as { name: string } | null)?.name}</TableCell>
                     <TableCell>{PAYMENT_METHOD_LABEL[r.method as keyof typeof PAYMENT_METHOD_LABEL]}</TableCell>
-                    <TableCell className={`text-right tabular-nums ${r.kind === "income" ? "text-green-700" : ""}`}>
+                    <TableCell className={`text-right tabular-nums ${r.kind === "income" ? "text-success" : ""}`}>
                       {r.kind === "income" ? "+" : "-"}
                       {formatMoney(r.amount)}
                     </TableCell>

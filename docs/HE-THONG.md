@@ -37,6 +37,7 @@ Web app (PWA) quản lý bán hàng, kho, công nợ nhà cung cấp, thu chi v�
 - Server Action của Next.js gọi RPC với phiên người dùng. Riêng tạo và sửa người dùng dùng service role ở server sau khi kiểm tra quyền.
 - Máy quét mã vạch USB (Kiosk Việt) hoạt động như bàn phím: ô tìm sản phẩm nhận mã rồi Enter, khớp đúng một mã thì thêm ngay.
 - In hóa đơn 80mm và tem mã vạch bằng trang in của trình duyệt. Chưa làm ESC/POS, QZ Tray, ngăn kéo tiền.
+- Giao diện theo bộ nhận diện trong `docs/THUONG-HIEU.md`: màu, font, logo, khung điều hướng (thanh bên trên máy tính, tab dưới đáy trên điện thoại).
 
 ## 3. Cấu trúc thư mục
 
@@ -49,7 +50,8 @@ src/app/(app)/suppliers          Nhà cung cấp
 src/app/(app)/settings           Cửa hàng, người dùng, cấu hình, nhóm hàng, thành viên
 src/app/(app)/account            Đổi mật khẩu, mã PIN quản lý
 src/app/print                    In hóa đơn 80mm, in tem mã vạch
-src/components                   Thành phần dùng chung (product-picker, money-input, ...), ui = shadcn
+src/components                   Thành phần dùng chung (app-shell, product-picker, money-input, ...), ui = shadcn
+public/brand                     Logo đã tách nền; sinh lại bằng scripts/brand-assets.py
 src/lib                          auth, roles, nav, errors, format, dates, settings, text, supabase clients
 supabase/migrations              SQL theo thứ tự thời gian
 supabase/tests                   Test pgTAP; include/setup.sql là dữ liệu mẫu dùng chung

@@ -23,7 +23,7 @@ export default async function NewCashPage({ params }: { params: Promise<{ store:
         description={isStaff ? "Nhân viên ghi được khoản chi tiền mặt lấy từ két trong ca đang mở." : "Khoản thu chi ngoài bán hàng và nhập hàng."}
       />
       {isStaff && !shift ? (
-        <p className="rounded-xl border bg-background p-4 text-sm">Bạn cần mở ca trước khi ghi khoản chi tiền mặt.</p>
+        <p className="rounded-xl border bg-card p-4 text-sm">Bạn cần mở ca trước khi ghi khoản chi tiền mặt.</p>
       ) : (
         <CashForm
           storeId={store.id}

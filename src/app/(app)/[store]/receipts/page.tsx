@@ -71,7 +71,7 @@ export default async function ReceiptsPage({ params, searchParams }: { params: P
       {rows.length === 0 ? (
         <EmptyState title="Chưa có phiếu nhập">Tạo phiếu nhập để đưa hàng vào kho.</EmptyState>
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-background">
+        <div className="overflow-x-auto rounded-xl border bg-card">
           <Table>
             <TableHeader>
               <TableRow>

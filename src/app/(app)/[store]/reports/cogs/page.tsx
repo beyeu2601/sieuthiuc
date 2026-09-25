@@ -74,7 +74,7 @@ export default async function CogsPage({
       ) : rows.length === 0 ? (
         <EmptyState title="Không có giao dịch trong kỳ" />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-background">
+        <div className="overflow-x-auto rounded-xl border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
@@ -93,7 +93,7 @@ export default async function CogsPage({
                   <TableCell className="text-right tabular-nums">{formatNumber(x.qty)}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatMoney(x.revenue)}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatMoney(x.cogs)}</TableCell>
-                  <TableCell className={`text-right tabular-nums ${x.gross_profit < 0 ? "text-red-700" : ""}`}>{formatMoney(x.gross_profit)}</TableCell>
+                  <TableCell className={`text-right tabular-nums ${x.gross_profit < 0 ? "text-destructive" : ""}`}>{formatMoney(x.gross_profit)}</TableCell>
                   <TableCell className="text-right tabular-nums">{x.margin == null ? "N/A" : `${x.margin}%`}</TableCell>
                 </TableRow>
               ))}

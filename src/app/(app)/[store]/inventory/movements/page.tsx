@@ -91,7 +91,7 @@ export default async function MovementsPage({ params, searchParams }: { params: 
       ) : rows.length === 0 ? (
         <EmptyState title="Không có biến động trong khoảng đã chọn" />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-background">
+        <div className="overflow-x-auto rounded-xl border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
@@ -121,7 +121,7 @@ export default async function MovementsPage({ params, searchParams }: { params: 
                       <div className="text-xs text-muted-foreground">{r.sku}</div>
                     </TableCell>
                     <TableCell>{MOVEMENT_LABEL[r.movement_type] ?? r.movement_type}</TableCell>
-                    <TableCell className={`text-right tabular-nums ${d > 0 ? "text-green-700" : d < 0 ? "text-red-700" : ""}`}>
+                    <TableCell className={`text-right tabular-nums ${d > 0 ? "text-success" : d < 0 ? "text-destructive" : ""}`}>
                       {d > 0 ? "+" : ""}
                       {formatNumber(d)}
                     </TableCell>

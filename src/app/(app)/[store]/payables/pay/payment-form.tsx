@@ -100,11 +100,11 @@ export function PaymentForm({
     });
   }
 
-  if (suppliers.size === 0) return <p className="rounded-xl border bg-background p-4 text-sm">Không có khoản nợ nào cần thanh toán.</p>;
+  if (suppliers.size === 0) return <p className="rounded-xl border bg-card p-4 text-sm">Không có khoản nợ nào cần thanh toán.</p>;
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <section className="grid gap-3 rounded-xl border bg-background p-4 sm:grid-cols-2">
+      <section className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2">
         <div className="space-y-1.5 sm:col-span-2">
           <Label htmlFor="sup">Nhà cung cấp *</Label>
           <NativeSelect
@@ -164,7 +164,7 @@ export function PaymentForm({
       </section>
 
       {supplier && (
-        <section className="rounded-xl border bg-background p-4">
+        <section className="rounded-xl border bg-card p-4">
           <h2 className="mb-2 font-medium">Phân bổ vào các khoản nợ</h2>
           <ul className="divide-y">
             {list.map((d) => (

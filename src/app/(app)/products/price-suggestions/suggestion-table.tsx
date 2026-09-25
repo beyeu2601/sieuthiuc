@@ -46,7 +46,7 @@ export function SuggestionTable({ rows }: { rows: Suggestion[] }) {
 
   return (
     <div className="space-y-3">
-      <div className="overflow-x-auto rounded-xl border bg-background">
+      <div className="overflow-x-auto rounded-xl border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -81,7 +81,7 @@ export function SuggestionTable({ rows }: { rows: Suggestion[] }) {
                       onChange={() => toggle(r.product_id)}
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="min-w-56 whitespace-normal">
                     {r.name}
                     <div className="text-xs text-muted-foreground">
                       {r.sku} - {GOODS_TYPE_LABEL[r.goods_type]}
@@ -91,7 +91,7 @@ export function SuggestionTable({ rows }: { rows: Suggestion[] }) {
                   <TableCell className="text-right tabular-nums">{r.benefit_pct}%</TableCell>
                   <TableCell className="text-right tabular-nums">{formatMoney(r.current_price)}</TableCell>
                   <TableCell className="text-right font-medium tabular-nums">{formatMoney(r.suggested_price)}</TableCell>
-                  <TableCell className={`text-right tabular-nums ${diff > 0 ? "text-green-700" : "text-red-700"}`}>
+                  <TableCell className={`text-right tabular-nums ${diff > 0 ? "text-success" : "text-destructive"}`}>
                     {diff > 0 ? "+" : ""}
                     {formatMoney(diff)}
                   </TableCell>

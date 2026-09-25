@@ -27,7 +27,7 @@ type Row = {
 
 function Diff({ v }: { v: number | null }) {
   if (v == null) return <span className="text-muted-foreground">-</span>;
-  return <span className={cn("tabular-nums", v < 0 ? "text-red-700" : v > 0 ? "text-amber-700" : "text-green-700")}>{formatMoney(v)}</span>;
+  return <span className={cn("tabular-nums", v < 0 ? "text-destructive" : v > 0 ? "text-warning" : "text-success")}>{formatMoney(v)}</span>;
 }
 
 export default async function ReconcilePage({
@@ -72,7 +72,7 @@ export default async function ReconcilePage({
           Không tải được số liệu.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-background">
+        <div className="overflow-x-auto rounded-xl border bg-card">
           <Table>
             <TableHeader>
               <TableRow>

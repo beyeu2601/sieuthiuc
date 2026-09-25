@@ -119,7 +119,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       ) : rows.length === 0 ? (
         <EmptyState title="Không có sản phẩm phù hợp">Thử bỏ bớt bộ lọc hoặc tìm bằng từ khác.</EmptyState>
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-background">
+        <div className="overflow-x-auto rounded-xl border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
@@ -148,7 +148,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                       </Link>
                     </TableCell>
                     <TableCell className="tabular-nums">{primary?.barcode ?? "-"}</TableCell>
-                    <TableCell>
+                    <TableCell className="min-w-64 whitespace-normal">
                       <Link href={`/products/${p.id}`} className="hover:underline">
                         {p.name}
                       </Link>

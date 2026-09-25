@@ -19,12 +19,12 @@ export default async function AccountPage() {
   return (
     <div className="max-w-md space-y-4">
       <PageHeader title="Tài khoản" description={`${ctx.profile.full_name} - ${ctx.profile.username} - ${ROLE_LABEL[ctx.profile.role]}`} />
-      <section className="rounded-xl border bg-background p-4">
+      <section className="rounded-xl border bg-card p-4">
         <h2 className="mb-3 font-medium">Đổi mật khẩu</h2>
         <PasswordChangeForm />
       </section>
       {isManager && (
-        <section className="rounded-xl border bg-background p-4">
+        <section className="rounded-xl border bg-card p-4">
           <h2 className="mb-3 font-medium">Mã PIN duyệt giảm giá</h2>
           <PinForm hasPin={hasPin} />
         </section>

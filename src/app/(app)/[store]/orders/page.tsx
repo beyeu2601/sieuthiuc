@@ -74,7 +74,7 @@ export default async function OrdersPage({ params, searchParams }: { params: Pro
       {rows.length === 0 ? (
         <EmptyState title="Không có đơn phù hợp" />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-background">
+        <div className="overflow-x-auto rounded-xl border bg-card">
           <Table>
             <TableHeader>
               <TableRow>

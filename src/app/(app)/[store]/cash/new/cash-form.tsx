@@ -57,7 +57,7 @@ export function CashForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4 rounded-xl border bg-background p-4">
+    <form onSubmit={submit} className="space-y-4 rounded-xl border bg-card p-4">
       <fieldset disabled={pending} className="grid gap-3 sm:grid-cols-2">
         {!isStaff && (
           <div className="space-y-1.5">

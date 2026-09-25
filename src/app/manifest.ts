@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Quản lý bán hàng, kho, công nợ và lãi lỗ cửa hàng",
     start_url: "/",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#15803d",
+    background_color: "#f5f7fb",
+    theme_color: "#324ca0",
     lang: "vi",
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },

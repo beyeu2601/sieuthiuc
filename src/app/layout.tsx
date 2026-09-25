@@ -1,11 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Barlow_Condensed, Be_Vietnam_Pro } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const inter = Inter({
+// Noi dung: Be Vietnam Pro (thiet ke cho dau tieng Viet). Tieu de: Barlow Condensed, gan net chu trong logo.
+const sans = Be_Vietnam_Pro({
   variable: "--font-sans",
   subsets: ["latin", "vietnamese"],
+  weight: ["400", "500", "600", "700"],
+});
+const display = Barlow_Condensed({
+  variable: "--font-display",
+  subsets: ["latin", "vietnamese"],
+  weight: ["600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -16,15 +23,16 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#15803d",
+  themeColor: "#324ca0",
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="vi">
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${sans.variable} ${display.variable} font-sans antialiased`}>
         {children}
         <Toaster richColors position="top-center" />
       </body>

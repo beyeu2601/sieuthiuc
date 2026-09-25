@@ -156,7 +156,7 @@ export default async function PayablesPage({
         bySupplier.size === 0 ? (
           <EmptyState title="Chưa có công nợ" />
         ) : (
-          <div className="overflow-x-auto rounded-xl border bg-background">
+          <div className="overflow-x-auto rounded-xl border bg-card">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -183,7 +183,7 @@ export default async function PayablesPage({
                       <TableCell className="text-right tabular-nums">{formatMoney(g.total)}</TableCell>
                       <TableCell className="text-right tabular-nums">{formatMoney(g.paid)}</TableCell>
                       <TableCell className="text-right font-medium tabular-nums">{formatMoney(g.remaining)}</TableCell>
-                      <TableCell className={cn("text-right tabular-nums", g.overdue > 0 && "text-red-700")}>{formatMoney(g.overdue)}</TableCell>
+                      <TableCell className={cn("text-right tabular-nums", g.overdue > 0 && "text-destructive")}>{formatMoney(g.overdue)}</TableCell>
                       <TableCell className="text-right">
                         {g.remaining > 0 && (
                           <Button size="sm" variant="outline" render={<Link href={`/${store.code}/payables/pay?supplier=${id}`} />}>
@@ -201,7 +201,7 @@ export default async function PayablesPage({
         (payments ?? []).length === 0 ? (
           <EmptyState title="Chưa có thanh toán nào" />
         ) : (
-          <div className="overflow-x-auto rounded-xl border bg-background">
+          <div className="overflow-x-auto rounded-xl border bg-card">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -254,7 +254,7 @@ export default async function PayablesPage({
           return rows.length === 0 ? (
             <EmptyState title={tab === "due" ? "Không có khoản nào cần thanh toán" : "Chưa có công nợ"} />
           ) : (
-            <div className="overflow-x-auto rounded-xl border bg-background">
+            <div className="overflow-x-auto rounded-xl border bg-card">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -306,9 +306,9 @@ export default async function PayablesPage({
 
 function Kpi({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: "bad" | "warn" }) {
   return (
-    <div className={cn("rounded-xl border bg-background p-4", tone === "bad" && "border-red-300", tone === "warn" && "border-amber-300")}>
+    <div className={cn("rounded-xl border bg-card p-4", tone === "bad" && "border-destructive/30", tone === "warn" && "border-warning/30")}>
       <div className="text-sm text-muted-foreground">{label}</div>
-      <div className={cn("text-xl font-semibold tabular-nums", tone === "bad" && "text-red-700")}>{value}</div>
+      <div className={cn("text-xl font-semibold tabular-nums", tone === "bad" && "text-destructive")}>{value}</div>
       {sub && <div className="text-xs text-muted-foreground">{sub}</div>}
     </div>
   );

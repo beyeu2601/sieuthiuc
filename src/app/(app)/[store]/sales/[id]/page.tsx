@@ -72,7 +72,7 @@ export default async function SalePage({ params }: { params: Promise<{ store: st
           {s.cancel_reason}
         </p>
       )}
-      <div className="overflow-x-auto rounded-xl border bg-background">
+      <div className="overflow-x-auto rounded-xl border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -90,7 +90,7 @@ export default async function SalePage({ params }: { params: Promise<{ store: st
               return (
                 <TableRow key={i.id}>
                   <TableCell>{i.line_no}</TableCell>
-                  <TableCell>
+                  <TableCell className="min-w-56 whitespace-normal">
                     {p?.name}
                     <div className="text-xs text-muted-foreground">{p?.sku}</div>
                   </TableCell>
@@ -106,7 +106,7 @@ export default async function SalePage({ params }: { params: Promise<{ store: st
           </TableBody>
         </Table>
       </div>
-      <div className="ml-auto max-w-sm rounded-xl border bg-background p-4 text-sm">
+      <div className="ml-auto max-w-sm rounded-xl border bg-card p-4 text-sm">
         <dl className="grid grid-cols-2 gap-y-1">
           <dt>Tiền hàng</dt>
           <dd className="text-right tabular-nums">{formatMoney(s.subtotal)}</dd>

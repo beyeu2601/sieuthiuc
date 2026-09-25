@@ -52,7 +52,7 @@ export default async function LowStockPage({ params }: { params: Promise<{ store
         {rows.length === 0 ? (
           <EmptyState title="Không có sản phẩm nào dưới mức tối thiểu" />
         ) : (
-          <div className="overflow-x-auto rounded-xl border bg-background">
+          <div className="overflow-x-auto rounded-xl border bg-card">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -67,7 +67,7 @@ export default async function LowStockPage({ params }: { params: Promise<{ store
               <TableBody>
                 {rows.map((r) => (
                   <TableRow key={r.product_id}>
-                    <TableCell>
+                    <TableCell className="min-w-56 whitespace-normal">
                       {r.name}
                       <div className="text-xs text-muted-foreground">{r.sku}</div>
                     </TableCell>

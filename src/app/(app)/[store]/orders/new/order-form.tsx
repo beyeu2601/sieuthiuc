@@ -72,7 +72,7 @@ export function OrderForm({ storeId, storeCode }: { storeId: string; storeCode: 
 
   return (
     <div className="space-y-4">
-      <section className="grid gap-3 rounded-xl border bg-background p-4 sm:grid-cols-2">
+      <section className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="channel">Kênh *</Label>
           <NativeSelect id="channel" value={h.channel} onChange={(e) => setH({ ...h, channel: e.target.value as OrderPayload["channel"] })}>
@@ -99,7 +99,7 @@ export function OrderForm({ storeId, storeCode }: { storeId: string; storeCode: 
         </div>
       </section>
 
-      <section className="space-y-3 rounded-xl border bg-background p-4">
+      <section className="space-y-3 rounded-xl border bg-card p-4">
         <h2 className="font-medium">Sản phẩm</h2>
         <ProductPicker storeId={storeId} onPick={add} />
         {lines.map((l) => (
@@ -135,7 +135,7 @@ export function OrderForm({ storeId, storeCode }: { storeId: string; storeCode: 
         ))}
       </section>
 
-      <section className="grid gap-3 rounded-xl border bg-background p-4 sm:grid-cols-3">
+      <section className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-3">
         <div className="space-y-1.5">
           <Label htmlFor="ship">Phí ship thu của khách</Label>
           <MoneyInput id="ship" value={h.shipping_fee} onChange={(n) => setH({ ...h, shipping_fee: n })} />
@@ -158,7 +158,7 @@ export function OrderForm({ storeId, storeCode }: { storeId: string; storeCode: 
         </div>
       </section>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-background p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4">
         <div className="text-sm">
           Tiền hàng {formatMoney(subtotal)} + ship {formatMoney(h.shipping_fee ?? 0)} - giảm {formatMoney(h.discount_amount ?? 0)}
           <div className="text-lg font-semibold">Tổng đơn {formatMoney(total)}</div>

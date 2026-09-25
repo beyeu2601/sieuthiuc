@@ -19,7 +19,7 @@ export default async function SettingsStorePage() {
         Thông tin cửa hàng in trên hóa đơn. Mã cửa hàng dùng trong đường dẫn và mã chứng từ, không đổi được ở đây.
       </p>
       {(stores ?? []).map((s) => (
-        <section key={s.id} className="max-w-3xl rounded-xl border bg-background p-4">
+        <section key={s.id} className="max-w-3xl rounded-xl border bg-card p-4">
           <h2 className="mb-3 font-medium">
             {s.code} - {s.name}
           </h2>

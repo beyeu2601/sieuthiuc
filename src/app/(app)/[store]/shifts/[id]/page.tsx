@@ -56,14 +56,14 @@ export default async function ShiftPage({ params }: { params: Promise<{ store: s
           { label: "Tiền mặt đầu ca", value: formatMoney(s.opening_cash) },
           { label: "Tiền mặt kỳ vọng", value: formatMoney(s.status === "open" ? sum?.expected_cash : s.expected_cash) },
         ].map((c) => (
-          <div key={c.label} className="rounded-xl border bg-background p-4">
+          <div key={c.label} className="rounded-xl border bg-card p-4">
             <div className="text-sm text-muted-foreground">{c.label}</div>
             <div className="text-xl font-semibold tabular-nums">{c.value}</div>
           </div>
         ))}
       </div>
 
-      <section className="rounded-xl border bg-background p-4 text-sm">
+      <section className="rounded-xl border bg-card p-4 text-sm">
         <h2 className="mb-2 font-medium">Theo phương thức</h2>
         <ul className="flex flex-wrap gap-4">
           {(["cash", "transfer", "other"] as const).map((m) => (
@@ -91,18 +91,18 @@ export default async function ShiftPage({ params }: { params: Promise<{ store: s
       </section>
 
       {canClose && (
-        <section className="rounded-xl border bg-background p-4">
+        <section className="rounded-xl border bg-card p-4">
           <h2 className="mb-3 font-medium">Chốt ca</h2>
           <CloseShiftForm storeCode={store.code} shiftId={s.id} expected={sum?.expected_cash ?? 0} />
         </section>
       )}
 
       {s.status !== "open" && (
-        <section className="space-y-2 rounded-xl border bg-background p-4 text-sm">
+        <section className="space-y-2 rounded-xl border bg-card p-4 text-sm">
           <h2 className="font-medium">Kết quả chốt ca</h2>
           <p>
             Kỳ vọng {formatMoney(s.expected_cash)} - thực đếm {formatMoney(s.counted_cash)} - lệch{" "}
-            <strong className={(s.cash_diff ?? 0) < 0 ? "text-red-700" : ""}>{formatMoney(s.cash_diff)}</strong>
+            <strong className={(s.cash_diff ?? 0) < 0 ? "text-destructive" : ""}>{formatMoney(s.cash_diff)}</strong>
           </p>
           {s.close_note && <p>Ghi chú chốt ca: {s.close_note}</p>}
           {s.review_note && <p>Ghi chú quản lý: {s.review_note}</p>}
@@ -113,7 +113,7 @@ export default async function ShiftPage({ params }: { params: Promise<{ store: s
         </section>
       )}
 
-      <section className="rounded-xl border bg-background">
+      <section className="rounded-xl border bg-card">
         <h2 className="p-4 pb-0 font-medium">Giao dịch trong ca</h2>
         <div className="overflow-x-auto">
           <Table>

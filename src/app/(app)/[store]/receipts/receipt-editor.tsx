@@ -169,7 +169,7 @@ export function ReceiptEditor({
         </p>
       )}
 
-      <section className="grid gap-3 rounded-xl border bg-background p-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1.5 sm:col-span-2">
           <Label htmlFor="supplier">Nhà cung cấp *</Label>
           <NativeSelect id="supplier" value={h.supplier_id} onChange={(e) => setH({ ...h, supplier_id: e.target.value })}>
@@ -195,7 +195,7 @@ export function ReceiptEditor({
         </div>
       </section>
 
-      <section className="space-y-3 rounded-xl border bg-background p-4">
+      <section className="space-y-3 rounded-xl border bg-card p-4">
         <h2 className="font-medium">Hàng nhập</h2>
         <ProductPicker storeId={storeId} onPick={addProduct} showStock={false} autoFocus={!receiptId} />
         {lines.length === 0 ? (
@@ -250,7 +250,7 @@ export function ReceiptEditor({
         )}
       </section>
 
-      <section className="space-y-3 rounded-xl border bg-background p-4">
+      <section className="space-y-3 rounded-xl border bg-card p-4">
         <div className="flex items-center justify-between">
           <h2 className="font-medium">Chi phí kèm theo</h2>
           <Button
@@ -306,7 +306,7 @@ export function ReceiptEditor({
         ))}
       </section>
 
-      <section className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-background p-4 shadow-sm">
+      <section className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4 shadow-sm">
         <div className="text-sm">
           <div>
             Tiền hàng <strong className="tabular-nums">{formatMoney(subtotal)}</strong> + chi phí{" "}

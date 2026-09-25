@@ -2,7 +2,7 @@ const vnd = new Intl.NumberFormat("vi-VN");
 
 export function formatMoney(v: number | null | undefined) {
   if (v == null) return "-";
-  return `${vnd.format(Math.round(v))} ₫`;
+  return `${vnd.format(Math.round(v))}\u00a0₫`; // dau cach khong ngat: so va ₫ luon cung dong
 }
 
 export function formatNumber(v: number | null | undefined) {

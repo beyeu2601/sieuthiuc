@@ -52,7 +52,7 @@ export default async function SuppliersPage({
       ) : rows.length === 0 ? (
         <EmptyState title="Chưa có nhà cung cấp">Thêm nhà cung cấp trước khi tạo phiếu nhập hàng.</EmptyState>
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-background">
+        <div className="overflow-x-auto rounded-xl border bg-card">
           <Table>
             <TableHeader>
               <TableRow>

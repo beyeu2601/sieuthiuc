@@ -15,7 +15,7 @@ export default async function GeneralSettingsPage({ searchParams }: { searchPara
   return (
     <div className="max-w-3xl space-y-4">
       <ScopePicker basePath="/settings/general" stores={ctx.stores} current={storeId} allowGlobal={ctx.profile.role === "sadmin"} />
-      <section className="rounded-xl border bg-background p-4">
+      <section className="rounded-xl border bg-card p-4">
         <h2 className="mb-1 font-medium">Tham số vận hành</h2>
         <p className="mb-4 text-sm text-muted-foreground">
           Đang sửa: {label}. Giá trị riêng của cửa hàng được ưu tiên hơn giá trị chung.

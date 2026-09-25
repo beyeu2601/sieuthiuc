@@ -82,7 +82,7 @@ export default async function SalesPage({ params, searchParams }: { params: Prom
           <p className="mb-2 text-sm">
             Trang này: tổng giao dịch hoàn tất <strong className="tabular-nums">{formatMoney(completedTotal)}</strong>
           </p>
-          <div className="overflow-x-auto rounded-xl border bg-background">
+          <div className="overflow-x-auto rounded-xl border bg-card">
             <Table>
               <TableHeader>
                 <TableRow>

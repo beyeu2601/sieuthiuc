@@ -105,7 +105,7 @@ export function CloseShiftForm({ storeCode, shiftId, expected }: { storeCode: st
         <dt>Thực đếm</dt>
         <dd className="text-right tabular-nums">{formatMoney(counted)}</dd>
         <dt className="font-medium">Chênh lệch</dt>
-        <dd className={`text-right font-medium tabular-nums ${diff < 0 ? "text-red-700" : diff > 0 ? "text-amber-700" : "text-green-700"}`}>
+        <dd className={`text-right font-medium tabular-nums ${diff < 0 ? "text-destructive" : diff > 0 ? "text-warning" : "text-success"}`}>
           {diff > 0 ? "+" : ""}
           {formatMoney(diff)}
         </dd>

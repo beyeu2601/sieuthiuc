@@ -23,14 +23,14 @@ export default async function LoyaltySettingsPage({ searchParams }: { searchPara
       <p className="rounded-lg bg-muted px-3 py-2 text-sm">
         Tích điểm và dùng điểm khi bán hàng thuộc giai đoạn 2. Có thể thiết lập trước quy tắc và hạng ở đây.
       </p>
-      <section className="rounded-xl border bg-background p-4">
+      <section className="rounded-xl border bg-card p-4">
         <h2 className="mb-1 font-medium">Hạng thành viên</h2>
         <p className="mb-3 text-sm text-muted-foreground">
           Khách tự lên hạng khi tổng chi tiêu đạt ngưỡng. Hệ số nhân điểm tích; giảm giá áp dụng tự động khi bán.
         </p>
         <TierEditor rows={tiers ?? []} />
       </section>
-      <section className="rounded-xl border bg-background p-4">
+      <section className="rounded-xl border bg-card p-4">
         <h2 className="mb-1 font-medium">Quy tắc điểm</h2>
         <p className="mb-3 text-sm text-muted-foreground">Đang sửa: {label}.</p>
         <div className="mb-3">

@@ -90,7 +90,7 @@ export function ImportForm() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border bg-background p-4 text-sm">
+      <div className="rounded-xl border bg-card p-4 text-sm">
         <ol className="list-decimal space-y-1 pl-5">
           <li>Tải file mẫu, điền mỗi sản phẩm một dòng. Dòng 1 là tiêu đề, giữ nguyên thứ tự cột.</li>
           <li>Bắt buộc: Tên, ĐVT, Loại hàng. Nhóm hàng và thương hiệu chưa có sẽ được tạo mới.</li>
@@ -100,7 +100,7 @@ export function ImportForm() {
           <Button variant="outline" onClick={downloadTemplate}>
             Tải file mẫu
           </Button>
-          <label className="inline-flex h-8 cursor-pointer items-center rounded-lg border bg-background px-2.5 text-sm font-medium hover:bg-muted">
+          <label className="inline-flex h-8 cursor-pointer items-center rounded-lg border bg-card px-2.5 text-sm font-medium hover:bg-muted">
             Chọn file Excel
             <input type="file" accept=".xlsx,.xls" className="sr-only" onChange={onFile} />
           </label>
@@ -124,7 +124,7 @@ export function ImportForm() {
               Sẵn sàng tạo <strong>{parsed.rows.length}</strong> sản phẩm. Xem trước 20 dòng đầu:
             </p>
           )}
-          <div className="overflow-x-auto rounded-xl border bg-background">
+          <div className="overflow-x-auto rounded-xl border bg-card">
             <Table>
               <TableHeader>
                 <TableRow>

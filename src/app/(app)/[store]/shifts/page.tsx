@@ -50,7 +50,7 @@ export default async function ShiftsPage({
       <PageHeader title="Ca làm việc" description="Mở ca trước khi bán hàng. Chốt ca để đối chiếu tiền mặt trong két." />
 
       {canWork && (
-        <section className="rounded-xl border bg-background p-4">
+        <section className="rounded-xl border bg-card p-4">
           {myOpen ? (
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p>
@@ -86,7 +86,7 @@ export default async function ShiftsPage({
       {rows.length === 0 ? (
         <EmptyState title="Chưa có ca nào" />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-background">
+        <div className="overflow-x-auto rounded-xl border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
@@ -118,7 +118,7 @@ export default async function ShiftsPage({
                     <TableCell className="text-right tabular-nums">{formatMoney(s.opening_cash)}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatMoney(s.expected_cash)}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatMoney(s.counted_cash)}</TableCell>
-                    <TableCell className={`text-right tabular-nums ${diff < 0 ? "text-red-700" : diff > 0 ? "text-amber-700" : ""}`}>
+                    <TableCell className={`text-right tabular-nums ${diff < 0 ? "text-destructive" : diff > 0 ? "text-warning" : ""}`}>
                       {s.cash_diff == null ? "-" : formatMoney(diff)}
                     </TableCell>
                     <TableCell>

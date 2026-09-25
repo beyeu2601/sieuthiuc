@@ -42,14 +42,14 @@ export default async function OrderPage({ params }: { params: Promise<{ store: s
         }
       />
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-xl border bg-background p-4 text-sm">
+        <div className="rounded-xl border bg-card p-4 text-sm">
           <p className="font-medium">{o.customer_name ?? "Khách chưa ghi tên"}</p>
           <p>{o.customer_phone ?? "-"}</p>
           <p className="text-muted-foreground">{o.shipping_address ?? ""}</p>
           {o.note && <p className="mt-2">Ghi chú: {o.note}</p>}
           {o.cancel_reason && <p className="mt-2 text-destructive">Lý do hủy: {o.cancel_reason}</p>}
         </div>
-        <div className="rounded-xl border bg-background p-4 text-sm">
+        <div className="rounded-xl border bg-card p-4 text-sm">
           <dl className="grid grid-cols-2 gap-y-1">
             <dt>Tiền hàng</dt>
             <dd className="text-right tabular-nums">{formatMoney(o.subtotal)}</dd>
@@ -67,7 +67,7 @@ export default async function OrderPage({ params }: { params: Promise<{ store: s
           )}
         </div>
       </div>
-      <div className="overflow-x-auto rounded-xl border bg-background">
+      <div className="overflow-x-auto rounded-xl border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -95,7 +95,7 @@ export default async function OrderPage({ params }: { params: Promise<{ store: s
         </Table>
       </div>
       {ctx.profile.role !== "accountant" && <OrderActions storeCode={store.code} id={o.id} status={o.status} />}
-      <section className="rounded-xl border bg-background p-4 text-sm">
+      <section className="rounded-xl border bg-card p-4 text-sm">
         <h2 className="mb-2 font-medium">Lịch sử trạng thái</h2>
         <ul className="space-y-1">
           {(history ?? []).map((h) => (

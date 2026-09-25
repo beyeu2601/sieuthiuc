@@ -51,7 +51,7 @@ export function UserManager({
         </p>
         <Button onClick={() => setMode({ kind: "create" })}>Thêm người dùng</Button>
       </div>
-      <div className="overflow-x-auto rounded-xl border bg-background">
+      <div className="overflow-x-auto rounded-xl border bg-card">
         <Table>
           <TableHeader>
             <TableRow>

@@ -46,7 +46,7 @@ export function DailyBars({ data, label }: { data: { day: string; value: number 
                 width={barW}
                 height={height}
                 rx={Math.min(4, barW / 2)}
-                className={d.value < 0 ? "fill-red-600" : "fill-primary"}
+                className={d.value < 0 ? "fill-destructive" : "fill-primary"}
                 opacity={hover == null || hover === i ? 1 : 0.45}
                 pointerEvents="none"
               />

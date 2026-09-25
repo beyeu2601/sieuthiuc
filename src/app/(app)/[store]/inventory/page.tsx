@@ -109,7 +109,7 @@ export default async function InventoryPage({ params, searchParams }: { params: 
       ) : rows.length === 0 ? (
         <EmptyState title="Không có sản phẩm phù hợp" />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-background">
+        <div className="overflow-x-auto rounded-xl border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
@@ -130,7 +130,7 @@ export default async function InventoryPage({ params, searchParams }: { params: 
                 const st = STOCK_STATUS[r.stock_status];
                 return (
                   <TableRow key={r.product_id}>
-                    <TableCell>
+                    <TableCell className="min-w-56 whitespace-normal">
                       {isStaff ? r.name : <Link href={`/products/${r.product_id}`} className="hover:underline">{r.name}</Link>}
                       <div className="text-xs text-muted-foreground">
                         {r.sku}

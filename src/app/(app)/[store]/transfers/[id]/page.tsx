@@ -44,7 +44,7 @@ export default async function TransferPage({ params }: { params: Promise<{ store
           </span>
         }
       />
-      <div className="overflow-x-auto rounded-xl border bg-background">
+      <div className="overflow-x-auto rounded-xl border bg-card">
         <Table>
           <TableHeader>
             <TableRow>

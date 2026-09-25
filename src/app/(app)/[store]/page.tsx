@@ -4,7 +4,7 @@ import { ROLE_LABEL } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 import { todayVN } from "@/lib/dates";
 import { formatMoney, formatNumber } from "@/lib/format";
-import { Button } from "@/components/ui/button";
+import { AlertTriangleIcon, CheckCircle2Icon, ChevronRightIcon, PackagePlusIcon, ScanLineIcon, ShoppingCartIcon, TruckIcon } from "lucide-react";
 
 type Overview = { active_products: number; skus_in_stock: number; total_qty: number; stock_value: number | null };
 type Pnl = { net_revenue: number; gross_profit: number; net_profit: number };
@@ -50,57 +50,85 @@ export default async function StoreHome({ params }: { params: Promise<{ store: s
     ...(o?.stock_value != null ? [{ label: "Giá trị tồn (giá vốn)", value: formatMoney(o.stock_value), href: `/${store.code}/inventory` }] : []),
   ];
 
+  const quick = [
+    { href: `/${store.code}/lookup`, label: "Tra cứu", icon: ScanLineIcon },
+    { href: `/${store.code}/receipts/new`, label: "Nhập hàng", icon: PackagePlusIcon },
+    { href: `/${store.code}/orders/new`, label: "Đơn online", icon: TruckIcon },
+  ];
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">{store.name}</h1>
+        <h1 className="font-heading text-[32px] leading-tight font-bold tracking-wide">Xin chào, {ctx.profile.full_name}</h1>
         <p className="text-sm text-muted-foreground">
-          Xin chào {ctx.profile.full_name} ({ROLE_LABEL[ctx.profile.role]})
+          {store.name} - {ROLE_LABEL[ctx.profile.role]}
         </p>
       </div>
 
       {ctx.profile.role !== "accountant" && (
-        <div className="flex flex-wrap gap-2">
-          {myShift ? (
-            <Button className="h-12 px-6 text-base" render={<Link href={`/${store.code}/pos`} />}>
-              Bán hàng (ca {myShift.code})
-            </Button>
-          ) : (
-            <Button className="h-12 px-6 text-base" render={<Link href={`/${store.code}/pos`} />}>
-              Mở ca và bán hàng
-            </Button>
-          )}
-          <Button variant="outline" className="h-12 px-5" render={<Link href={`/${store.code}/lookup`} />}>
-            Tra cứu
-          </Button>
-          <Button variant="outline" className="h-12 px-5" render={<Link href={`/${store.code}/receipts/new`} />}>
-            Nhập hàng
-          </Button>
-          <Button variant="outline" className="h-12 px-5" render={<Link href={`/${store.code}/orders/new`} />}>
-            Đơn online
-          </Button>
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1.4fr)_minmax(0,2fr)]">
+          <Link
+            href={`/${store.code}/pos`}
+            className="group flex min-h-28 items-center gap-4 rounded-2xl bg-primary p-5 text-primary-foreground shadow-md transition-colors hover:bg-brand-strong focus-visible:ring-4 focus-visible:ring-ring/40 focus-visible:outline-none"
+          >
+            <span className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-white/15" aria-hidden>
+              <ShoppingCartIcon className="size-7" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-heading text-3xl leading-none font-bold tracking-wide">Bán hàng</span>
+              <span className="mt-1 block text-sm text-white/85">{myShift ? `Ca ${myShift.code} đang mở` : "Mở ca và bắt đầu bán"}</span>
+            </span>
+            <ChevronRightIcon className="size-6 opacity-70 transition-transform group-hover:translate-x-0.5" aria-hidden />
+          </Link>
+          <div className="grid grid-cols-3 gap-3">
+            {quick.map((q) => (
+              <Link
+                key={q.href}
+                href={q.href}
+                className="flex min-h-28 flex-col items-center justify-center gap-2 rounded-2xl border bg-card p-3 text-center text-sm font-medium transition-colors hover:border-primary hover:bg-brand-soft hover:text-brand-strong"
+              >
+                <q.icon className="size-7 text-brand" aria-hidden />
+                {q.label}
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {/* Dien thoai: moi chi so mot hang (nhan trai, so phai) de so tien dai khong bi cat */}
+      <div className="grid gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
         {cards.map((c) => (
-          <Link key={c.label} href={c.href} className="rounded-xl border bg-background p-4 hover:border-primary">
+          <Link
+            key={c.label}
+            href={c.href}
+            className="flex min-h-14 items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3 transition-colors hover:border-primary sm:block sm:p-4"
+          >
             <div className="text-sm text-muted-foreground">{c.label}</div>
-            <div className="text-2xl font-semibold tabular-nums">{c.value}</div>
+            <div className="text-lg font-semibold whitespace-nowrap tabular-nums sm:mt-1 sm:text-2xl">{c.value}</div>
           </Link>
         ))}
       </div>
 
-      <section className="rounded-xl border bg-background p-4">
-        <h2 className="mb-2 font-medium">Cần chú ý</h2>
+      <section className="rounded-2xl border bg-card p-4 lg:p-5" aria-labelledby="alerts-title">
+        <h2 id="alerts-title" className="mb-3 font-heading text-2xl font-bold tracking-wide">
+          Cần chú ý
+        </h2>
         {alerts.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Không có cảnh báo nào.</p>
+          <p className="flex items-center gap-2 rounded-xl bg-success-soft px-4 py-3 text-sm font-medium text-success">
+            <CheckCircle2Icon className="size-5" aria-hidden />
+            Không có cảnh báo nào.
+          </p>
         ) : (
-          <ul className="space-y-1 text-sm">
+          <ul className="space-y-2">
             {alerts.map((a) => (
               <li key={a.text}>
-                <Link href={a.href} className="underline underline-offset-4">
-                  {a.text}
+                <Link
+                  href={a.href}
+                  className="flex min-h-12 items-center gap-3 rounded-xl bg-warning-soft px-4 py-2.5 text-sm font-medium text-warning transition-colors hover:brightness-95"
+                >
+                  <AlertTriangleIcon className="size-5 shrink-0" aria-hidden />
+                  <span className="flex-1">{a.text}</span>
+                  <ChevronRightIcon className="size-5 shrink-0" aria-hidden />
                 </Link>
               </li>
             ))}

@@ -9,7 +9,7 @@ export default async function NewSupplierPage() {
   return (
     <div className="max-w-3xl">
       <PageHeader title="Thêm nhà cung cấp" description="Mã nhà cung cấp tự sinh." />
-      <div className="rounded-xl border bg-background p-4">
+      <div className="rounded-xl border bg-card p-4">
         <SupplierForm
           id={null}
           readOnly={false}

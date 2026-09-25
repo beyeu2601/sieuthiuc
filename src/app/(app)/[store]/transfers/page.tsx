@@ -38,7 +38,7 @@ export default async function TransfersPage({ params }: { params: Promise<{ stor
       {rows.length === 0 ? (
         <EmptyState title="Chưa có phiếu chuyển kho" />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-background">
+        <div className="overflow-x-auto rounded-xl border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
