@@ -244,7 +244,7 @@ create policy profiles_select on public.profiles for select to authenticated
     or (select public.auth_role()) = 'sadmin'
     or ((select public.auth_role()) = 'admin' and exists (
           select 1 from public.user_stores us
-          where us.user_id = profiles.id and us.store_id = any((select public.auth_store_ids()))))
+          where us.user_id = profiles.id and us.store_id = any(public.auth_store_ids())))
   );
 -- tao / sua nguoi dung qua server (service role) sau khi kiem tra quyen; sadmin sua truc tiep
 create policy profiles_write on public.profiles for all to authenticated
