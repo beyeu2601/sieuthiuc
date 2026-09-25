@@ -14,6 +14,7 @@ export type Profile = {
   role: AppRole;
   is_active: boolean;
   default_store_id: string | null;
+  extra_permissions: Record<string, unknown>;
 };
 
 export type SessionContext = { profile: Profile; stores: StoreLite[] };
@@ -28,7 +29,7 @@ export const getSessionContext = cache(async (): Promise<SessionContext | null> 
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, username, full_name, role, is_active, default_store_id")
+    .select("id, username, full_name, role, is_active, default_store_id, extra_permissions")
     .eq("id", user.id)
     .maybeSingle<Profile>();
   if (!profile || !profile.is_active) return null;
@@ -58,4 +59,16 @@ export async function requireRole(...roles: AppRole[]): Promise<SessionContext> 
 export function homeStoreCode(ctx: SessionContext): string | null {
   const byDefault = ctx.stores.find((s) => s.id === ctx.profile.default_store_id);
   return (byDefault ?? ctx.stores[0])?.code ?? null;
+}
+
+// Cua hang dang mo theo ma tren URL (layout [store] da chan ma khong hop le).
+export async function requireStore(code: string, ...roles: AppRole[]) {
+  const ctx = roles.length ? await requireRole(...roles) : await requireSession();
+  const store = ctx.stores.find((s) => s.code === code);
+  if (!store) redirect("/forbidden");
+  return { ctx, store };
+}
+
+export function hasPerm(ctx: SessionContext, perm: string) {
+  return ctx.profile.extra_permissions?.[perm] === true;
 }
