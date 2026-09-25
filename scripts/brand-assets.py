@@ -61,10 +61,21 @@ mark_a = np.where(text, 0, alpha)
 mark = trim(rgba(color, mark_a))
 mark.save("public/brand/logo-mark.png", optimize=True)
 
+# ban sang cho che do toi: than xanh nhat, chi tiet mat mui mau nen toi
+LIGHT = np.array([157, 176, 240], dtype=float)
+NIGHT = np.array([15, 20, 36], dtype=float)
+color_light = np.where(dark[..., None], NIGHT, LIGHT)
+trim(rgba(color_light, alpha)).save("public/brand/logo-light.png", optimize=True)
+trim(rgba(color_light, mark_a)).save("public/brand/logo-mark-light.png", optimize=True)
+
 # ban trang tren nen xanh: chi tiet toi thanh lo trong
 white_a = np.where(dark, 0, alpha)
 trim(rgba(np.array([255, 255, 255]), white_a)).save("public/brand/logo-white.png", optimize=True)
 trim(rgba(np.array([255, 255, 255]), np.where(text, 0, white_a))).save("public/brand/logo-mark-white.png", optimize=True)
+
+# ban in nhiet: den thuan 1 bit (may in nhiet khong in duoc nua tong, mau xanh chuyen xam se bi cham lam tam)
+bw_a = np.where(alpha > 0.5, 1.0, 0.0)
+trim(rgba(np.array([0, 0, 0]), np.where(dark, 0, bw_a))).save("public/brand/logo-print.png", optimize=True)
 
 def square_icon(img, size, scale, bg=(255, 255, 255, 255)):
     canvas = Image.new("RGBA", (size, size), bg)

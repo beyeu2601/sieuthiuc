@@ -5,6 +5,7 @@ import { formatMoney, formatNumber } from "@/lib/format";
 import { GOODS_TYPE_LABEL } from "@/lib/text";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { NativeSelect } from "@/components/native-select";
 import { Pagination } from "@/components/pagination";
 import { Badge } from "@/components/ui/badge";
@@ -109,7 +110,33 @@ export default async function InventoryPage({ params, searchParams }: { params: 
       ) : rows.length === 0 ? (
         <EmptyState title="Không có sản phẩm phù hợp" />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-card">
+        <>
+        <MobileCardList label="Danh sách tồn kho">
+          {rows.map((r) => {
+            const st = STOCK_STATUS[r.stock_status];
+            return (
+              <MobileCard
+                key={r.product_id}
+                title={isStaff ? r.name : <Link href={`/products/${r.product_id}`} className="hover:underline">{r.name}</Link>}
+                subtitle={`${r.sku}${r.barcode ? ` - ${r.barcode}` : ""}${isStaff ? "" : ` - ${GOODS_TYPE_LABEL[r.goods_type]}`}`}
+                badge={<Badge variant={st.variant}>{st.label}</Badge>}
+                stats={[
+                  { label: `Khả dụng (${r.unit})`, value: formatNumber(r.qty_available), strong: true },
+                  ...(!isStaff
+                    ? [
+                        { label: "Tồn thực tế", value: formatNumber(r.qty_on_hand) },
+                        { label: "Đang giữ", value: formatNumber(r.qty_reserved) },
+                        { label: "Giá vốn BQ", value: formatMoney(r.avg_cost) },
+                        { label: "Giá trị tồn", value: formatMoney(r.stock_value) },
+                      ]
+                    : []),
+                  { label: "HSD gần nhất", value: r.nearest_expiry ? new Date(r.nearest_expiry).toLocaleDateString("vi-VN") : "-" },
+                ]}
+              />
+            );
+          })}
+        </MobileCardList>
+        <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -154,6 +181,7 @@ export default async function InventoryPage({ params, searchParams }: { params: 
             </TableBody>
           </Table>
         </div>
+        </>
       )}
       <Pagination
         page={page}

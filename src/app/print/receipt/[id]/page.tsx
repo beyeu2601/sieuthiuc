@@ -45,7 +45,7 @@ export default async function ReceiptPrintPage({
       {auto === "1" && <AutoPrint />}
       <div className="text-center">
         {/* eslint-disable-next-line @next/next/no-img-element -- trang in, anh tinh nho */}
-        <img src="/brand/logo.png" alt="" className="mx-auto mb-1 h-auto w-[26mm] grayscale" />
+        <img src="/brand/logo-print.png" alt="" className="mx-auto mb-1 h-auto w-[26mm]" />
         <div className="text-[14px] font-bold">{store.name}</div>
         {store.address && <div>{store.address}</div>}
         {store.phone && <div>ĐT: {store.phone}</div>}

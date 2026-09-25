@@ -4,6 +4,7 @@ import { formatNumber } from "@/lib/format";
 import { GOODS_TYPE_LABEL } from "@/lib/text";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -80,7 +81,43 @@ export default async function PeriodPage({
       ) : rows.length === 0 ? (
         <EmptyState title="Không có phát sinh trong kỳ" />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-card">
+        <>
+        <MobileCardList label="Nhập xuất tồn theo sản phẩm">
+          <li className="rounded-xl border bg-muted/70 p-3.5 text-sm">
+            <div className="font-semibold">Tổng {rows.length} sản phẩm</div>
+            <dl className="mt-2 grid grid-cols-3 gap-x-3 gap-y-2">
+              {(
+                [
+                  ["Tồn đầu", "opening"],
+                  ["Nhập", "qty_in"],
+                  ["Xuất", "qty_out"],
+                  ["Điều chỉnh", "qty_adjust"],
+                  ["Tồn cuối", "closing"],
+                ] as const
+              ).map(([l, k]) => (
+                <div key={k}>
+                  <dt className="text-xs text-muted-foreground">{l}</dt>
+                  <dd className="font-semibold tabular-nums">{formatNumber(sum(k))}</dd>
+                </div>
+              ))}
+            </dl>
+          </li>
+          {rows.map((r) => (
+            <MobileCard
+              key={r.product_id}
+              title={r.name}
+              subtitle={`${r.sku} - ${r.unit} - ${GOODS_TYPE_LABEL[r.goods_type]}`}
+              stats={[
+                { label: "Tồn đầu", value: formatNumber(r.opening) },
+                { label: "Nhập", value: formatNumber(r.qty_in) },
+                { label: "Xuất", value: formatNumber(r.qty_out) },
+                { label: "Điều chỉnh", value: formatNumber(r.qty_adjust) },
+                { label: "Tồn cuối", value: formatNumber(r.closing), strong: true },
+              ]}
+            />
+          ))}
+        </MobileCardList>
+        <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -123,6 +160,7 @@ export default async function PeriodPage({
             </TableFooter>
           </Table>
         </div>
+        </>
       )}
     </div>
   );

@@ -10,6 +10,7 @@ import { ROLE_LABEL, type AppRole, type StoreLite } from "@/lib/roles";
 import { MOBILE_TABS, NAV_GROUPS, type NavItem } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { ThemeMenuItems } from "@/components/theme";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -94,6 +95,8 @@ export function AppShell({ fullName, role, stores, defaultStoreCode, children }:
           <div className="text-xs text-muted-foreground">{ROLE_LABEL[role]}</div>
         </div>
         <DropdownMenuSeparator />
+        <ThemeMenuItems />
+        <DropdownMenuSeparator />
         <DropdownMenuItem className="h-10" onClick={() => router.push("/account")}>
           <UserRoundIcon className="size-4" />
           Tài khoản
@@ -139,7 +142,7 @@ export function AppShell({ fullName, role, stores, defaultStoreCode, children }:
       {/* May tinh: thanh ben */}
       <aside className="sticky top-0 hidden h-dvh flex-col border-r bg-sidebar lg:flex" aria-label="Điều hướng chính">
         <Link href="/" className="flex items-center gap-2.5 px-5 pt-5 pb-4" aria-label="Siêu Thị Úc - trang chủ">
-          <Image src="/brand/logo-mark.png" alt="" width={44} height={40} priority />
+          <BrandMark size={44} />
           <span className="font-heading text-[26px] leading-none font-bold tracking-wide text-brand uppercase">Siêu Thị Úc</span>
         </Link>
         <div className="px-4 pb-4">{storePicker}</div>
@@ -165,7 +168,7 @@ export function AppShell({ fullName, role, stores, defaultStoreCode, children }:
         {/* Dien thoai: thanh tren */}
         <header className="sticky top-0 z-40 flex h-14 items-center gap-2 border-b bg-card/95 px-4 backdrop-blur lg:hidden">
           <Link href="/" className="flex min-w-0 items-center gap-2" aria-label="Siêu Thị Úc - trang chủ">
-            <Image src="/brand/logo-mark.png" alt="" width={34} height={31} priority />
+            <BrandMark size={34} />
             <span className="truncate font-heading text-xl leading-none font-bold tracking-wide text-brand uppercase">
               {current?.name ?? "Siêu Thị Úc"}
             </span>
@@ -236,4 +239,15 @@ function initials(name: string) {
   const parts = name.trim().split(/\s+/);
   const last = parts[parts.length - 1] ?? "";
   return (last[0] ?? "?").toUpperCase();
+}
+
+// Logo hinh: ban xanh tren nen sang, ban xanh nhat tren nen toi
+function BrandMark({ size }: { size: number }) {
+  const h = Math.round((size * 1274) / 1399);
+  return (
+    <>
+      <Image src="/brand/logo-mark.png" alt="" width={size} height={h} priority className="dark:hidden" />
+      <Image src="/brand/logo-mark-light.png" alt="" width={size} height={h} priority className="hidden dark:block" />
+    </>
+  );
 }

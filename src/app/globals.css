@@ -41,6 +41,7 @@
   --color-card: var(--card);
   --color-brand: var(--brand);
   --color-brand-strong: var(--brand-strong);
+  --color-primary-hover: var(--primary-hover);
   --color-brand-soft: var(--brand-soft);
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
@@ -71,6 +72,7 @@
   --popover-foreground: #1b2340;
   --primary: #324ca0;
   --primary-foreground: #ffffff;
+  --primary-hover: #263c82;
   --secondary: #eef2fb;
   --secondary-foreground: #263c82;
   --muted: #eef1f7;
@@ -100,6 +102,54 @@
   --sidebar-accent-foreground: #263c82;
   --sidebar-border: #dde2ee;
   --sidebar-ring: #324ca0;
+}
+
+/* Che do toi: cung he mau, chon lai buoc sang toi (khong dao nguoc tu dong). --brand la mau chu/bieu tuong,
+   --primary la nen nut; tren nen toi hai mau nay tach nhau de chu xanh van doc duoc. */
+.dark {
+  color-scheme: dark;
+  --brand: #9db0f0;
+  --brand-strong: #c3cff7;
+  --brand-soft: #1e2748;
+  --brand-ink: #e6eaf5;
+
+  --background: #0f1424;
+  --foreground: #e6eaf5;
+  --card: #171d30;
+  --card-foreground: #e6eaf5;
+  --popover: #1c2338;
+  --popover-foreground: #e6eaf5;
+  --primary: #3a56b4;
+  --primary-foreground: #ffffff;
+  --primary-hover: #4863c4;
+  --secondary: #1e2748;
+  --secondary-foreground: #c3cff7;
+  --muted: #20283d;
+  --muted-foreground: #a3acc2;
+  --accent: #1e2748;
+  --accent-foreground: #c3cff7;
+  --destructive: #ff8a80;
+  --success: #6fd3a0;
+  --success-soft: #12301f;
+  --warning: #f2c06b;
+  --warning-soft: #33260e;
+  --danger-soft: #3a1714;
+  --border: #2a3350;
+  --input: #4b5680;
+  --ring: #9db0f0;
+  --chart-1: #7d93d6;
+  --chart-2: #9db0f0;
+  --chart-3: #6fd3a0;
+  --chart-4: #f2c06b;
+  --chart-5: #a3acc2;
+  --sidebar: #131929;
+  --sidebar-foreground: #e6eaf5;
+  --sidebar-primary: #3a56b4;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e2748;
+  --sidebar-accent-foreground: #c3cff7;
+  --sidebar-border: #2a3350;
+  --sidebar-ring: #9db0f0;
 }
 
 @layer base {

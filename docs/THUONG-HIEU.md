@@ -10,8 +10,9 @@ Tài liệu cho người phát triển và người thiết kế. Mọi màu, ch
 - [4. Tệp logo và icon](#4-tệp-logo-và-icon)
 - [5. Bố cục và điều hướng](#5-bố-cục-và-điều-hướng)
 - [6. Kích thước và vùng chạm](#6-kích-thước-và-vùng-chạm)
+  - [Chế độ tối](#chế-độ-tối)
 - [7. Nguyên tắc tâm lý và sinh lý người dùng](#7-nguyên-tắc-tâm-lý-và-sinh-lý-người-dùng)
-- [8. Việc chưa làm](#8-việc-chưa-làm)
+- [8. Việc còn lại](#8-việc-còn-lại)
 
 ## 1. Phân tích logo
 
@@ -61,7 +62,9 @@ Sinh lại bằng `python scripts/brand-assets.py` (cần Pillow, numpy, scipy).
 
 | Tệp | Dùng ở đâu |
 |---|---|
-| `public/brand/logo.png` | Bản đầy đủ nền trong suốt: trang đăng nhập trên điện thoại, hóa đơn in (in xám) |
+| `public/brand/logo.png` | Bản đầy đủ nền trong suốt: trang đăng nhập trên điện thoại |
+| `public/brand/logo-light.png`, `logo-mark-light.png` | Bản xanh nhạt cho chế độ tối (logo xanh gốc trên nền tối chỉ đạt 2,5:1) |
+| `public/brand/logo-print.png` | Bản đen thuần 1 bit cho hóa đơn in nhiệt (máy in nhiệt không in được nửa tông) |
 | `public/brand/logo-white.png` | Bản trắng trên nền xanh: mảng thương hiệu trang đăng nhập |
 | `public/brand/logo-mark.png` | Chỉ hình kangaroo và xe: thanh bên, thanh trên điện thoại |
 | `public/brand/logo-mark-white.png` | Chỉ hình, màu trắng (dự phòng) |
@@ -87,7 +90,14 @@ Không kéo giãn, không đổi màu logo ngoài hai bản xanh và trắng, ch
 | Tab dưới đáy điện thoại | 64px, cộng vùng an toàn của máy |
 | Nút thanh toán POS | 56px |
 
-Ô tên sản phẩm trong bảng được xuống dòng để các cột giá, tồn luôn nằm trong màn hình.
+Ô tên sản phẩm trong bảng được xuống dòng để các cột giá, tồn luôn nằm trong màn hình. Trên điện thoại (dưới 768px), bảng Tồn kho và Nhập xuất tồn chuyển thành thẻ: tên và trạng thái ở trên, số liệu có nhãn ở dưới (`src/components/mobile-card.tsx`).
+
+### Chế độ tối
+
+- Mặc định theo cài đặt của máy; người dùng chọn Sáng, Tối hoặc Theo máy trong menu tài khoản. Lựa chọn lưu ở trình duyệt (`localStorage`), áp dụng trước khi vẽ trang nên không nháy màu (`src/components/theme.tsx`).
+- Cùng hệ màu, chọn lại bước sáng tối chứ không đảo tự động. Trên nền tối `--brand` (chữ, biểu tượng) là `#9DB0F0`, tách khỏi `--primary` (nền nút) là `#3A56B4`.
+- Tương phản trên nền tối: chữ 13,9-15,2:1, chữ phụ 7,4:1, nút xanh chữ trắng 6,6:1, màu trạng thái từ 7:1.
+- Dùng khi làm việc buổi tối hoặc chỗ thiếu sáng; tại quầy sáng đèn nên giữ chế độ sáng.
 
 ## 7. Nguyên tắc tâm lý và sinh lý người dùng
 
@@ -102,8 +112,7 @@ Không kéo giãn, không đổi màu logo ngoài hai bản xanh và trắng, ch
 | Business | Nhận diện thống nhất trên app, icon điện thoại và hóa đơn in; không thêm chi phí vận hành |
 | Accessibility | Tương phản đạt AA, trạng thái không chỉ bằng màu, mục đang chọn có vạch và chữ đậm, vòng focus rõ khi dùng bàn phím, biểu tượng trang trí có `aria-hidden` |
 
-## 8. Việc chưa làm
+## 8. Việc còn lại
 
-- Chế độ tối: chưa có nhu cầu, đã bỏ token tối cũ.
-- Bảng nhiều cột (Tồn kho, Nhập xuất tồn) trên điện thoại vẫn cuộn ngang; có thể chuyển thành dạng thẻ nếu nhân viên dùng điện thoại nhiều.
-- Logo trên hóa đơn in nhiệt chưa thử trên máy in thật.
+- Logo trên hóa đơn đã dùng bản đen thuần nhưng chưa thử trên máy in nhiệt thật (cửa hàng chưa có máy in).
+- Các bảng khác (giao dịch, công nợ, phiếu nhập) trên điện thoại vẫn cuộn ngang; chuyển sang thẻ bằng `MobileCard` khi cần.

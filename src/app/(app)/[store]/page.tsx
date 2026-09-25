@@ -69,7 +69,7 @@ export default async function StoreHome({ params }: { params: Promise<{ store: s
         <div className="grid gap-3 md:grid-cols-[minmax(0,1.4fr)_minmax(0,2fr)]">
           <Link
             href={`/${store.code}/pos`}
-            className="group flex min-h-28 items-center gap-4 rounded-2xl bg-primary p-5 text-primary-foreground shadow-md transition-colors hover:bg-brand-strong focus-visible:ring-4 focus-visible:ring-ring/40 focus-visible:outline-none"
+            className="group flex min-h-28 items-center gap-4 rounded-2xl bg-primary p-5 text-primary-foreground shadow-md transition-colors hover:bg-primary-hover focus-visible:ring-4 focus-visible:ring-ring/40 focus-visible:outline-none"
           >
             <span className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-white/15" aria-hidden>
               <ShoppingCartIcon className="size-7" />
