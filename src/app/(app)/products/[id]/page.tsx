@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getNumberSetting } from "@/lib/settings";
+import { driveConfigured } from "@/lib/google-drive";
 import { formatDateTime, formatMoney, formatNumber } from "@/lib/format";
 import { GOODS_TYPE_LABEL } from "@/lib/text";
 import { PageHeader } from "@/components/page-header";
@@ -10,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ProductForm } from "../product-form";
 import { BarcodePanel } from "./barcode-panel";
+import { ImageGallery } from "./image-gallery";
 
 const FIELD_LABEL: Record<string, string> = {
   sell_price: "Giá bán",
@@ -41,7 +43,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     .maybeSingle();
   if (!p) notFound();
 
-  const [{ data: categories }, { data: brands }, { data: barcodes }, { data: history }, { data: lots }, roundingUnit] =
+  const [{ data: categories }, { data: brands }, { data: barcodes }, { data: history }, { data: lots }, roundingUnit, { data: images }] =
     await Promise.all([
       supabase.from("categories").select("id, name, benefit_pct").order("name"),
       supabase.from("brands").select("id, name").order("name"),
@@ -63,6 +65,11 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         .gt("qty_on_hand", 0)
         .order("expiry_date", { ascending: true, nullsFirst: false }),
       getNumberSetting("pricing.rounding_unit", 1000),
+      supabase
+        .from("product_images")
+        .select("id, drive_file_id, drive_thumb_id, is_thumbnail")
+        .eq("product_id", id)
+        .order("sort_order"),
     ]);
 
   return (
@@ -105,6 +112,13 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
             note: p.note,
           }}
         />
+      </section>
+
+      <section className="rounded-xl border bg-card p-4" aria-labelledby="images">
+        <h2 id="images" className="mb-3 font-medium">
+          Ảnh sản phẩm
+        </h2>
+        <ImageGallery productId={p.id} productName={p.name} images={images ?? []} canEdit={canEdit} configured={driveConfigured()} />
       </section>
 
       <section className="rounded-xl border bg-card p-4" aria-labelledby="barcodes">

@@ -16,6 +16,7 @@ Tài liệu kỹ thuật sống của dự án. Đọc trước khi sửa code. 
 - [10. Chạy và kiểm thử trên máy](#10-chạy-và-kiểm-thử-trên-máy)
 - [11. Triển khai production](#11-triển-khai-production)
 - [12. Tiến độ và việc còn lại](#12-tiến-độ-và-việc-còn-lại)
+- [13. Ảnh sản phẩm trên Google Drive](#13-ảnh-sản-phẩm-trên-google-drive)
 
 ## 1. Tổng quan
 
@@ -32,6 +33,7 @@ Web app (PWA) quản lý bán hàng, kho, công nợ nhà cung cấp, thu chi v�
 
 - Next.js 15 (App Router, TypeScript strict), Tailwind CSS 4, shadcn/ui (bản Base UI). Form dùng select và checkbox gốc của trình duyệt.
 - Supabase: PostgreSQL 17, Auth, RLS, các extension `pg_trgm`, `unaccent`, `pgcrypto`. Chưa dùng Storage, Realtime, Edge Functions.
+- Ảnh sản phẩm lưu trên Google Drive của chủ cửa hàng, thư mục `sieuthiuc` (xem mục 13).
 - `@supabase/ssr` giữ session qua cookie; `src/middleware.ts` làm mới session và chuyển về `/login` khi chưa đăng nhập.
 - Mọi logic thay đổi số liệu nghiệp vụ (tồn, giá vốn, công nợ, tiền ca, doanh thu) nằm trong hàm PostgreSQL. Client chỉ gọi RPC và hiển thị.
 - Server Action của Next.js gọi RPC với phiên người dùng. Riêng tạo và sửa người dùng dùng service role ở server sau khi kiểm tra quyền.
@@ -90,6 +92,7 @@ Cơ chế:
 | `20260927000001` | Phiếu nhập, landed cost, WAVG (`_receive_stock`), `_apply_movement`, công nợ, thanh toán, chuyển kho, báo cáo tồn |
 | `20260928000001` | Ca, bán hàng (`_post_sale`, `complete_sale`, `cancel_sale`), PIN duyệt giảm giá |
 | `20260929000001` | Đơn online giữ hàng, công nợ, thu chi, đối soát, báo cáo lãi lỗ, giá vốn, bán chạy |
+| `20260930000001` | Ảnh sản phẩm: `product_images`, `add_product_image`, `set_product_thumbnail`, `delete_product_image` |
 
 Các RPC chính theo nghiệp vụ:
 
@@ -198,7 +201,7 @@ npm run bootstrap -- --store-code SU --store-name "Siêu Thị Úc" --username <
 npm run import:kho -- --store SU
 ```
 
-Biến môi trường trên Vercel: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (bắt buộc cho màn hình quản lý người dùng; chỉ dùng ở server).
+Biến môi trường trên Vercel: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (bắt buộc cho màn hình quản lý người dùng; chỉ dùng ở server), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, `GOOGLE_DRIVE_FOLDER_ID` (ảnh sản phẩm).
 
 ## 12. Tiến độ và việc còn lại
 
@@ -219,3 +222,19 @@ Việc còn lại đã biết:
 - Test đồng thời hai phiên bán cùng món cuối: logic khóa dòng có sẵn, cần chạy trên database thật.
 - P1: thành viên và tích điểm tại POS, hoàn trả, kiểm kê, điều chỉnh và hủy hàng, thông báo, export Excel/PDF, màn hình audit log.
 - P2: đồng bộ Shopee, hóa đơn điện tử, offline POS, in Bluetooth, FIFO.
+
+## 13. Ảnh sản phẩm trên Google Drive
+
+- Mỗi sản phẩm tối đa 10 ảnh, một ảnh đại diện hiện ở danh sách Sản phẩm. Ảnh đầu tiên tự thành ảnh đại diện; xóa ảnh đại diện thì ảnh còn lại đầu tiên thay thế. Chỉ sadmin, admin thêm, xóa, đổi ảnh đại diện; mọi người đăng nhập đều xem được.
+- Trình duyệt thu nhỏ ảnh trước khi gửi: bản lớn cạnh dài tối đa 1600px và bản nhỏ vuông 400px, đều JPEG. Mỗi ảnh là hai file trên Drive (`<SKU>_<thời điểm>.jpg` và `..._nho.jpg`). DB chỉ giữ mã file.
+- App dùng quyền `drive.file`: chỉ thấy file do chính app tạo, không đọc được phần còn lại của Drive. Vì vậy thư mục `sieuthiuc` phải do script tạo, không tạo tay.
+- Ảnh hiển thị qua `/api/product-images/<mã file>` (cần đăng nhập), cache một năm vì file không bao giờ bị ghi đè. Xóa ảnh trong app chuyển file vào thùng rác Drive (khôi phục được 30 ngày).
+- Thiếu biến môi trường Google thì màn chi tiết sản phẩm báo chưa kết nối, phần còn lại chạy bình thường.
+
+Kết nối lần đầu (một lần):
+
+1. Google Cloud Console: tạo project, bật Google Drive API.
+2. OAuth consent screen: loại External, thêm scope `drive.file`, rồi bấm Publish app (để ở Testing thì refresh token hết hạn sau 7 ngày).
+3. Credentials: tạo OAuth client ID loại Desktop app, ghi `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` vào `.env.local`.
+4. `npm run drive:setup`: đăng nhập tài khoản Google sẽ lưu ảnh; script tạo thư mục `sieuthiuc` và ghi `GOOGLE_REFRESH_TOKEN`, `GOOGLE_DRIVE_FOLDER_ID` vào `.env.local`.
+5. Thêm bốn biến trên vào Vercel rồi deploy lại.

@@ -5,6 +5,7 @@ import { formatMoney, formatNumber } from "@/lib/format";
 import { GOODS_TYPE_LABEL, ilikeTerm } from "@/lib/text";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
+import { ProductThumb } from "@/components/product-thumb";
 import { AutoSubmitForm } from "@/components/auto-submit-form";
 import { CameraScanButton } from "@/components/camera-scan-button";
 import { Pagination } from "@/components/pagination";
@@ -34,6 +35,7 @@ type Row = {
   categories: { name: string; benefit_pct: number | null } | null;
   product_barcodes: { barcode: string; is_primary: boolean }[];
   inventory: { qty_on_hand: number }[];
+  product_images: { drive_thumb_id: string }[];
 };
 
 type SP = { q?: string; type?: string; status?: string; cat?: string; missing?: string; page?: string };
@@ -53,9 +55,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   let query = supabase
     .from("products")
     .select(
-      "id, sku, name, unit, goods_type, sell_price, cost_price_ref, pricing_method, benefit_pct, status, categories(name, benefit_pct), product_barcodes(barcode, is_primary), inventory(qty_on_hand)",
+      "id, sku, name, unit, goods_type, sell_price, cost_price_ref, pricing_method, benefit_pct, status, categories(name, benefit_pct), product_barcodes(barcode, is_primary), inventory(qty_on_hand), product_images(drive_thumb_id)",
       { count: "exact" }
     )
+    .eq("product_images.is_thumbnail", true)
     .order("name")
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
@@ -167,8 +170,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
             const stock = stockOf(p);
             return (
               <li key={p.id}>
-                <Link href={`/products/${p.id}`} className="flex items-start justify-between gap-3 rounded-xl border bg-card p-3.5 active:bg-muted">
-                  <div className="min-w-0">
+                <Link href={`/products/${p.id}`} className="flex items-start gap-3 rounded-xl border bg-card p-3.5 active:bg-muted">
+                  <ProductThumb fileId={p.product_images[0]?.drive_thumb_id} size={56} />
+                  <div className="min-w-0 flex-1">
                     <div className="line-clamp-2 font-medium">{p.name}</div>
                     <div className="mt-0.5 text-xs text-muted-foreground">
                       {GOODS_TYPE_LABEL[p.goods_type]} - {p.unit} - {p.sku}
@@ -194,6 +198,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-14">
+                  <span className="sr-only">Ảnh</span>
+                </TableHead>
                 <TableHead>SKU</TableHead>
                 <TableHead>Mã vạch</TableHead>
                 <TableHead className="min-w-64">Tên</TableHead>
@@ -213,6 +220,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                 const pct = p.benefit_pct ?? p.categories?.benefit_pct ?? null;
                 return (
                   <TableRow key={p.id}>
+                    <TableCell className="py-1.5">
+                      <ProductThumb fileId={p.product_images[0]?.drive_thumb_id} size={44} />
+                    </TableCell>
                     <TableCell className="whitespace-nowrap">
                       <Link href={`/products/${p.id}`} className="font-medium underline-offset-4 hover:underline">
                         {p.sku}
