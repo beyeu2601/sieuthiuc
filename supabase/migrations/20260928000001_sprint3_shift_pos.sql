@@ -751,3 +751,22 @@ returns boolean language sql stable security definer set search_path = '' as $$
 $$;
 revoke execute on function public.my_pin_is_set() from public, anon;
 grant execute on function public.my_pin_is_set() to authenticated;
+
+-- Audit khong luu ma bam PIN
+create or replace function public.audit_row_change()
+returns trigger language plpgsql security definer set search_path = '' as $$
+declare
+  v_before jsonb := case when tg_op in ('UPDATE','DELETE') then to_jsonb(old) - 'pos_pin_hash' end;
+  v_after  jsonb := case when tg_op in ('INSERT','UPDATE') then to_jsonb(new) - 'pos_pin_hash' end;
+  v_row    jsonb := coalesce(v_after, v_before);
+begin
+  if tg_op = 'UPDATE' and v_before = v_after then
+    return new;
+  end if;
+  insert into public.audit_logs(user_id, action, entity, entity_id, store_id, before, after)
+  values (auth.uid(), lower(tg_op), tg_table_name,
+          case when v_row ? 'id' then (v_row ->> 'id')::uuid end,
+          case when v_row ? 'store_id' then (v_row ->> 'store_id')::uuid end,
+          v_before, v_after);
+  return coalesce(new, old);
+end $$;

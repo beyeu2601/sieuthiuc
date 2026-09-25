@@ -8,48 +8,52 @@ Tài liệu kỹ thuật sống của dự án. Đọc trước khi sửa code. 
 - [2. Công nghệ và kiến trúc](#2-công-nghệ-và-kiến-trúc)
 - [3. Cấu trúc thư mục](#3-cấu-trúc-thư-mục)
 - [4. Vai trò và phân quyền](#4-vai-trò-và-phân-quyền)
-- [5. Mô hình dữ liệu đã triển khai](#5-mô-hình-dữ-liệu-đã-triển-khai)
+- [5. Mô hình dữ liệu và RPC](#5-mô-hình-dữ-liệu-và-rpc)
 - [6. Quy ước](#6-quy-ước)
 - [7. Quyết định đã chốt và khác biệt so với SPEC](#7-quyết-định-đã-chốt-và-khác-biệt-so-với-spec)
-- [8. Dữ liệu tồn đầu kỳ](#8-dữ-liệu-tồn-đầu-kỳ)
-- [9. Chạy trên máy](#9-chạy-trên-máy)
-- [10. Triển khai production](#10-triển-khai-production)
-- [11. Tiến độ](#11-tiến-độ)
+- [8. Phạm vi P0 đã làm](#8-phạm-vi-p0-đã-làm)
+- [9. Dữ liệu tồn đầu kỳ](#9-dữ-liệu-tồn-đầu-kỳ)
+- [10. Chạy và kiểm thử trên máy](#10-chạy-và-kiểm-thử-trên-máy)
+- [11. Triển khai production](#11-triển-khai-production)
+- [12. Tiến độ và việc còn lại](#12-tiến-độ-và-việc-còn-lại)
 
 ## 1. Tổng quan
 
-Web app (PWA) quản lý bán hàng, kho, công nợ nhà cung cấp, thu chi và lãi lỗ cho cửa hàng bán lẻ hàng nhập khẩu. Chạy trên Chrome máy tính tại quầy và cài được lên điện thoại như ứng dụng (PWA).
+Web app (PWA) quản lý bán hàng, kho, công nợ nhà cung cấp, thu chi và lãi lỗ cho cửa hàng bán lẻ hàng nhập khẩu. Chạy trên Chrome máy tính tại quầy và cài được lên điện thoại như ứng dụng.
 
 | Hạng mục | Giá trị |
 |---|---|
-| Production | https://sieuthiuc.vercel.app |
+| Production | https://sieuthiuc.vercel.app (project Vercel `sieuthiuc` đã tạo, chưa nối GitHub) |
 | Mã nguồn | https://github.com/beyeu2601/sieuthiuc (public, không chứa dữ liệu kinh doanh) |
 | Database | Supabase project `mmnfhppaupmvkdggekbz` (một môi trường duy nhất: production) |
-| Phạm vi hiện tại | Toàn bộ P0, một cửa hàng, schema sẵn sàng cho nhiều cửa hàng |
+| Phạm vi | Toàn bộ P0, một cửa hàng, schema sẵn sàng cho nhiều cửa hàng |
 
 ## 2. Công nghệ và kiến trúc
 
-- Next.js 15 (App Router, TypeScript strict), Tailwind CSS 4, shadcn/ui (bản Base UI).
-- Supabase: PostgreSQL 17, Auth, RLS. Chưa dùng Storage, Realtime, Edge Functions ở Sprint 0.
-- `@supabase/ssr` cho session qua cookie; `src/middleware.ts` làm mới session và chuyển về `/login` khi chưa đăng nhập.
-- Nguyên tắc từ SPEC mục 0.1 giữ nguyên: mọi logic làm thay đổi số liệu nghiệp vụ nằm trong PostgreSQL (RPC), client chỉ gọi RPC và hiển thị; không xóa cứng dữ liệu nghiệp vụ; tiền là `bigint` VND, số lượng là `numeric(12,3)`.
-- Máy quét mã vạch USB (Kiosk Việt) hoạt động như bàn phím, không cần driver. In hóa đơn dùng trang in của trình duyệt; chưa làm máy in nhiệt ESC/POS và ngăn kéo tiền.
+- Next.js 15 (App Router, TypeScript strict), Tailwind CSS 4, shadcn/ui (bản Base UI). Form dùng select và checkbox gốc của trình duyệt.
+- Supabase: PostgreSQL 17, Auth, RLS, các extension `pg_trgm`, `unaccent`, `pgcrypto`. Chưa dùng Storage, Realtime, Edge Functions.
+- `@supabase/ssr` giữ session qua cookie; `src/middleware.ts` làm mới session và chuyển về `/login` khi chưa đăng nhập.
+- Mọi logic thay đổi số liệu nghiệp vụ (tồn, giá vốn, công nợ, tiền ca, doanh thu) nằm trong hàm PostgreSQL. Client chỉ gọi RPC và hiển thị.
+- Server Action của Next.js gọi RPC với phiên người dùng. Riêng tạo và sửa người dùng dùng service role ở server sau khi kiểm tra quyền.
+- Máy quét mã vạch USB (Kiosk Việt) hoạt động như bàn phím: ô tìm sản phẩm nhận mã rồi Enter, khớp đúng một mã thì thêm ngay.
+- In hóa đơn 80mm và tem mã vạch bằng trang in của trình duyệt. Chưa làm ESC/POS, QZ Tray, ngăn kéo tiền.
 
 ## 3. Cấu trúc thư mục
 
 ```
-src/app/login            Đăng nhập bằng username
-src/app/(app)/[store]    Màn hình nghiệp vụ theo cửa hàng (route theo mã cửa hàng)
-src/app/(app)/settings   Cài đặt (sadmin, admin)
-src/components/ui        shadcn/ui
-src/lib/auth.ts          Đọc session, hồ sơ, cửa hàng; requireSession, requireRole (chỉ server)
-src/lib/roles.ts         Vai trò, nhãn, quy tắc username (dùng được ở client)
-src/lib/nav.ts           Menu theo vai trò
-src/lib/supabase         Client trình duyệt, server, middleware
-supabase/migrations      SQL theo thứ tự thời gian
-supabase/tests           Test pgTAP, chạy bằng npm run db:test
-scripts                  bootstrap (tạo cửa hàng + sadmin), import-kho (tồn đầu kỳ), db-test
-docs                     Tài liệu này
+src/app/login                    Đăng nhập bằng username
+src/app/(app)/[store]/...        Màn hình theo cửa hàng: pos, sales, shifts, orders, receipts, inventory,
+                                 lookup, expiry, transfers, payables, cash, reconcile, reports
+src/app/(app)/products           Danh mục sản phẩm, gợi ý giá, import Excel
+src/app/(app)/suppliers          Nhà cung cấp
+src/app/(app)/settings           Cửa hàng, người dùng, cấu hình, nhóm hàng, thành viên
+src/app/(app)/account            Đổi mật khẩu, mã PIN quản lý
+src/app/print                    In hóa đơn 80mm, in tem mã vạch
+src/components                   Thành phần dùng chung (product-picker, money-input, ...), ui = shadcn
+src/lib                          auth, roles, nav, errors, format, dates, settings, text, supabase clients
+supabase/migrations              SQL theo thứ tự thời gian
+supabase/tests                   Test pgTAP; include/setup.sql là dữ liệu mẫu dùng chung
+scripts                          bootstrap, import-kho, db-test (DB thật), local-db-test (PGlite)
 ```
 
 ## 4. Vai trò và phân quyền
@@ -57,38 +61,48 @@ docs                     Tài liệu này
 | Vai trò (`app_role`) | Nhãn | Phạm vi |
 |---|---|---|
 | `sadmin` | Quản trị hệ thống | Mọi cửa hàng, người dùng, cấu hình chung |
-| `admin` | Quản lý cửa hàng | Toàn quyền trong cửa hàng được gán (tương ứng "Chủ tiệm" của SPEC trong phạm vi cửa hàng) |
-| `accountant` | Kế toán | Cửa hàng được gán, quyền theo ma trận SPEC mục 4.2 |
-| `staff` | Nhân viên | Cửa hàng được gán, quyền theo ma trận SPEC mục 4.2 |
+| `admin` | Quản lý cửa hàng | Toàn quyền trong cửa hàng được gán (vai trò "Chủ tiệm" của SPEC trong phạm vi cửa hàng) |
+| `accountant` | Kế toán | Cửa hàng được gán; công nợ, thu chi, đối soát, báo cáo; không bán hàng, không sửa sản phẩm |
+| `staff` | Nhân viên | Cửa hàng được gán; bán hàng, ca, nhập hàng nháp, đơn online, tra cứu, chi tiền mặt trong ca |
 
 Cơ chế:
 
-- Quyền đọc từ bảng `profiles` và `user_stores` qua các hàm `SECURITY DEFINER`: `auth_role()`, `auth_store_ids()`, `can_access_store(store_id)`, `is_store_manager(store_id)`, `auth_has_perm(key)`, `assert_role(...)`. Đổi quyền có hiệu lực ngay ở request kế tiếp.
-- RLS bật trên mọi bảng. SELECT đi qua RLS; ghi dữ liệu nghiệp vụ chỉ qua RPC. Bảng danh mục (sản phẩm, barcode, nhóm hàng, thương hiệu) cho `sadmin` và `admin` ghi trực tiếp.
-- Tài khoản không có hồ sơ hoặc bị khóa (`is_active = false`) không đọc được dữ liệu nào.
-- Trigger `protect_last_sadmin` chặn hạ quyền hoặc khóa sadmin cuối cùng.
-- Quyền mở rộng cá nhân lưu ở `profiles.extra_permissions` (ví dụ `{"confirm_receipt": true}`).
+- Quyền đọc từ bảng `profiles` và `user_stores` qua các hàm `SECURITY DEFINER`: `auth_role()`, `auth_store_ids()`, `can_access_store()`, `is_store_manager()`, `auth_has_perm()`, `assert_role()`. Đổi quyền có hiệu lực ở request kế tiếp.
+- RLS bật trên mọi bảng. SELECT qua RLS, ghi dữ liệu nghiệp vụ chỉ qua RPC.
+- Nhân viên không đọc được giá vốn: bảng `products`, `inventory`, `stock_lots`, `stock_movements` chặn nhân viên; nhân viên dùng RPC `catalog_search`, `inventory_status`, `lot_expiry`, `stock_movement_list`, `catalog_by_ids` (các cột giá vốn trả về rỗng). Cột `sales.cogs_total`, `sale_items.unit_cost/cogs` và `profiles.pos_pin_hash` bị chặn bằng quyền theo cột.
+- Quyền mở rộng cá nhân: `profiles.extra_permissions.confirm_receipt` cho nhân viên được xác nhận phiếu nhập.
+- `protect_last_sadmin` chặn hạ quyền hoặc khóa sadmin cuối cùng. Admin chỉ tạo và sửa được tài khoản kế toán, nhân viên trong cửa hàng mình.
 
-## 5. Mô hình dữ liệu đã triển khai
+## 5. Mô hình dữ liệu và RPC
 
-| Migration | Nội dung |
+| Migration | Nội dung chính |
 |---|---|
-| `20260925000001_extensions_enums` | `pg_trgm`, toàn bộ enum SPEC 6.1, trigger `set_updated_at` |
-| `20260925000002_org_auth_settings_audit` | `stores`, `profiles`, `user_stores`, `settings`, `document_sequences`, `audit_logs`; hàm phân quyền; `get_setting`, `set_setting`, `next_doc_code`; trigger audit |
-| `20260925000003_products` | `categories`, `brands`, `products`, `product_barcodes`, `price_history`; trigger ghi lịch sử giá |
-| `20260925000004_inventory` | `inventory`, `stock_lots`, `stock_movements`; RPC `import_opening_stock`, `store_overview` |
-| `20260925000005_seed_settings` | Cấu hình mặc định theo SPEC Phụ lục A |
+| `20260925000001` | Enum SPEC 6.1 (thêm `sadmin`, `admin`, `opening`), trigger `set_updated_at` |
+| `20260925000002` | Cửa hàng, hồ sơ, gán cửa hàng, cấu hình, mã chứng từ, audit, hàm phân quyền |
+| `20260925000003` | Nhóm hàng, thương hiệu, sản phẩm, mã vạch, lịch sử giá |
+| `20260925000004` | Tồn, lô, biến động; `import_opening_stock` |
+| `20260925000005` | Cấu hình mặc định Phụ lục A |
+| `20260926000001` | Tìm không dấu, giá % Benefit, gợi ý giá, mã vạch nội bộ EAN-13, `catalog_search`, nhà cung cấp, hạng thành viên, `import_products` |
+| `20260927000001` | Phiếu nhập, landed cost, WAVG (`_receive_stock`), `_apply_movement`, công nợ, thanh toán, chuyển kho, báo cáo tồn |
+| `20260928000001` | Ca, bán hàng (`_post_sale`, `complete_sale`, `cancel_sale`), PIN duyệt giảm giá |
+| `20260929000001` | Đơn online giữ hàng, công nợ, thu chi, đối soát, báo cáo lãi lỗ, giá vốn, bán chạy |
 
-Các bảng còn lại của SPEC mục 6 được thêm theo từng sprint ở mục 11.
+Các RPC chính theo nghiệp vụ:
+
+- Bán hàng: `complete_sale` (idempotent theo khóa, giá lấy từ DB, FEFO, khóa tồn theo thứ tự sản phẩm), `cancel_sale`, `request_discount_approval`.
+- Ca: `open_shift`, `close_shift`, `approve_shift`, `adjust_shift_count`, `shift_expected_cash`, `shift_summary`.
+- Kho: `save_purchase_receipt`, `confirm_purchase_receipt`, `cancel_purchase_receipt`, `save_transfer`, `send_transfer`, `receive_transfer`, `cancel_transfer`.
+- Đơn online: `create_order`, `update_order_status` (giao thành công tạo giao dịch bán theo kênh), `reconcile_reservations`.
+- Tài chính: `record_supplier_payment`, `debt_overview`, `create_cash_transaction`, `review_cash_transaction`, `mark_cash_transaction_paid`, `reconcile_report`, `save_reconciliation_note`.
+- Báo cáo: `pnl_report`, `pnl_daily`, `revenue_breakdown`, `cogs_report`, `expense_report`, `best_sellers`, `inventory_status`, `inventory_period`, `lot_expiry`, `stock_movement_list`.
 
 ## 6. Quy ước
 
-- Tên bảng, cột: `snake_case` tiếng Anh. Nhãn giao diện: tiếng Việt.
-- Tiền hiển thị `1.234.567 ₫`, ngày `dd/MM/yyyy`, giờ 24h, múi giờ `Asia/Ho_Chi_Minh` (`src/lib/format`).
-- Mã chứng từ sinh trong DB: `{PREFIX}-{MÃ CỬA HÀNG}-{YYMMDD}-{số thứ tự 4 chữ số}`. SKU sản phẩm: `SP-000001`.
-- RPC báo lỗi bằng `RAISE EXCEPTION`; thông điệp tiếng Việt ở `message`, mã lỗi (`FORBIDDEN`, `NOT_FOUND`, `VALIDATION`, `INVALID_STATE`, `ALREADY_CONFIRMED`...) ở `hint`. Supabase JS trả về trong `error.message` và `error.hint`.
-- Hàm mới: `SECURITY DEFINER` khi cần vượt RLS, luôn `set search_path = ''`, kiểm tra quyền ở đầu hàm, `revoke execute ... from public, anon`.
-- Mỗi migration mới đi kèm test pgTAP trong `supabase/tests`.
+- Tiền `bigint` VND, số lượng `numeric(12,3)`. Hiển thị `1.234.567 ₫`, ngày `dd/MM/yyyy`, múi giờ `Asia/Ho_Chi_Minh`.
+- Mã chứng từ: `{PREFIX}-{MÃ CỬA HÀNG}-{YYMMDD}-{4 số}`. SKU `SP-000001`, nhà cung cấp `NCC-0001`.
+- `sales.subtotal` là tiền hàng trước mọi giảm giá; `sales.discount_amount` gồm giảm theo dòng và giảm cả đơn; `total = subtotal - discount_amount`. Lãi lỗ tính Doanh thu gộp = Σ subtotal, Giảm giá = Σ discount_amount, nên doanh thu thuần khớp SPEC 7.6.
+- RPC báo lỗi bằng `RAISE EXCEPTION`: thông điệp tiếng Việt ở `message`, mã lỗi (`FORBIDDEN`, `VALIDATION`, `INSUFFICIENT_STOCK`, `EXPIRED_LOT`, `DISCOUNT_LIMIT`, `PAYMENT_MISMATCH`, `DEBT_OVERPAY`, `SHIFT_NOT_OPEN`...) ở `hint`. `src/lib/errors.ts` chuyển thành câu cho người dùng.
+- Hàm mới: `set search_path = ''`, kiểm tra quyền ở đầu hàm, `revoke execute ... from public, anon`, kèm test pgTAP.
 
 ## 7. Quyết định đã chốt và khác biệt so với SPEC
 
@@ -99,80 +113,105 @@ Quyết định của khách ngày 25/09/2026:
 | 1 | Mobile | PWA, không đăng App Store / Play Store |
 | 2 | Môi trường | Một Supabase project production duy nhất |
 | 3 | Số cửa hàng | Một cửa hàng; schema giữ `store_id` |
-| 4 | Vai trò | Bốn vai trò: sadmin, admin, accountant, staff |
-| 5 | Hạng thành viên | Dùng mặc định SPEC, admin chỉnh được |
-| 6 | Hóa đơn điện tử | Có nghĩa vụ nhưng chưa làm ở giai đoạn này |
+| 4 | Vai trò | sadmin, admin, accountant, staff |
+| 5 | Hạng thành viên | Mặc định SPEC, admin chỉnh được |
+| 6 | Hóa đơn điện tử | Có nghĩa vụ nhưng chưa làm giai đoạn này |
 | 7 | Phạm vi | Làm hết P0 trước |
-| 8 | Đăng nhập | Username, không dùng email |
-| 9 | Thiết bị | Chrome; máy quét USB Kiosk Việt; chưa làm máy in nhiệt, ngăn kéo tiền |
+| 8 | Đăng nhập | Username; email nội bộ `<username>@sieuthiuc.local` |
+| 9 | Thiết bị | Chrome; máy quét USB Kiosk Việt; chưa làm máy in nhiệt, ngăn kéo |
 | 10 | Mạng | Ổn định; offline POS giữ ở P2 |
-| 11 | Shopee | Quản lý đơn thủ công, chưa tích hợp API |
-| 12 | Loại hàng | Mặt hàng nhập theo cả hai kênh Cont và Air được tạo thành hai mã sản phẩm riêng |
+| 11 | Shopee | Nhập đơn thủ công, chưa tích hợp API |
+| 12 | Loại hàng | Mặt hàng nhập theo cả Cont và Air là hai mã sản phẩm riêng; loại hàng là một thuộc tính thường của sản phẩm |
 
 Khác biệt kỹ thuật so với SPEC:
 
-- Không dùng custom JWT claims và Auth Hook; quyền đọc trực tiếp từ bảng (mục 4).
-- Tạo người dùng sẽ làm bằng route server của Next.js dùng service role, thay cho Edge Function `admin-create-user`.
-- `settings` dùng `id` làm khóa chính và ràng buộc `unique nulls not distinct (key, store_id)` thay cho khóa chính có `coalesce` (cú pháp SPEC không hợp lệ).
-- `movement_type` thêm giá trị `opening` cho tồn đầu kỳ.
-- `products.goods_type` bắt buộc.
+- Không dùng custom JWT claims và Auth Hook; quyền đọc trực tiếp từ bảng.
+- Tạo người dùng bằng Server Action dùng service role, thay cho Edge Function `admin-create-user`.
+- `settings` dùng `unique nulls not distinct (key, store_id)` (cú pháp khóa chính của SPEC không hợp lệ).
 - RPC trả lỗi bằng exception thay cho JSON `{ok, data, error}` để giao dịch luôn rollback trọn vẹn.
+- Giá bán tại quầy luôn lấy từ DB, bỏ qua giá client gửi lên. Đơn online dùng giá nhập trên đơn.
+- Duyệt giảm giá vượt hạn mức: quản lý nhập PIN để nhận mã duyệt dùng một lần trong 5 phút; sai 3 lần trong 1 phút khóa 1 phút. Tách bước để số lần sai không bị rollback.
+- Phí ship của đơn online không vào doanh thu (sale ghi tiền hàng trừ giảm giá).
+- Công nợ, thu chi, đối soát, báo cáo đặt dưới đường dẫn cửa hàng `/[store]/...`; báo cáo có tùy chọn "Tất cả cửa hàng" khi người dùng có nhiều cửa hàng.
+- Duyệt khoản chi (P1) làm sớm ở dạng đơn giản: chỉ khoản chi tiền mặt của nhân viên vượt ngưỡng `expense.auto_approve_below` mới chờ duyệt.
+- Giỏ hàng POS lưu localStorage thay cho Dexie.
 
-Việc còn mở cần làm ở sprint sau:
+## 8. Phạm vi P0 đã làm
 
-- Ẩn giá vốn và giá trị tồn với nhân viên ở tầng dữ liệu (hiện RLS cho mọi người dùng đăng nhập đọc bảng `products`). Làm ở Sprint 1 khi có màn hình sản phẩm.
-- Khóa đăng nhập sau 5 lần sai (SPEC mục 17). Hiện dựa vào giới hạn tần suất của Supabase Auth.
+| Module | Tính năng |
+|---|---|
+| Bán hàng | POS quét mã, giảm giá dòng và đơn, hạn mức giảm giá + PIN quản lý, thanh toán nhiều phương thức, tiền thối, in hóa đơn 80mm, hủy giao dịch, lịch sử |
+| Đơn online | Tạo đơn Shopee/Facebook/khác, giữ hàng, đang giao, giao thành công ghi doanh thu, hủy trả khả dụng |
+| Sản phẩm | CRUD, mã vạch nhà sản xuất và nội bộ, mã lốc, giá trực tiếp hoặc % Benefit, gợi ý giá, lịch sử giá, import Excel, in tem, tra cứu, hạn sử dụng |
+| Kho | Phiếu nhập nháp/xác nhận, chi phí kèm theo phân bổ, giá vốn bình quân, lô và HSD, tồn hiện tại, nhập xuất tồn theo kỳ, cần nhập thêm, lịch sử biến động, chuyển kho |
+| Công nợ | Tự sinh từ phiếu nhập, hạn theo nhà cung cấp, tổng quan, theo NCC, cần thanh toán, thanh toán phân bổ nhiều khoản, lịch sử số dư trước/sau |
+| Thu chi và lãi lỗ | Ghi thu chi, phải trả khác, đối soát tiền mặt theo ca và sao kê nhập tay, lãi lỗ 2 tầng có so sánh kỳ trước, giá vốn và lãi gộp theo sản phẩm/nhóm/kênh/loại hàng |
+| Ca | Mở ca, chốt ca đếm theo mệnh giá, tiền kỳ vọng, chênh lệch, cần kiểm tra khi vượt ngưỡng, duyệt, sửa số đếm có lý do |
+| Cấu hình | Người dùng và phân quyền, thông tin cửa hàng, tham số vận hành, nhóm hàng, thương hiệu, hạng thành viên |
 
-## 8. Dữ liệu tồn đầu kỳ
+## 9. Dữ liệu tồn đầu kỳ
 
 Nguồn: `kho hang.xlsx` (không đưa lên GitHub). Script: `scripts/import-kho.mjs`.
 
-- Đọc hai sheet `AIR` và `CONT`. Không dùng sheet `TỔNG` vì tổng tồn không khớp hai sheet kia.
+- Đọc hai sheet `AIR` và `CONT`. Không dùng sheet `TỔNG` vì tổng tồn không khớp.
 - Ô gộp theo cột được đọc lại đúng giá trị ô đầu vùng gộp.
-- Dòng nhóm (có tên, không có số lượng) không phải sản phẩm; dòng con được đặt tên `<tên nhóm> - <tên con>`.
+- Dòng nhóm (có tên, không có số lượng) không phải sản phẩm; dòng con đặt tên `<tên nhóm> - <tên con>`.
 - Tồn = cột "CÒN LẠI". Tồn âm đưa về 0 và ghi chú. Giá vốn dạng chữ đưa về 0, giữ chữ trong ghi chú.
 - Tên trùng trong cùng loại hàng được thêm `- <ĐVT>`.
-- Mỗi sản phẩm có tồn tạo một lô `TONDAU` không hạn dùng và một biến động `opening`. Hàm `import_opening_stock` chỉ chạy được một lần cho mỗi cửa hàng.
+- Mỗi sản phẩm có tồn tạo lô `TONDAU` không hạn dùng và biến động `opening`. Chỉ import được một lần cho mỗi cửa hàng.
 
 Chạy thử không ghi DB: `npm run import:kho -- --dry-run`, kết quả ở `data/import-preview.json`.
 
-## 9. Chạy trên máy
+## 10. Chạy và kiểm thử trên máy
 
 ```
 npm install
 cp .env.example .env.local      # điền giá trị
 npm run dev                     # http://localhost:3000
 npm run typecheck && npm run lint
-npm run db:test                 # test pgTAP trên database
+npm run db:test:local           # áp toàn bộ migration + chạy pgTAP trên PGlite, không cần Docker
+npm run db:test                 # chạy pgTAP trên database thật (cần SUPABASE_DB_URL)
 ```
 
-## 10. Triển khai production
+`db:test:local` giả lập schema `auth` và các vai trò của Supabase. Nó không thay thế việc chạy `db:test` trên database thật sau khi `supabase db push`.
 
-Thứ tự khi có migration mới:
+## 11. Triển khai production
+
+Khi có migration mới:
 
 ```
 supabase link --project-ref mmnfhppaupmvkdggekbz
-supabase db push                # áp dụng migration mới
-supabase config push            # đồng bộ cấu hình Auth (tắt đăng ký công khai, mật khẩu tối thiểu 8)
+supabase db push                # áp dụng migration
+supabase config push            # tắt đăng ký công khai, mật khẩu tối thiểu 8
 npm run db:test                 # phải đạt trước khi deploy app
-git push origin main            # Vercel tự build và deploy
+git push origin main            # Vercel tự build khi đã nối GitHub
 ```
 
-Khởi tạo lần đầu (đã chạy một lần, không chạy lại):
+Khởi tạo lần đầu (một lần):
 
 ```
 npm run bootstrap -- --store-code SU --store-name "Siêu Thị Úc" --username <ten> --full-name "<Họ tên>"
 npm run import:kho -- --store SU
 ```
 
-Biến môi trường trên Vercel: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Service role key không đặt trên Vercel cho tới khi có màn hình quản lý người dùng.
+Biến môi trường trên Vercel: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (bắt buộc cho màn hình quản lý người dùng; chỉ dùng ở server).
 
-## 11. Tiến độ
+## 12. Tiến độ và việc còn lại
 
-| Sprint | Phạm vi | Trạng thái |
-|---|---|---|
-| 0 | Khung app, đăng nhập username, phân quyền 4 vai trò, RLS, cấu hình, audit, sản phẩm và kho lõi, import tồn đầu kỳ | Code xong, chờ quyền truy cập Supabase để áp dụng migration |
-| 1 | Sản phẩm, barcode, giá, % Benefit, nhà cung cấp, quản lý người dùng, cài đặt | Chưa bắt đầu |
-| 2 | Phiếu nhập, lô, giá vốn bình quân, tồn kho, biến động, cảnh báo tồn thấp | Chưa bắt đầu |
-| 3 | Ca làm việc, POS, thanh toán, in hóa đơn, hủy giao dịch | Chưa bắt đầu |
-| 4 | Đơn hàng online, công nợ, thu chi, đối soát, PnL, doanh thu, COGS, chi phí | Chưa bắt đầu |
+| Sprint | Trạng thái |
+|---|---|
+| 0 - Khung, phân quyền, cấu hình, audit | Xong, test đạt trên PGlite |
+| 1 - Sản phẩm, giá, NCC, người dùng, cài đặt | Xong, test đạt trên PGlite |
+| 2 - Phiếu nhập, giá vốn, kho, chuyển kho | Xong, test đạt trên PGlite |
+| 3 - Ca, POS, in hóa đơn, hủy | Xong, test đạt trên PGlite |
+| 4 - Đơn online, công nợ, thu chi, đối soát, báo cáo | Xong, test đạt trên PGlite |
+| Áp migration lên Supabase, bootstrap, import, deploy | Chờ quyền truy cập Supabase và kết nối Vercel với GitHub |
+
+Việc còn lại đã biết:
+
+- Khóa đăng nhập sau 5 lần sai (SPEC mục 17): hiện dựa vào giới hạn tần suất của Supabase Auth.
+- Đính kèm chứng từ (Storage) cho phiếu nhập, thu chi, thanh toán.
+- Cập nhật tồn thời gian thực trên POS (Realtime): hiện RPC kiểm tra tồn lần cuối khi thanh toán và báo lỗi nếu vượt.
+- Test đồng thời hai phiên bán cùng món cuối: logic khóa dòng có sẵn, cần chạy trên database thật.
+- P1: thành viên và tích điểm tại POS, hoàn trả, kiểm kê, điều chỉnh và hủy hàng, thông báo, export Excel/PDF, màn hình audit log.
+- P2: đồng bộ Shopee, hóa đơn điện tử, offline POS, in Bluetooth, FIFO.
