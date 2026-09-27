@@ -122,6 +122,17 @@ export function ReceiptEditor({
   const upd = (key: string, patch: Partial<EditorLine>) =>
     setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
 
+  // Them mot dong nua cho cung san pham de nhap them lo/HSD khac trong cung phieu
+  function addLot(l: EditorLine) {
+    setLines((ls) => {
+      const idx = ls.findIndex((x) => x.key === l.key);
+      const clone: EditorLine = { ...l, key: newKey(), qty: 1, lot_no: "", expiry_date: "" };
+      const copy = [...ls];
+      copy.splice(idx + 1, 0, clone);
+      return copy;
+    });
+  }
+
   function payload(): ReceiptPayload {
     return {
       id: receiptId,
@@ -226,7 +237,7 @@ export function ReceiptEditor({
           </div>
         )}
         {lines.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Quét mã vạch hoặc tìm tên để thêm hàng. Quét lại cùng mã sẽ tăng số lượng.</p>
+          <p className="text-sm text-muted-foreground">Quét mã vạch hoặc tìm tên để thêm hàng. Quét lại cùng mã sẽ tăng số lượng. Cùng một mặt hàng nhiều hạn dùng thì bấm &quot;+ Thêm lô/date khác&quot; trên dòng.</p>
         ) : (
           <div className="space-y-2">
             {lines.map((l, i) => (
@@ -238,6 +249,13 @@ export function ReceiptEditor({
                   <div className="text-xs text-muted-foreground">
                     {l.sku} - {GOODS_TYPE_LABEL[l.goods_type]} - Thành tiền {formatMoney(Math.round(l.qty * (l.unit_cost ?? 0)))}
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => addLot(l)}
+                    className="mt-1 text-xs font-medium text-primary underline underline-offset-2"
+                  >
+                    + Thêm lô/date khác
+                  </button>
                 </div>
                 <label className="space-y-1 text-xs text-muted-foreground">
                   SL ({l.unit})

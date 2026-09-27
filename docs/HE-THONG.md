@@ -96,6 +96,7 @@ Cơ chế:
 | `20261001000001` | Tài khoản giữ tiền: `money_accounts`, `manage_money_account`, `money_account_balances`, cột `account_id` cho thu chi/thanh toán bán và NCC; giá bán trên dòng phiếu nhập (`purchase_receipt_items.sell_price`) cập nhật giá bán khi xác nhận |
 | `20261002000001` | Giá cận date: enum `product_date_type` và cột `products.date_type` (short/long); cấu hình `expiry.short_date_days` (15), `expiry.long_date_days` (60), `expiry.markup_vnd` (50000); `lot_expiry` dùng ngưỡng theo loại date và trả thêm `date_type`, `near_days`, `suggested_price` |
 | `20261004000001` | Tìm sản phẩm linh hoạt: `catalog_search` tách câu tìm thành các từ, yêu cầu mọi từ đều có trong `search_key` (không cần đúng thứ tự); vẫn ưu tiên khớp mã vạch và SKU |
+| `20261005000001` | Nhập nhiều HSD cho một mặt hàng trong cùng phiếu: `confirm_purchase_receipt` tự đặt số lô `{mã phiếu}-1`, `{mã phiếu}-2`... cho các dòng cùng sản phẩm để trống số lô, mỗi HSD thành một lô riêng |
 
 Các RPC chính theo nghiệp vụ:
 
@@ -152,6 +153,7 @@ Khác biệt kỹ thuật so với SPEC:
 - Tìm sản phẩm ở ô tra cứu/phiếu nhập nhận nhiều từ khóa rời: gõ "yến mạch 500gr" vẫn ra "Yến Mạch Uncle 500gr" vì mọi từ đều phải khớp `search_key` nhưng không cần liền nhau hay đúng thứ tự.
 - Nhóm hàng bỏ cấu hình % Benefit ở giao diện; sản phẩm đặt giá theo % Benefit dùng % riêng. Hạng thành viên tạm ẩn khỏi Cài đặt (trang `/settings/loyalty` vẫn còn).
 - Thanh bên trên máy tính có thể ẩn/hiện, lưu lựa chọn trong localStorage.
+- Nhập một mặt hàng nhiều hạn dùng trong cùng một phiếu: trên màn phiếu nhập bấm "+ Thêm lô/date khác" để tạo thêm dòng cho cùng sản phẩm (SL/lô/HSD nhập riêng, chép sẵn đơn giá và giá bán). Khi xác nhận, các dòng cùng sản phẩm để trống số lô được tự đặt số lô `{mã phiếu}-1`, `{mã phiếu}-2`... nên mỗi HSD thành một lô riêng; dòng đơn lẻ vẫn dùng số lô mặc định là mã phiếu. Quét lại cùng mã vạch vẫn cộng dồn vào dòng đầu.
 - Giá cận date: mỗi sản phẩm gán loại date ngắn (ngưỡng 15 ngày) hoặc dài (ngưỡng 60 ngày), mặc định dài. Khi lô còn dưới ngưỡng, màn Hạn sử dụng đề xuất giá bán = giá vốn lô + phụ thu (mặc định 50.000₫); chỉ gợi ý, không tự ghi đè `products.sell_price`. Giá đề xuất ẩn với nhân viên (lộ giá vốn). sadmin sửa ngưỡng 15/60 và phụ thu ở Cài đặt > Cấu hình (nhóm "Cận date và giá giảm"); `inventory.near_expiry_days` không còn dùng cho màn này.
 
 ## 8. Phạm vi P0 đã làm
