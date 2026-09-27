@@ -49,7 +49,7 @@ export function LabelSheet({ items, widthMm, heightMm }: { items: LabelItem[]; w
         {list.map((it) => (
           <div
             key={it.key}
-            className="flex flex-col items-center justify-between overflow-hidden border bg-white p-[7px] text-black print:border-0"
+            className="flex flex-col items-center justify-between overflow-hidden border bg-white p-[14px] text-black print:border-0"
             style={{ width: `${widthMm}mm`, height: `${heightMm}mm`, breakAfter: "page" }}
           >
             <div className="line-clamp-2 w-full text-center text-[9px] leading-tight">{it.name}</div>
