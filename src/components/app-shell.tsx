@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
-import { ChevronsUpDownIcon, LayoutGridIcon, LogOutIcon, PanelLeftCloseIcon, PanelLeftOpenIcon, StoreIcon, UserRoundIcon } from "lucide-react";
+import { ChevronsUpDownIcon, LayoutGridIcon, LogOutIcon, PanelLeftCloseIcon, PanelLeftOpenIcon, SearchIcon, StoreIcon, UserRoundIcon } from "lucide-react";
 import { logout } from "@/app/login/actions";
 import { ROLE_LABEL, type AppRole, type StoreLite } from "@/lib/roles";
 import { MOBILE_TABS, NAV_GROUPS, type NavItem } from "@/lib/nav";
 import { cn } from "@/lib/utils";
+import { CommandPalette, openCommandPalette, type PaletteItem } from "@/components/command-palette";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ThemeMenuItems } from "@/components/theme";
 import {
@@ -73,6 +74,7 @@ export function AppShell({ fullName, role, stores, defaultStoreCode, children }:
   const flat = groups.flatMap((g) => g.items);
   const tabs = MOBILE_TABS[role].map((k) => flat.find((i) => i.key === k)).filter(Boolean) as ResolvedItem[];
   const moreActive = !tabs.some((t) => t.active) && flat.some((i) => i.active);
+  const paletteItems: PaletteItem[] = groups.flatMap((g) => g.items.map((i) => ({ label: i.label, href: i.href, icon: i.icon, group: g.label })));
 
   const storePicker =
     stores.length > 1 ? (
@@ -175,7 +177,18 @@ export function AppShell({ fullName, role, stores, defaultStoreCode, children }:
             <PanelLeftCloseIcon className="size-5" aria-hidden />
           </button>
         </div>
-        <div className="px-4 pb-4">{storePicker}</div>
+        <div className="px-4 pb-3">{storePicker}</div>
+        <div className="px-4 pb-4">
+          <button
+            type="button"
+            onClick={openCommandPalette}
+            className="flex h-10 w-full items-center gap-2 rounded-lg border bg-card px-3 text-left text-sm text-muted-foreground hover:bg-muted"
+          >
+            <SearchIcon className="size-4 shrink-0" aria-hidden />
+            <span className="min-w-0 flex-1 truncate">Tìm nhanh...</span>
+            <kbd className="shrink-0 rounded border bg-muted px-1.5 py-0.5 text-[10px] font-medium">Ctrl K</kbd>
+          </button>
+        </div>
         <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-4">{navList()}</nav>
         <div className="border-t p-3">
           {accountMenu(
@@ -215,7 +228,15 @@ export function AppShell({ fullName, role, stores, defaultStoreCode, children }:
               {current?.name ?? "Siêu Thị Úc"}
             </span>
           </Link>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              onClick={openCommandPalette}
+              className="flex size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+              aria-label="Tìm nhanh"
+            >
+              <SearchIcon className="size-5" aria-hidden />
+            </button>
             {accountMenu(
               <DropdownMenuTrigger
                 className="flex size-11 items-center justify-center rounded-full"
@@ -263,6 +284,8 @@ export function AppShell({ fullName, role, stores, defaultStoreCode, children }:
           {navList(() => setMoreOpen(false))}
         </DialogContent>
       </Dialog>
+
+      <CommandPalette items={paletteItems} />
     </div>
   );
 }
