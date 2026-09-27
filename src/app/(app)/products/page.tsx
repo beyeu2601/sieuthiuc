@@ -11,6 +11,7 @@ import { CameraScanButton } from "@/components/camera-scan-button";
 import { Pagination } from "@/components/pagination";
 import { EmptyState } from "@/components/empty-state";
 import { NativeSelect } from "@/components/native-select";
+import { CategoryInfo } from "@/components/category-info";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -50,7 +51,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const status = sp.status ?? "active";
   const supabase = await createClient();
 
-  const { data: categories } = await supabase.from("categories").select("id, name").order("name");
+  const { data: categories } = await supabase.from("categories").select("id, name, description").order("name");
 
   let query = supabase
     .from("products")
@@ -136,14 +137,17 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
           <option value="inactive">Ngừng bán</option>
           <option value="all">Tất cả</option>
         </NativeSelect>
-        <NativeSelect name="cat" defaultValue={sp.cat ?? ""} aria-label="Nhóm hàng">
-          <option value="">Mọi nhóm hàng</option>
-          {(categories ?? []).map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </NativeSelect>
+        <div className="flex items-center gap-1">
+          <NativeSelect name="cat" defaultValue={sp.cat ?? ""} aria-label="Nhóm hàng" className="flex-1">
+            <option value="">Mọi nhóm hàng</option>
+            {(categories ?? []).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </NativeSelect>
+          <CategoryInfo categories={categories ?? []} />
+        </div>
         <NativeSelect name="missing" defaultValue={sp.missing ?? ""} aria-label="Thiếu thông tin">
           <option value="">Mọi dữ liệu</option>
           <option value="any">Thiếu thông tin</option>

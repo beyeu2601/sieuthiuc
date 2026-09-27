@@ -37,7 +37,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   const { data: p } = await supabase
     .from("products")
     .select(
-      "id, sku, name, goods_type, unit, category_id, brand_id, pricing_method, sell_price, benefit_pct, cost_price_ref, expiry_level, expiry_date, min_stock, max_stock, status, note"
+      "id, sku, name, goods_type, unit, category_id, brand_id, pricing_method, sell_price, benefit_pct, cost_price_ref, date_type, expiry_level, expiry_date, min_stock, max_stock, status, note"
     )
     .eq("id", id)
     .maybeSingle();
@@ -45,7 +45,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
   const [{ data: categories }, { data: brands }, { data: barcodes }, { data: history }, { data: lots }, roundingUnit, { data: images }] =
     await Promise.all([
-      supabase.from("categories").select("id, name, benefit_pct").order("name"),
+      supabase.from("categories").select("id, name, benefit_pct, description").order("name"),
       supabase.from("brands").select("id, name").order("name"),
       supabase
         .from("product_barcodes")
@@ -104,6 +104,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
             pricing_method: p.pricing_method,
             sell_price: p.sell_price,
             benefit_pct: p.benefit_pct,
+            date_type: p.date_type,
             expiry_level: p.expiry_level,
             expiry_date: p.expiry_date,
             min_stock: p.min_stock,

@@ -50,6 +50,9 @@ export type LotRow = {
   days_left: number | null;
   expiry_status: "none" | "normal" | "near" | "expired";
   unit_cost: number | null;
+  date_type: "short" | "long";
+  near_days: number;
+  suggested_price: number | null;
 };
 
 export async function productLots(storeId: string, productId: string): Promise<ActionResult<LotRow[]>> {

@@ -10,6 +10,7 @@ export const productSchema = z
     pricing_method: z.enum(["manual", "benefit"]),
     sell_price: z.number().int().min(0, "Giá bán không âm"),
     benefit_pct: z.number().min(0).max(1000).nullable(),
+    date_type: z.enum(["short", "long"]),
     expiry_level: z.enum(["none", "product", "lot"]),
     expiry_date: z.string().nullable(),
     min_stock: z.number().min(0).nullable(),

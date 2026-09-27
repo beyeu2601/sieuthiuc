@@ -8,12 +8,13 @@ import type { ProductInput } from "@/lib/schemas/product";
 import { formatMoney } from "@/lib/format";
 import { MoneyInput } from "@/components/money-input";
 import { NativeSelect } from "@/components/native-select";
+import { CategoryInfo } from "@/components/category-info";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-type Option = { id: string; name: string; benefit_pct?: number | null };
+type Option = { id: string; name: string; benefit_pct?: number | null; description?: string | null };
 
 export function ProductForm({
   id,
@@ -84,7 +85,10 @@ export function ProductForm({
           <Input id="unit" value={v.unit} onChange={(e) => set("unit", e.target.value)} placeholder="Hộp, Lon, Chai..." required />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="category">Nhóm hàng</Label>
+          <div className="flex items-center gap-1">
+            <Label htmlFor="category">Nhóm hàng</Label>
+            <CategoryInfo categories={categories} />
+          </div>
           <NativeSelect id="category" value={v.category_id ?? ""} onChange={(e) => set("category_id", e.target.value || null)}>
             <option value="">Chưa phân nhóm</option>
             {categories.map((c) => (
@@ -145,6 +149,21 @@ export function ProductForm({
             </p>
           </div>
         )}
+
+        <div className="space-y-1.5">
+          <Label htmlFor="date_type">Loại date (cận date)</Label>
+          <NativeSelect
+            id="date_type"
+            value={v.date_type}
+            onChange={(e) => set("date_type", e.target.value as "short" | "long")}
+          >
+            <option value="long">Date dài (giảm giá khi tới ngưỡng dài)</option>
+            <option value="short">Date ngắn (giảm giá khi tới ngưỡng ngắn)</option>
+          </NativeSelect>
+          <p className="text-xs text-muted-foreground">
+            Khi lô tới ngưỡng cận date, hệ thống gợi ý giá bán = giá vốn lô + phụ thu ở màn Hạn sử dụng.
+          </p>
+        </div>
 
         <div className="space-y-1.5">
           <Label htmlFor="expiry_level">Quản lý hạn sử dụng</Label>

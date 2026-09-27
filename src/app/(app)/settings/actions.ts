@@ -43,13 +43,13 @@ export async function saveSettings(storeId: string | null, values: Record<string
 
 export async function saveCategory(
   id: string | null,
-  input: { name: string; is_active: boolean }
+  input: { name: string; is_active: boolean; description: string | null }
 ): Promise<ActionResult> {
   const name = input.name.trim();
   if (!name) return { ok: false, error: "Nhập tên nhóm hàng" };
   const supabase = await createClient();
-  // Bo cau hinh % Benefit theo nhom: chi luu ten va trang thai. San pham dat gia theo % Benefit dung % rieng.
-  const row = { name, is_active: input.is_active };
+  // Bo cau hinh % Benefit theo nhom: chi luu ten, trang thai va mo ta. San pham dat gia theo % Benefit dung % rieng.
+  const row = { name, is_active: input.is_active, description: input.description?.trim() || null };
   const { error } = id
     ? await supabase.from("categories").update(row).eq("id", id)
     : await supabase.from("categories").insert(row);

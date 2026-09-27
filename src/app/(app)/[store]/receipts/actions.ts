@@ -90,6 +90,26 @@ export async function quickCreateProduct(input: {
   };
 }
 
+// Tao nhanh nha cung cap ngay tren phieu nhap (RLS cho phep sadmin/admin/accountant)
+export async function quickCreateSupplier(input: {
+  name: string;
+  phone: string;
+  payment_terms_days: number;
+}): Promise<ActionResult<{ id: string; code: string; name: string; payment_terms_days: number }>> {
+  const name = input.name.trim();
+  if (!name) return { ok: false, error: "Nhập tên nhà cung cấp" };
+  const terms = Math.min(365, Math.max(0, Math.round(input.payment_terms_days || 0)));
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("suppliers")
+    .insert({ name, phone: input.phone.trim() || null, payment_terms_days: terms })
+    .select("id, code, name, payment_terms_days")
+    .single();
+  if (error) return { ok: false, error: errorMessage(error) };
+  revalidatePath("/suppliers");
+  return { ok: true, data };
+}
+
 export async function cancelReceipt(storeCode: string, id: string, reason: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.rpc("cancel_purchase_receipt", { p_receipt_id: id, p_reason: reason });

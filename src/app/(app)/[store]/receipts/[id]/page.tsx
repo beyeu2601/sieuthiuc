@@ -99,6 +99,7 @@ export default async function ReceiptPage({
           suppliers={suppliers ?? []}
           accounts={(accounts ?? []) as { id: string; name: string; kind: string }[]}
           canCreateProduct={["sadmin", "admin"].includes(ctx.profile.role)}
+          canCreateSupplier={["sadmin", "admin", "accountant"].includes(ctx.profile.role)}
           canConfirm={canConfirm}
           autoOpenConfirm={confirm === "1"}
           initial={{

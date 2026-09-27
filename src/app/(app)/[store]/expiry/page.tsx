@@ -26,9 +26,10 @@ export default async function ExpiryPage({
   const isStaff = ctx.profile.role === "staff";
   const supabase = await createClient();
   const status = tab === "expired" ? "expired" : "near";
-  const [{ data }, nearDays] = await Promise.all([
+  const [{ data }, shortDays, longDays] = await Promise.all([
     supabase.rpc("lot_expiry", { p_store_id: store.id, p_status: status }),
-    getNumberSetting("inventory.near_expiry_days", 30, store.id),
+    getNumberSetting("expiry.short_date_days", 15, store.id),
+    getNumberSetting("expiry.long_date_days", 60, store.id),
   ]);
   const rows = (data ?? []) as LotRow[];
   const value = rows.reduce((s, r) => s + Number(r.qty_on_hand) * (r.unit_cost ?? 0), 0);
@@ -37,7 +38,7 @@ export default async function ExpiryPage({
     <div>
       <PageHeader
         title="Hạn sử dụng"
-        description={`Lô còn hàng gần hết hạn (trong ${nearDays} ngày) hoặc đã hết hạn. Hàng hết hạn bị chặn khi bán.`}
+        description={`Lô cận date: date ngắn còn ${shortDays} ngày, date dài còn ${longDays} ngày. Gợi ý giá giảm = giá vốn lô + phụ thu. Hàng hết hạn bị chặn khi bán.`}
       />
       <InventoryTabs storeCode={store.code} />
       <div className="my-3 flex gap-1" role="tablist">
@@ -73,11 +74,13 @@ export default async function ExpiryPage({
               <TableHeader>
                 <TableRow>
                   <TableHead className="min-w-56">Sản phẩm</TableHead>
+                  <TableHead>Loại date</TableHead>
                   <TableHead>Lô</TableHead>
                   <TableHead>Hạn sử dụng</TableHead>
                   <TableHead className="text-right">Còn (ngày)</TableHead>
                   <TableHead className="text-right">Số lượng</TableHead>
                   {!isStaff && <TableHead className="text-right">Giá vốn lô</TableHead>}
+                  {!isStaff && <TableHead className="text-right">Giá bán đề xuất</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -87,6 +90,7 @@ export default async function ExpiryPage({
                       {r.name}
                       <div className="text-xs text-muted-foreground">{r.sku}</div>
                     </TableCell>
+                    <TableCell>{r.date_type === "short" ? "Date ngắn" : "Date dài"}</TableCell>
                     <TableCell>{r.lot_no}</TableCell>
                     <TableCell>{r.expiry_date ? new Date(r.expiry_date).toLocaleDateString("vi-VN") : "-"}</TableCell>
                     <TableCell className="text-right">
@@ -98,6 +102,15 @@ export default async function ExpiryPage({
                       {formatNumber(r.qty_on_hand)} {r.unit}
                     </TableCell>
                     {!isStaff && <TableCell className="text-right tabular-nums">{formatMoney(r.unit_cost)}</TableCell>}
+                    {!isStaff && (
+                      <TableCell className="text-right tabular-nums">
+                        {r.suggested_price != null ? (
+                          <span className="font-medium text-primary">{formatMoney(r.suggested_price)}</span>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>

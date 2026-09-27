@@ -10,7 +10,7 @@ export default async function NewProductPage() {
   await requireRole("sadmin", "admin");
   const supabase = await createClient();
   const [{ data: categories }, { data: brands }, roundingUnit] = await Promise.all([
-    supabase.from("categories").select("id, name, benefit_pct").eq("is_active", true).order("name"),
+    supabase.from("categories").select("id, name, benefit_pct, description").eq("is_active", true).order("name"),
     supabase.from("brands").select("id, name").order("name"),
     getNumberSetting("pricing.rounding_unit", 1000),
   ]);
@@ -35,6 +35,7 @@ export default async function NewProductPage() {
             pricing_method: "manual",
             sell_price: 0,
             benefit_pct: null,
+            date_type: "long",
             expiry_level: "lot",
             expiry_date: null,
             min_stock: null,

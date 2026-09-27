@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PlusIcon, TrashIcon } from "lucide-react";
-import { cancelReceipt, confirmReceipt, quickCreateProduct, saveReceipt, type ReceiptPayload } from "./actions";
+import { cancelReceipt, confirmReceipt, quickCreateProduct, quickCreateSupplier, saveReceipt, type ReceiptPayload } from "./actions";
 import type { CatalogItem } from "../catalog-actions";
 import { formatMoney } from "@/lib/format";
 import { GOODS_TYPE_LABEL } from "@/lib/text";
@@ -42,9 +42,10 @@ export function ReceiptEditor({
   storeId,
   storeCode,
   receiptId,
-  suppliers,
+  suppliers: initialSuppliers,
   accounts,
   canCreateProduct,
+  canCreateSupplier,
   initial,
   canConfirm,
   autoOpenConfirm = false,
@@ -55,6 +56,7 @@ export function ReceiptEditor({
   suppliers: Supplier[];
   accounts: Account[];
   canCreateProduct: boolean;
+  canCreateSupplier: boolean;
   initial: {
     supplier_id: string;
     receipt_date: string;
@@ -68,6 +70,8 @@ export function ReceiptEditor({
   autoOpenConfirm?: boolean;
 }) {
   const router = useRouter();
+  const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
+  const [supplierOpen, setSupplierOpen] = useState(false);
   const [h, setH] = useState({
     supplier_id: initial.supplier_id,
     receipt_date: initial.receipt_date,
@@ -181,14 +185,21 @@ export function ReceiptEditor({
       <section className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1.5 sm:col-span-2">
           <Label htmlFor="supplier">Nhà cung cấp *</Label>
-          <NativeSelect id="supplier" value={h.supplier_id} onChange={(e) => setH({ ...h, supplier_id: e.target.value })}>
-            <option value="">Chọn nhà cung cấp</option>
-            {suppliers.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name} ({s.code})
-              </option>
-            ))}
-          </NativeSelect>
+          <div className="flex gap-2">
+            <NativeSelect id="supplier" value={h.supplier_id} onChange={(e) => setH({ ...h, supplier_id: e.target.value })}>
+              <option value="">Chọn nhà cung cấp</option>
+              {suppliers.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} ({s.code})
+                </option>
+              ))}
+            </NativeSelect>
+            {canCreateSupplier && (
+              <Button type="button" variant="outline" className="shrink-0" onClick={() => setSupplierOpen(true)}>
+                <PlusIcon /> Thêm NCC
+              </Button>
+            )}
+          </div>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="rdate">Ngày nhập *</Label>
@@ -362,6 +373,15 @@ export function ReceiptEditor({
         />
       )}
 
+      <QuickSupplierDialog
+        open={supplierOpen}
+        onOpenChange={setSupplierOpen}
+        onCreated={(s) => {
+          setSuppliers((ls) => [...ls, s].sort((a, b) => a.name.localeCompare(b.name, "vi")));
+          setH((prev) => ({ ...prev, supplier_id: s.id }));
+        }}
+      />
+
       <QuickProductDialog
         open={addOpen}
         onOpenChange={setAddOpen}
@@ -386,6 +406,84 @@ export function ReceiptEditor({
         }
       />
     </div>
+  );
+}
+
+function QuickSupplierDialog({
+  open,
+  onOpenChange,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  onCreated: (s: Supplier) => void;
+}) {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [terms, setTerms] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    start(async () => {
+      const res = await quickCreateSupplier({ name, phone, payment_terms_days: terms });
+      if (!res.ok) return setError(res.error);
+      onCreated(res.data!);
+      toast.success(`Đã thêm nhà cung cấp ${res.data!.code}`);
+      setName("");
+      setPhone("");
+      setTerms(0);
+      onOpenChange(false);
+    });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <form onSubmit={submit} className="space-y-3">
+          <DialogHeader>
+            <DialogTitle>Thêm nhà cung cấp</DialogTitle>
+            <DialogDescription>Tạo nhanh nhà cung cấp chưa có trong danh sách. Mã NCC tự sinh. Sửa thêm thông tin ở màn Nhà cung cấp.</DialogDescription>
+          </DialogHeader>
+          {error && (
+            <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </p>
+          )}
+          <div className="space-y-1.5">
+            <Label htmlFor="qs-name">Tên nhà cung cấp *</Label>
+            <Input id="qs-name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="qs-phone">Điện thoại</Label>
+              <Input id="qs-phone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="qs-terms">Số ngày được nợ</Label>
+              <Input
+                id="qs-terms"
+                type="number"
+                min={0}
+                max={365}
+                value={terms}
+                onChange={(e) => setTerms(Math.max(0, Number(e.target.value) || 0))}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              Hủy
+            </Button>
+            <Button type="submit" disabled={pending || !name.trim()}>
+              {pending ? "Đang tạo..." : "Tạo và chọn"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 

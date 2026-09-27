@@ -8,7 +8,7 @@ export default async function CatalogSettingsPage() {
   await requireRole("sadmin", "admin");
   const supabase = await createClient();
   const [{ data: categories }, { data: brands }] = await Promise.all([
-    supabase.from("categories").select("id, name, is_active").order("name"),
+    supabase.from("categories").select("id, name, is_active, description").order("name"),
     supabase.from("brands").select("id, name").order("name"),
   ]);
   return (

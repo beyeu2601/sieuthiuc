@@ -2,7 +2,7 @@
 begin;
 -- @include setup.sql
 
-select plan(31);
+select plan(32);
 
 -- Nhom hang co % benefit
 insert into categories (id, name, benefit_pct) values ('00000000-0000-0000-0000-0000000000d1', 'Sữa', 25);
@@ -56,6 +56,8 @@ select tests.login(tests.uid('staff'));
 select is((select count(*) from products), 0::bigint, 'nhan vien khong doc truc tiep bang products (co gia von)');
 select is((select name from catalog_search(tests.store('A'), 'sua bot ensure')), 'Sữa Bột Ensure Úc 850g',
   'tim khong dau ra dung san pham');
+select is((select name from catalog_search(tests.store('A'), 'ensure sua 850g')), 'Sữa Bột Ensure Úc 850g',
+  'tim linh hoat: cac tu khong lien tiep, khong dung thu tu van ra dung');
 select is((select pack_qty from catalog_search(tests.store('A'), '19300617000120')), 6::numeric,
   'quet ma loc tra ve so luong quy doi 6');
 select throws_ok($$ select * from catalog_search(tests.store('B'), 'sua') $$, 'P0001', null,
