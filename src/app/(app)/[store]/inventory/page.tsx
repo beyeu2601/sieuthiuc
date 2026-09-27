@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { NativeSelect } from "@/components/native-select";
+import { AutoSubmitForm } from "@/components/auto-submit-form";
 import { Pagination } from "@/components/pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -77,8 +78,8 @@ export default async function InventoryPage({ params, searchParams }: { params: 
         }
       />
       <InventoryTabs storeCode={store.code} />
-      <form className="my-3 grid gap-2 sm:grid-cols-[1fr_150px_130px_180px_auto]" role="search">
-        <Input name="q" defaultValue={sp.q} placeholder="Tìm tên, SKU hoặc quét mã" aria-label="Tìm sản phẩm" />
+      <AutoSubmitForm action={`/${store.code}/inventory`} debounceMs={400} className="my-3 grid gap-2 sm:grid-cols-[1fr_150px_130px_180px_auto]" role="search">
+        <Input type="search" enterKeyHint="search" name="q" defaultValue={sp.q} placeholder="Tìm tên, SKU hoặc quét mã" aria-label="Tìm sản phẩm" />
         <NativeSelect name="status" defaultValue={sp.status ?? ""} aria-label="Trạng thái tồn">
           <option value="">Mọi trạng thái</option>
           <option value="out">Hết hàng</option>
@@ -101,7 +102,7 @@ export default async function InventoryPage({ params, searchParams }: { params: 
         <Button type="submit" variant="secondary">
           Lọc
         </Button>
-      </form>
+      </AutoSubmitForm>
 
       {error ? (
         <p role="alert" className="text-sm text-destructive">
