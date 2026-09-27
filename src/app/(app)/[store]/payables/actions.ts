@@ -13,6 +13,7 @@ export type PaymentPayload = {
   reference: string | null;
   note: string | null;
   record_in_shift: boolean;
+  account_id: string | null;
   allocations: { debt_id: string; amount: number }[];
 };
 

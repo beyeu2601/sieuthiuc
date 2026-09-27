@@ -40,6 +40,7 @@ export default async function ShiftPage({ params }: { params: Promise<{ store: s
     <div className="space-y-4">
       <PageHeader
         title={`Ca ${s.code}`}
+        back={{ href: `/${store.code}/shifts`, label: "Danh sách ca" }}
         description={
           <span className="flex flex-wrap items-center gap-2">
             <Badge variant={st.variant}>{st.label}</Badge>

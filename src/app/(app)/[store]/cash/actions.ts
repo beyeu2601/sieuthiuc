@@ -17,6 +17,7 @@ export type CashPayload = {
   note: string | null;
   payment_status: "paid" | "unpaid";
   record_in_shift: boolean;
+  account_id: string | null;
 };
 
 export async function createCash(storeCode: string, p: CashPayload): Promise<ActionResult<{ code: string; approval_status: string }>> {

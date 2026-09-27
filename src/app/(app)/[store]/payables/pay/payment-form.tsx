@@ -37,16 +37,20 @@ export function PaymentForm({
   storeId,
   storeCode,
   debts,
+  accounts,
   initialSupplier,
   today,
 }: {
   storeId: string;
   storeCode: string;
   debts: OpenDebt[];
+  accounts: { id: string; name: string; kind: string }[];
   initialSupplier: string;
   today: string;
 }) {
   const router = useRouter();
+  const kindForMethod: Record<"cash" | "transfer" | "other", string> = { cash: "cash", transfer: "bank", other: "ewallet" };
+  const pickAccount = (m: "cash" | "transfer" | "other") => accounts.find((a) => a.kind === kindForMethod[m])?.id ?? accounts[0]?.id ?? "";
   const suppliers = useMemo(() => {
     const m = new Map<string, { name: string; remaining: number }>();
     for (const d of debts) {
@@ -62,6 +66,7 @@ export function PaymentForm({
   const [amount, setAmount] = useState<number | null>(null);
   const [alloc, setAlloc] = useState<Record<string, number>>({});
   const [method, setMethod] = useState<"cash" | "transfer" | "other">("transfer");
+  const [account, setAccount] = useState<string>(pickAccount("transfer"));
   const [date, setDate] = useState(today);
   const [reference, setReference] = useState("");
   const [note, setNote] = useState("");
@@ -80,6 +85,7 @@ export function PaymentForm({
     if (!amount || amount <= 0) return void toast.error("Nhập số tiền");
     if (amount > owed) return void toast.error(`Số tiền vượt tổng còn nợ ${formatMoney(owed)}`);
     if (allocSum !== amount) return void toast.error("Tổng phân bổ phải bằng số tiền thanh toán");
+    if (accounts.length > 0 && !account) return void toast.error("Chọn tài khoản giữ tiền");
     start(async () => {
       const res = await recordPayment(storeCode, {
         store_id: storeId,
@@ -90,6 +96,7 @@ export function PaymentForm({
         reference: reference || null,
         note: note || null,
         record_in_shift: inShift && method === "cash",
+        account_id: account || null,
         allocations: Object.entries(alloc)
           .filter(([, a]) => a > 0)
           .map(([debt_id, a]) => ({ debt_id, amount: a })),
@@ -139,7 +146,15 @@ export function PaymentForm({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="pm">Phương thức</Label>
-              <NativeSelect id="pm" value={method} onChange={(e) => setMethod(e.target.value as typeof method)}>
+              <NativeSelect
+                id="pm"
+                value={method}
+                onChange={(e) => {
+                  const m = e.target.value as typeof method;
+                  setMethod(m);
+                  setAccount((a) => a || pickAccount(m));
+                }}
+              >
                 <option value="transfer">Chuyển khoản</option>
                 <option value="cash">Tiền mặt</option>
                 <option value="other">Khác</option>
@@ -151,6 +166,19 @@ export function PaymentForm({
                 </label>
               )}
             </div>
+            {accounts.length > 0 && (
+              <div className="space-y-1.5">
+                <Label htmlFor="pacc">Tài khoản giữ tiền *</Label>
+                <NativeSelect id="pacc" value={account} onChange={(e) => setAccount(e.target.value)}>
+                  <option value="">Chọn tài khoản</option>
+                  {accounts.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="ref">Số tham chiếu / mã giao dịch</Label>
               <Input id="ref" value={reference} onChange={(e) => setReference(e.target.value)} />

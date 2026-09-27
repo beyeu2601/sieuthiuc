@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
-import { ChevronsUpDownIcon, LayoutGridIcon, LogOutIcon, StoreIcon, UserRoundIcon } from "lucide-react";
+import { ChevronsUpDownIcon, LayoutGridIcon, LogOutIcon, PanelLeftCloseIcon, PanelLeftOpenIcon, StoreIcon, UserRoundIcon } from "lucide-react";
 import { logout } from "@/app/login/actions";
 import { ROLE_LABEL, type AppRole, type StoreLite } from "@/lib/roles";
 import { MOBILE_TABS, NAV_GROUPS, type NavItem } from "@/lib/nav";
@@ -34,6 +34,22 @@ export function AppShell({ fullName, role, stores, defaultStoreCode, children }:
   const pathname = usePathname();
   const router = useRouter();
   const [moreOpen, setMoreOpen] = useState(false);
+  // An thanh ben tren may tinh, nho lua chon qua localStorage
+  const [sidebarHidden, setSidebarHidden] = useState(false);
+  useEffect(() => {
+    try {
+      setSidebarHidden(localStorage.getItem("sidebarHidden") === "1");
+    } catch {}
+  }, []);
+  function toggleSidebar() {
+    setSidebarHidden((v) => {
+      const next = !v;
+      try {
+        localStorage.setItem("sidebarHidden", next ? "1" : "0");
+      } catch {}
+      return next;
+    });
+  }
   const currentCode = params.store ?? defaultStoreCode;
   const current = stores.find((s) => s.code === currentCode) ?? stores[0];
   const home = `/${current?.code ?? ""}`;
@@ -138,13 +154,27 @@ export function AppShell({ fullName, role, stores, defaultStoreCode, children }:
   );
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[252px_minmax(0,1fr)]">
+    <div className={cn("min-h-dvh", sidebarHidden ? "lg:block" : "lg:grid lg:grid-cols-[252px_minmax(0,1fr)]")}>
       {/* May tinh: thanh ben */}
-      <aside className="sticky top-0 hidden h-dvh flex-col border-r bg-sidebar lg:flex" aria-label="Điều hướng chính">
-        <Link href="/" className="flex items-center gap-2.5 px-5 pt-5 pb-4" aria-label="Siêu Thị Úc - trang chủ">
-          <BrandMark size={44} />
-          <span className="font-heading text-[26px] leading-none font-bold tracking-wide text-brand uppercase">Siêu Thị Úc</span>
-        </Link>
+      <aside
+        className={cn("sticky top-0 h-dvh flex-col border-r bg-sidebar lg:flex", sidebarHidden ? "hidden lg:!hidden" : "hidden")}
+        aria-label="Điều hướng chính"
+      >
+        <div className="flex items-center justify-between gap-2 px-5 pt-5 pb-4">
+          <Link href="/" className="flex min-w-0 items-center gap-2.5" aria-label="Siêu Thị Úc - trang chủ">
+            <BrandMark size={44} />
+            <span className="font-heading text-[26px] leading-none font-bold tracking-wide text-brand uppercase">Siêu Thị Úc</span>
+          </Link>
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+            aria-label="Ẩn thanh bên"
+            title="Ẩn thanh bên"
+          >
+            <PanelLeftCloseIcon className="size-5" aria-hidden />
+          </button>
+        </div>
         <div className="px-4 pb-4">{storePicker}</div>
         <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-4">{navList()}</nav>
         <div className="border-t p-3">
@@ -165,6 +195,18 @@ export function AppShell({ fullName, role, stores, defaultStoreCode, children }:
       </aside>
 
       <div className="min-w-0">
+        {/* May tinh: nut hien lai thanh ben khi dang an */}
+        {sidebarHidden && (
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            className="fixed top-3 left-3 z-50 hidden size-10 items-center justify-center rounded-lg border bg-card text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground lg:flex"
+            aria-label="Hiện thanh bên"
+            title="Hiện thanh bên"
+          >
+            <PanelLeftOpenIcon className="size-5" aria-hidden />
+          </button>
+        )}
         {/* Dien thoai: thanh tren */}
         <header className="sticky top-0 z-40 flex h-14 items-center gap-2 border-b bg-card/95 px-4 backdrop-blur lg:hidden">
           <Link href="/" className="flex min-w-0 items-center gap-2" aria-label="Siêu Thị Úc - trang chủ">

@@ -43,14 +43,13 @@ export async function saveSettings(storeId: string | null, values: Record<string
 
 export async function saveCategory(
   id: string | null,
-  input: { name: string; benefit_pct: number | null; is_active: boolean }
+  input: { name: string; is_active: boolean }
 ): Promise<ActionResult> {
   const name = input.name.trim();
   if (!name) return { ok: false, error: "Nhập tên nhóm hàng" };
-  if (input.benefit_pct != null && (input.benefit_pct < 0 || input.benefit_pct > 1000))
-    return { ok: false, error: "% Benefit từ 0 đến 1000" };
   const supabase = await createClient();
-  const row = { name, benefit_pct: input.benefit_pct, is_active: input.is_active };
+  // Bo cau hinh % Benefit theo nhom: chi luu ten va trang thai. San pham dat gia theo % Benefit dung % rieng.
+  const row = { name, is_active: input.is_active };
   const { error } = id
     ? await supabase.from("categories").update(row).eq("id", id)
     : await supabase.from("categories").insert(row);
@@ -68,6 +67,26 @@ export async function saveBrand(id: string | null, name: string): Promise<Action
     : await supabase.from("brands").insert({ name: n });
   if (error) return { ok: false, error: errorMessage(error) };
   revalidatePath("/settings/catalog");
+  return { ok: true };
+}
+
+/* ---------------- Tai khoan giu tien ---------------- */
+
+export type MoneyAccountInput = {
+  id: string | null;
+  name: string;
+  kind: "cash" | "bank" | "ewallet" | "other";
+  opening_balance: number;
+  is_active: boolean;
+  note: string | null;
+};
+
+export async function saveMoneyAccount(input: MoneyAccountInput): Promise<ActionResult> {
+  if (!input.name.trim()) return { ok: false, error: "Nhập tên tài khoản" };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("manage_money_account", { p: input });
+  if (error) return { ok: false, error: errorMessage(error) };
+  revalidatePath("/settings/accounts");
   return { ok: true };
 }
 

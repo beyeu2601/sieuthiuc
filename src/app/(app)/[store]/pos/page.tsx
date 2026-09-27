@@ -11,7 +11,7 @@ export default async function PosPage({ params }: { params: Promise<{ store: str
   const { store: code } = await params;
   const { ctx, store } = await requireStore(code, "sadmin", "admin", "staff");
   const supabase = await createClient();
-  const [{ data: shift }, maxPct] = await Promise.all([
+  const [{ data: shift }, maxPct, { data: accounts }] = await Promise.all([
     supabase
       .from("shifts")
       .select("id, code")
@@ -20,6 +20,7 @@ export default async function PosPage({ params }: { params: Promise<{ store: str
       .eq("status", "open")
       .maybeSingle(),
     getNumberSetting("pos.max_manual_discount_pct", 10, store.id),
+    supabase.from("money_accounts").select("id, name, kind").eq("is_active", true).order("sort_order").order("name"),
   ]);
 
   if (!shift) {
@@ -38,6 +39,7 @@ export default async function PosPage({ params }: { params: Promise<{ store: str
       shiftId={shift.id}
       shiftCode={shift.code}
       maxDiscountPct={ctx.profile.role === "staff" ? maxPct : null}
+      accounts={(accounts ?? []) as { id: string; name: string; kind: string }[]}
     />
   );
 }

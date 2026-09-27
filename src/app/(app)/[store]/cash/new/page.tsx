@@ -10,9 +10,10 @@ export default async function NewCashPage({ params }: { params: Promise<{ store:
   const { store: code } = await params;
   const { ctx, store } = await requireStore(code);
   const supabase = await createClient();
-  const [{ data: cats }, { data: shift }] = await Promise.all([
+  const [{ data: cats }, { data: shift }, { data: accounts }] = await Promise.all([
     supabase.from("expense_categories").select("id, name, kind").eq("is_active", true).order("name"),
     supabase.from("shifts").select("id, code").eq("store_id", store.id).eq("user_id", ctx.profile.id).eq("status", "open").maybeSingle(),
+    supabase.from("money_accounts").select("id, name, kind").eq("is_active", true).order("sort_order").order("name"),
   ]);
   const isStaff = ctx.profile.role === "staff";
 
@@ -20,6 +21,7 @@ export default async function NewCashPage({ params }: { params: Promise<{ store:
     <div className="max-w-2xl">
       <PageHeader
         title="Ghi thu chi"
+        back={{ href: `/${store.code}/cash`, label: "Danh sách thu chi" }}
         description={isStaff ? "Nhân viên ghi được khoản chi tiền mặt lấy từ két trong ca đang mở." : "Khoản thu chi ngoài bán hàng và nhập hàng."}
       />
       {isStaff && !shift ? (
@@ -29,6 +31,7 @@ export default async function NewCashPage({ params }: { params: Promise<{ store:
           storeId={store.id}
           storeCode={store.code}
           categories={(cats ?? []) as { id: string; name: string; kind: "income" | "expense" }[]}
+          accounts={(accounts ?? []) as { id: string; name: string; kind: string }[]}
           isStaff={isStaff}
           openShiftCode={shift?.code ?? null}
           today={todayVN()}

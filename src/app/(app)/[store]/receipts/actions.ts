@@ -12,7 +12,7 @@ export type ReceiptPayload = {
   invoice_no: string | null;
   due_date: string | null;
   note: string | null;
-  items: { product_id: string; qty: number; unit_cost: number; lot_no: string | null; expiry_date: string | null }[];
+  items: { product_id: string; qty: number; unit_cost: number; lot_no: string | null; expiry_date: string | null; sell_price: number | null }[];
   costs: { cost_type: string; amount: number; allocation: "by_value" | "by_qty"; note: string | null }[];
 };
 
@@ -31,7 +31,8 @@ export async function confirmReceipt(
   paid: number,
   method: "cash" | "transfer" | "other" | null,
   dueDate: string | null,
-  recordInShift = false
+  recordInShift = false,
+  accountId: string | null = null
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.rpc("confirm_purchase_receipt", {
@@ -40,12 +41,53 @@ export async function confirmReceipt(
     p_payment_method: paid > 0 ? method : null,
     p_due_date: dueDate,
     p_record_in_shift: recordInShift && method === "cash" && paid > 0,
+    p_account_id: paid > 0 ? accountId : null,
   });
   if (error) return { ok: false, error: errorMessage(error) };
   revalidatePath(`/${storeCode}/receipts`);
   revalidatePath(`/${storeCode}/receipts/${id}`);
   revalidatePath(`/${storeCode}/inventory`);
   return { ok: true };
+}
+
+// Tao nhanh san pham ngay tren phieu nhap (chi sadmin/admin theo RLS)
+export async function quickCreateProduct(input: {
+  name: string;
+  goods_type: "cont" | "air";
+  unit: string;
+  sell_price: number;
+}): Promise<ActionResult<{ product_id: string; sku: string; name: string; unit: string; goods_type: "cont" | "air"; expiry_level: "none" | "product" | "lot" }>> {
+  const name = input.name.trim();
+  const unit = input.unit.trim();
+  if (!name) return { ok: false, error: "Nhập tên sản phẩm" };
+  if (!unit) return { ok: false, error: "Nhập đơn vị tính" };
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .insert({
+      name,
+      unit,
+      goods_type: input.goods_type,
+      sell_price: Math.max(0, Math.round(input.sell_price || 0)),
+      pricing_method: "manual",
+      expiry_level: "none",
+      status: "active",
+    })
+    .select("id, sku, name, unit, goods_type, expiry_level")
+    .single();
+  if (error) return { ok: false, error: errorMessage(error) };
+  revalidatePath("/products");
+  return {
+    ok: true,
+    data: {
+      product_id: data.id,
+      sku: data.sku,
+      name: data.name,
+      unit: data.unit,
+      goods_type: data.goods_type as "cont" | "air",
+      expiry_level: data.expiry_level as "none" | "product" | "lot",
+    },
+  };
 }
 
 export async function cancelReceipt(storeCode: string, id: string, reason: string): Promise<ActionResult> {

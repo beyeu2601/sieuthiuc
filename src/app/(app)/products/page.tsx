@@ -112,7 +112,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         }
       />
 
-      <AutoSubmitForm action="/products" className="mb-3 grid grid-cols-2 gap-2 lg:grid-cols-[1fr_120px_130px_170px_160px_auto]" role="search">
+      <AutoSubmitForm action="/products" debounceMs={400} className="mb-3 grid grid-cols-2 gap-2 lg:grid-cols-[1fr_120px_130px_170px_160px_auto]" role="search">
         <div className="col-span-2 flex gap-2 lg:col-span-1">
           <Input
             type="search"

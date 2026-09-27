@@ -7,29 +7,21 @@ import { saveBrand, saveCategory } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-type Category = { id: string; name: string; benefit_pct: number | null; is_active: boolean };
+type Category = { id: string; name: string; is_active: boolean };
 
 function CategoryRow({ row, onSaved }: { row: Category | null; onSaved: () => void }) {
   const [name, setName] = useState(row?.name ?? "");
-  const [pct, setPct] = useState(row?.benefit_pct == null ? "" : String(row.benefit_pct));
   const [active, setActive] = useState(row?.is_active ?? true);
   const [pending, start] = useTransition();
-  const dirty = !row || name !== row.name || pct !== (row.benefit_pct == null ? "" : String(row.benefit_pct)) || active !== row.is_active;
+  const dirty = !row || name !== row.name || active !== row.is_active;
 
   function save(e: React.FormEvent) {
     e.preventDefault();
     start(async () => {
-      const res = await saveCategory(row?.id ?? null, {
-        name,
-        benefit_pct: pct === "" ? null : Number(pct),
-        is_active: active,
-      });
+      const res = await saveCategory(row?.id ?? null, { name, is_active: active });
       if (!res.ok) return void toast.error(res.error);
       toast.success(row ? "Đã lưu nhóm hàng" : "Đã thêm nhóm hàng");
-      if (!row) {
-        setName("");
-        setPct("");
-      }
+      if (!row) setName("");
       onSaved();
     });
   }
@@ -42,18 +34,6 @@ function CategoryRow({ row, onSaved }: { row: Category | null; onSaved: () => vo
         value={name}
         onChange={(e) => setName(e.target.value)}
         className="min-w-40 flex-1"
-      />
-      <Input
-        aria-label="% Benefit"
-        type="number"
-        inputMode="decimal"
-        min={0}
-        max={1000}
-        step="0.01"
-        placeholder="% Benefit"
-        value={pct}
-        onChange={(e) => setPct(e.target.value)}
-        className="w-28"
       />
       {row && (
         <label className="flex items-center gap-1.5 text-sm">
@@ -74,7 +54,7 @@ export function CategoryEditor({ rows }: { rows: Category[] }) {
     <div className="divide-y">
       <CategoryRow row={null} onSaved={() => router.refresh()} />
       {rows.map((r) => (
-        <CategoryRow key={`${r.id}-${r.name}-${r.benefit_pct}-${r.is_active}`} row={r} onSaved={() => router.refresh()} />
+        <CategoryRow key={`${r.id}-${r.name}-${r.is_active}`} row={r} onSaved={() => router.refresh()} />
       ))}
     </div>
   );

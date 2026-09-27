@@ -93,6 +93,7 @@ Cơ chế:
 | `20260928000001` | Ca, bán hàng (`_post_sale`, `complete_sale`, `cancel_sale`), PIN duyệt giảm giá |
 | `20260929000001` | Đơn online giữ hàng, công nợ, thu chi, đối soát, báo cáo lãi lỗ, giá vốn, bán chạy |
 | `20260930000001` | Ảnh sản phẩm: `product_images`, `add_product_image`, `set_product_thumbnail`, `delete_product_image` |
+| `20261001000001` | Tài khoản giữ tiền: `money_accounts`, `manage_money_account`, `money_account_balances`, cột `account_id` cho thu chi/thanh toán bán và NCC; giá bán trên dòng phiếu nhập (`purchase_receipt_items.sell_price`) cập nhật giá bán khi xác nhận |
 
 Các RPC chính theo nghiệp vụ:
 
@@ -142,6 +143,11 @@ Khác biệt kỹ thuật so với SPEC:
 - Công nợ, thu chi, đối soát, báo cáo đặt dưới đường dẫn cửa hàng `/[store]/...`; báo cáo có tùy chọn "Tất cả cửa hàng" khi người dùng có nhiều cửa hàng.
 - Duyệt khoản chi (P1) làm sớm ở dạng đơn giản: chỉ khoản chi tiền mặt của nhân viên vượt ngưỡng `expense.auto_approve_below` mới chờ duyệt.
 - Giỏ hàng POS lưu localStorage thay cho Dexie.
+- Thanh toán POS bắt buộc chọn phương thức (bỏ mặc định tiền mặt toàn bộ khi để trống).
+- Tài khoản giữ tiền (két, ngân hàng, ví) do sadmin quản lý ở Cài đặt > Tài khoản tiền. Thu chi, thu bán hàng (từng phương thức) và trả NCC đều chọn tài khoản để theo dõi số dư; `account_id` là tùy chọn ở RPC (validate khi có), bắt buộc chọn ở giao diện.
+- Phiếu nhập có cột giá bán mỗi dòng và nút "Thêm sản phẩm" tạo nhanh (sadmin/admin); xác nhận nhập kho cập nhật giá bán sản phẩm (ghi lịch sử giá) khi dòng có nhập giá bán khác giá cũ.
+- Nhóm hàng bỏ cấu hình % Benefit ở giao diện; sản phẩm đặt giá theo % Benefit dùng % riêng. Hạng thành viên tạm ẩn khỏi Cài đặt (trang `/settings/loyalty` vẫn còn).
+- Thanh bên trên máy tính có thể ẩn/hiện, lưu lựa chọn trong localStorage.
 
 ## 8. Phạm vi P0 đã làm
 

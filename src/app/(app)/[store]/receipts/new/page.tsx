@@ -21,11 +21,10 @@ export default async function NewReceiptPage({
   const { products } = await searchParams;
   const { ctx, store } = await requireStore(code, "sadmin", "admin", "staff");
   const supabase = await createClient();
-  const { data: suppliers } = await supabase
-    .from("suppliers")
-    .select("id, code, name, payment_terms_days")
-    .eq("is_active", true)
-    .order("name");
+  const [{ data: suppliers }, { data: accounts }] = await Promise.all([
+    supabase.from("suppliers").select("id, code, name, payment_terms_days").eq("is_active", true).order("name"),
+    supabase.from("money_accounts").select("id, name, kind").eq("is_active", true).order("sort_order").order("name"),
+  ]);
 
   const wanted = new Map(
     (products ?? "")
@@ -37,13 +36,14 @@ export default async function NewReceiptPage({
   let lines: EditorLine[] = [];
   if (wanted.size) {
     const { data } = await supabase.rpc("catalog_by_ids", { p_ids: [...wanted.keys()] });
-    lines = ((data ?? []) as Omit<EditorLine, "key" | "qty" | "unit_cost" | "lot_no" | "expiry_date">[]).map((p) => ({
+    lines = ((data ?? []) as Omit<EditorLine, "key" | "qty" | "unit_cost" | "lot_no" | "expiry_date" | "sell_price">[]).map((p) => ({
       ...p,
       key: p.product_id,
       qty: wanted.get(p.product_id) ?? 1,
       unit_cost: null,
       lot_no: "",
       expiry_date: "",
+      sell_price: null,
     }));
   }
 
@@ -55,6 +55,8 @@ export default async function NewReceiptPage({
         storeCode={store.code}
         receiptId={null}
         suppliers={suppliers ?? []}
+        accounts={(accounts ?? []) as { id: string; name: string; kind: string }[]}
+        canCreateProduct={["sadmin", "admin"].includes(ctx.profile.role)}
         canConfirm={ctx.profile.role !== "staff" || hasPerm(ctx, "confirm_receipt")}
         initial={{ supplier_id: "", receipt_date: today(), invoice_no: "", due_date: "", note: "", lines, costs: [] }}
       />

@@ -9,6 +9,7 @@ import type { CatalogItem } from "../catalog-actions";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { ProductPicker } from "@/components/product-picker";
 import { MoneyInput } from "@/components/money-input";
+import { NativeSelect } from "@/components/native-select";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,8 @@ type Line = {
   discount: number;
 };
 
+type Account = { id: string; name: string; kind: string };
+
 type Cart = {
   key: string;
   lines: Line[];
@@ -33,6 +36,9 @@ type Cart = {
   transfer: number | null;
   other: number | null;
   given: number | null;
+  cashAcc: string | null;
+  transferAcc: string | null;
+  otherAcc: string | null;
   approvalId: string | null;
   approvedBy: string | null;
 };
@@ -45,9 +51,14 @@ const newCart = (): Cart => ({
   transfer: null,
   other: null,
   given: null,
+  cashAcc: null,
+  transferAcc: null,
+  otherAcc: null,
   approvalId: null,
   approvedBy: null,
 });
+
+const kindForMethod: Record<"cash" | "transfer" | "other", string> = { cash: "cash", transfer: "bank", other: "ewallet" };
 
 export function PosClient({
   storeId,
@@ -55,14 +66,18 @@ export function PosClient({
   shiftId,
   shiftCode,
   maxDiscountPct,
+  accounts,
 }: {
   storeId: string;
   storeCode: string;
   shiftId: string;
   shiftCode: string;
   maxDiscountPct: number | null;
+  accounts: Account[];
 }) {
   const storageKey = `pos-cart-${storeCode}`;
+  const pickAcc = (method: "cash" | "transfer" | "other") =>
+    accounts.find((a) => a.kind === kindForMethod[method])?.id ?? accounts[0]?.id ?? null;
   const [cart, setCart] = useState<Cart>(newCart);
   const [loaded, setLoaded] = useState(false);
   const [pending, start] = useTransition();
@@ -148,10 +163,17 @@ export function PosClient({
     if (cart.lines.length === 0) return void toast.error("Giỏ hàng trống");
     if (cart.lines.some((l) => !(l.qty > 0))) return void toast.error("Có dòng số lượng bằng 0");
     if (needApproval) return setApprovalOpen(true);
-    // mac dinh tra toan bo bang tien mat neu chua nhap
-    const payments = paid === 0 ? { cash: total, transfer: null, other: null } : { cash: cart.cash, transfer: cart.transfer, other: cart.other };
-    const sum = (payments.cash ?? 0) + (payments.transfer ?? 0) + (payments.other ?? 0);
+    // bat buoc chon phuong thuc: khong con mac dinh tien mat toan bo
+    if (paid === 0) return void toast.error("Chọn phương thức thanh toán (tiền mặt, chuyển khoản hoặc khác)");
+    const methods = [
+      { method: "cash" as const, amount: cart.cash, account_id: cart.cashAcc },
+      { method: "transfer" as const, amount: cart.transfer, account_id: cart.transferAcc },
+      { method: "other" as const, amount: cart.other, account_id: cart.otherAcc },
+    ].filter((m) => (m.amount ?? 0) > 0);
+    const sum = methods.reduce((s, m) => s + (m.amount ?? 0), 0);
     if (sum !== total) return void toast.error(`Tiền thanh toán ${formatMoney(sum)} chưa bằng tổng ${formatMoney(total)}`);
+    if (accounts.length > 0 && methods.some((m) => !m.account_id))
+      return void toast.error("Chọn tài khoản giữ tiền cho từng phương thức");
     // mo cua so in truoc (trinh duyet chan popup neu mo sau await)
     const printWin = window.open("", "_blank", "width=420,height=640");
     start(async () => {
@@ -163,15 +185,7 @@ export function PosClient({
         approval_id: cart.approvalId,
         note: null,
         items: cart.lines.map((l) => ({ product_id: l.product_id, qty: l.qty, discount_amount: l.discount })),
-        payments: (
-          [
-            ["cash", payments.cash],
-            ["transfer", payments.transfer],
-            ["other", payments.other],
-          ] as const
-        )
-          .filter(([, a]) => (a ?? 0) > 0)
-          .map(([method, amount]) => ({ method, amount: amount!, reference: null })),
+        payments: methods.map((m) => ({ method: m.method, amount: m.amount!, reference: null, account_id: m.account_id })),
       });
       if (!res.ok) {
         printWin?.close();
@@ -183,7 +197,7 @@ export function PosClient({
       setCart(newCart());
       document.getElementById("pos-search")?.focus();
     });
-  }, [cart, needApproval, paid, total, storeCode, storeId, shiftId]);
+  }, [cart, needApproval, paid, total, storeCode, storeId, shiftId, accounts]);
 
   // Phim tat: F2 tim, F4 thanh toan, F8 giam gia don
   useEffect(() => {
@@ -336,26 +350,51 @@ export function PosClient({
 
         <div className="space-y-3 rounded-xl border bg-card p-4">
           <div className="flex gap-2">
-            <Button type="button" variant="outline" className="flex-1" onClick={() => set({ cash: total, transfer: null, other: null })}>
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => set({ cash: total, transfer: null, other: null, cashAcc: cart.cashAcc ?? pickAcc("cash") })}
+            >
               Tất cả tiền mặt
             </Button>
-            <Button type="button" variant="outline" className="flex-1" onClick={() => set({ cash: null, transfer: total, other: null, given: null })}>
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => set({ cash: null, transfer: total, other: null, given: null, transferAcc: cart.transferAcc ?? pickAcc("transfer") })}
+            >
               Tất cả chuyển khoản
             </Button>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <label className="space-y-1 text-sm">
-              Tiền mặt
-              <MoneyInput value={cart.cash} onChange={(n) => set({ cash: n })} />
-            </label>
-            <label className="space-y-1 text-sm">
-              Chuyển khoản
-              <MoneyInput value={cart.transfer} onChange={(n) => set({ transfer: n })} />
-            </label>
-            <label className="space-y-1 text-sm">
-              Khác
-              <MoneyInput value={cart.other} onChange={(n) => set({ other: n })} />
-            </label>
+            <div className="space-y-1 text-sm">
+              <label className="block">
+                Tiền mặt
+                <MoneyInput value={cart.cash} onChange={(n) => set({ cash: n, cashAcc: n && !cart.cashAcc ? pickAcc("cash") : cart.cashAcc })} />
+              </label>
+              {accounts.length > 0 && (cart.cash ?? 0) > 0 && (
+                <AccountSelect value={cart.cashAcc} accounts={accounts} onChange={(id) => set({ cashAcc: id })} />
+              )}
+            </div>
+            <div className="space-y-1 text-sm">
+              <label className="block">
+                Chuyển khoản
+                <MoneyInput value={cart.transfer} onChange={(n) => set({ transfer: n, transferAcc: n && !cart.transferAcc ? pickAcc("transfer") : cart.transferAcc })} />
+              </label>
+              {accounts.length > 0 && (cart.transfer ?? 0) > 0 && (
+                <AccountSelect value={cart.transferAcc} accounts={accounts} onChange={(id) => set({ transferAcc: id })} />
+              )}
+            </div>
+            <div className="space-y-1 text-sm">
+              <label className="block">
+                Khác
+                <MoneyInput value={cart.other} onChange={(n) => set({ other: n, otherAcc: n && !cart.otherAcc ? pickAcc("other") : cart.otherAcc })} />
+              </label>
+              {accounts.length > 0 && (cart.other ?? 0) > 0 && (
+                <AccountSelect value={cart.otherAcc} accounts={accounts} onChange={(id) => set({ otherAcc: id })} />
+              )}
+            </div>
             <label className="space-y-1 text-sm">
               Khách đưa (tiền mặt)
               <MoneyInput value={cart.given} onChange={(n) => set({ given: n })} />
@@ -363,8 +402,8 @@ export function PosClient({
           </div>
           <dl className="grid grid-cols-2 gap-y-1 text-sm">
             <dt>Đã nhập thanh toán</dt>
-            <dd className={`text-right tabular-nums ${paid !== total && paid !== 0 ? "text-destructive" : ""}`}>
-              {paid === 0 ? "Tiền mặt toàn bộ" : formatMoney(paid)}
+            <dd className={`text-right tabular-nums ${paid !== total ? "text-destructive" : ""}`}>
+              {paid === 0 ? "Chưa chọn phương thức" : formatMoney(paid)}
             </dd>
             {change != null && (
               <>
@@ -392,6 +431,19 @@ export function PosClient({
         }}
       />
     </div>
+  );
+}
+
+function AccountSelect({ value, accounts, onChange }: { value: string | null; accounts: Account[]; onChange: (id: string) => void }) {
+  return (
+    <NativeSelect aria-label="Tài khoản giữ tiền" className="h-9 text-sm" value={value ?? ""} onChange={(e) => onChange(e.target.value)}>
+      <option value="">Chọn tài khoản</option>
+      {accounts.map((a) => (
+        <option key={a.id} value={a.id}>
+          {a.name}
+        </option>
+      ))}
+    </NativeSelect>
   );
 }
 

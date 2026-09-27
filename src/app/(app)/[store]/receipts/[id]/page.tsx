@@ -23,6 +23,7 @@ type Item = {
   landed_unit_cost: number | null;
   lot_no: string | null;
   expiry_date: string | null;
+  sell_price: number | null;
   products: { name: string; sku: string; expiry_level: "none" | "product" | "lot" } | null;
 };
 
@@ -51,7 +52,7 @@ export default async function ReceiptPage({
   const [{ data: items }, { data: costs }] = await Promise.all([
     supabase
       .from("purchase_receipt_items")
-      .select("id, line_no, product_id, goods_type, qty, unit, unit_cost, line_total, allocated_cost, landed_unit_cost, lot_no, expiry_date")
+      .select("id, line_no, product_id, goods_type, qty, unit, unit_cost, line_total, allocated_cost, landed_unit_cost, lot_no, expiry_date, sell_price")
       .eq("receipt_id", id)
       .order("line_no"),
     supabase.from("purchase_receipt_costs").select("id, cost_type, amount, allocation, note").eq("receipt_id", id),
@@ -66,11 +67,14 @@ export default async function ReceiptPage({
   const canConfirm = ["sadmin", "admin"].includes(ctx.profile.role) || (ctx.profile.role === "staff" && hasPerm(ctx, "confirm_receipt"));
 
   if (r.status === "draft" && canEdit) {
-    const { data: suppliers } = await supabase
-      .from("suppliers")
-      .select("id, code, name, payment_terms_days")
-      .or(`is_active.eq.true,id.eq.${r.supplier_id}`)
-      .order("name");
+    const [{ data: suppliers }, { data: accounts }] = await Promise.all([
+      supabase
+        .from("suppliers")
+        .select("id, code, name, payment_terms_days")
+        .or(`is_active.eq.true,id.eq.${r.supplier_id}`)
+        .order("name"),
+      supabase.from("money_accounts").select("id, name, kind").eq("is_active", true).order("sort_order").order("name"),
+    ]);
     const lines: EditorLine[] = rows.map((i) => ({
       key: i.id,
       product_id: i.product_id,
@@ -83,6 +87,7 @@ export default async function ReceiptPage({
       unit_cost: i.unit_cost,
       lot_no: i.lot_no ?? "",
       expiry_date: i.expiry_date ?? "",
+      sell_price: i.sell_price,
     }));
     return (
       <div>
@@ -92,6 +97,8 @@ export default async function ReceiptPage({
           storeCode={store.code}
           receiptId={r.id}
           suppliers={suppliers ?? []}
+          accounts={(accounts ?? []) as { id: string; name: string; kind: string }[]}
+          canCreateProduct={["sadmin", "admin"].includes(ctx.profile.role)}
           canConfirm={canConfirm}
           autoOpenConfirm={confirm === "1"}
           initial={{

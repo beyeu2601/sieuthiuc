@@ -12,7 +12,7 @@ export type SalePayload = {
   approval_id: string | null;
   note: string | null;
   items: { product_id: string; qty: number; discount_amount: number }[];
-  payments: { method: "cash" | "transfer" | "other"; amount: number; reference: string | null }[];
+  payments: { method: "cash" | "transfer" | "other"; amount: number; reference: string | null; account_id: string | null }[];
 };
 
 export async function completeSale(storeCode: string, p: SalePayload): Promise<ActionResult<{ id: string; code: string; total: number }>> {
