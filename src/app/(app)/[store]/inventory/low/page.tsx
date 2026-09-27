@@ -27,7 +27,7 @@ export default async function LowStockPage({ params }: { params: Promise<{ store
   const { store: code } = await params;
   const { ctx, store } = await requireStore(code);
   const supabase = await createClient();
-  const { data } = await supabase.rpc("inventory_status", { p_store_id: store.id, p_status: "low_out", p_limit: 500 });
+  const { data } = await supabase.rpc("inventory_status", { p_store_id: store.id, p_status: ["low", "out"], p_limit: 500 });
   const rows = (data ?? []) as Row[];
   const withSuggest = rows.filter((r) => Number(r.suggest_qty) > 0);
   const prefill = withSuggest.map((r) => `${r.product_id}:${Math.ceil(Number(r.suggest_qty))}`).join(",");

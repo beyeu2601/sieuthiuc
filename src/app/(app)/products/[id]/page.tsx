@@ -1,16 +1,15 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { getNumberSetting } from "@/lib/settings";
+import { getNumberSetting, getSetting } from "@/lib/settings";
 import { driveConfigured } from "@/lib/google-drive";
 import { formatDateTime, formatMoney, formatNumber } from "@/lib/format";
 import { GOODS_TYPE_LABEL } from "@/lib/text";
 import { PageHeader } from "@/components/page-header";
-import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ProductForm } from "../product-form";
 import { BarcodePanel } from "./barcode-panel";
+import { LabelPreview } from "./label-preview";
 import { ImageGallery } from "./image-gallery";
 
 const FIELD_LABEL: Record<string, string> = {
@@ -43,7 +42,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     .maybeSingle();
   if (!p) notFound();
 
-  const [{ data: categories }, { data: brands }, { data: barcodes }, { data: history }, { data: lots }, roundingUnit, { data: images }] =
+  const [{ data: categories }, { data: brands }, { data: barcodes }, { data: history }, { data: lots }, roundingUnit, labelSize, { data: images }] =
     await Promise.all([
       supabase.from("categories").select("id, name, benefit_pct, description").order("name"),
       supabase.from("brands").select("id, name").order("name"),
@@ -65,6 +64,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         .gt("qty_on_hand", 0)
         .order("expiry_date", { ascending: true, nullsFirst: false }),
       getNumberSetting("pricing.rounding_unit", 1000),
+      getSetting<string>("label.size", "40x30"),
       supabase
         .from("product_images")
         .select("id, drive_file_id, drive_thumb_id, is_thumbnail")
@@ -72,22 +72,22 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         .order("sort_order"),
     ]);
 
+  const bcList = (barcodes ?? []) as { barcode: string; is_primary: boolean }[];
+  const primaryBarcode = bcList.find((b) => b.is_primary)?.barcode ?? bcList[0]?.barcode ?? p.sku;
+  const [labelW, labelH] = String(labelSize).split("x").map(Number);
+
   return (
     <div className="space-y-6">
       <PageHeader
         title={p.name}
         description={`${p.sku} - ${GOODS_TYPE_LABEL[p.goods_type as "cont" | "air"]} - Giá vốn tham chiếu ${formatMoney(p.cost_price_ref)}`}
-        actions={
-          <Button variant="outline" render={<Link href={`/print/labels?ids=${p.id}`} target="_blank" />}>
-            In tem
-          </Button>
-        }
       />
 
       <section className="rounded-xl border bg-card p-4" aria-labelledby="info">
-        <h2 id="info" className="mb-3 font-medium">
+        <h2 id="info" className="mb-1 font-medium">
           Thông tin
         </h2>
+        <p className="mb-3 text-sm text-muted-foreground">Tên, loại hàng, đơn vị, nhóm, cách đặt giá và giá bán của sản phẩm.</p>
         <ProductForm
           id={p.id}
           readOnly={!canEdit}
@@ -116,9 +116,10 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       </section>
 
       <section className="rounded-xl border bg-card p-4" aria-labelledby="images">
-        <h2 id="images" className="mb-3 font-medium">
+        <h2 id="images" className="mb-1 font-medium">
           Ảnh sản phẩm
         </h2>
+        <p className="mb-3 text-sm text-muted-foreground">Tối đa 10 ảnh. Ảnh đầu tiên là ảnh đại diện hiện ở danh sách sản phẩm.</p>
         <ImageGallery productId={p.id} productName={p.name} images={images ?? []} canEdit={canEdit} configured={driveConfigured()} />
       </section>
 
@@ -129,10 +130,27 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         <BarcodePanel productId={p.id} barcodes={barcodes ?? []} canEdit={canEdit} />
       </section>
 
+      <section className="rounded-xl border bg-card p-4" aria-labelledby="label">
+        <h2 id="label" className="mb-3 font-medium">
+          Tem nhãn
+        </h2>
+        <LabelPreview
+          productId={p.id}
+          name={p.name}
+          price={p.sell_price}
+          barcode={primaryBarcode}
+          sku={p.sku}
+          hasBarcode={bcList.length > 0}
+          widthMm={labelW || 40}
+          heightMm={labelH || 30}
+        />
+      </section>
+
       <section className="rounded-xl border bg-card p-4" aria-labelledby="lots">
-        <h2 id="lots" className="mb-3 font-medium">
+        <h2 id="lots" className="mb-1 font-medium">
           Lô đang còn hàng
         </h2>
+        <p className="mb-3 text-sm text-muted-foreground">Các lô còn tồn theo hạn sử dụng và giá vốn từng lô. Bán hàng trừ lô gần hết hạn trước (FEFO).</p>
         {(lots ?? []).length === 0 ? (
           <p className="text-sm text-muted-foreground">Chưa có lô nào còn hàng.</p>
         ) : (
@@ -166,9 +184,10 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       </section>
 
       <section className="rounded-xl border bg-card p-4" aria-labelledby="history">
-        <h2 id="history" className="mb-3 font-medium">
+        <h2 id="history" className="mb-1 font-medium">
           Lịch sử giá
         </h2>
+        <p className="mb-3 text-sm text-muted-foreground">Ghi lại mỗi lần đổi giá bán, % Benefit hoặc cách đặt giá - kèm người đổi và thời gian.</p>
         {(history ?? []).length === 0 ? (
           <p className="text-sm text-muted-foreground">Chưa có thay đổi giá.</p>
         ) : (

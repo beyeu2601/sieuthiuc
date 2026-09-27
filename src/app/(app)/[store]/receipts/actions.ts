@@ -110,6 +110,17 @@ export async function quickCreateSupplier(input: {
   return { ok: true, data };
 }
 
+// Mo lai phieu da xac nhan ve nhap de sua (chi sadmin/admin, va chi khi dao nguoc sach se)
+export async function reopenReceipt(storeCode: string, id: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("reopen_purchase_receipt", { p_receipt_id: id });
+  if (error) return { ok: false, error: errorMessage(error) };
+  revalidatePath(`/${storeCode}/receipts`);
+  revalidatePath(`/${storeCode}/receipts/${id}`);
+  revalidatePath(`/${storeCode}/inventory`);
+  return { ok: true };
+}
+
 export async function cancelReceipt(storeCode: string, id: string, reason: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.rpc("cancel_purchase_receipt", { p_receipt_id: id, p_reason: reason });

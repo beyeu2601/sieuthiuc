@@ -20,7 +20,7 @@ export default async function StoreHome({ params }: { params: Promise<{ store: s
     supabase.rpc("store_overview", { p_store_id: store.id }),
     supabase.from("shifts").select("id, code").eq("store_id", store.id).eq("user_id", ctx.profile.id).eq("status", "open").maybeSingle(),
     isFinance ? supabase.rpc("pnl_report", { p_store_ids: [store.id], p_from: today, p_to: today }) : Promise.resolve({ data: null }),
-    supabase.rpc("inventory_status", { p_store_id: store.id, p_status: "low_out", p_limit: 1 }),
+    supabase.rpc("inventory_status", { p_store_id: store.id, p_status: ["low", "out"], p_limit: 1 }),
     supabase.rpc("lot_expiry", { p_store_id: store.id, p_status: "near" }),
     isFinance ? supabase.rpc("debt_overview", { p_store_ids: [store.id] }) : Promise.resolve({ data: null }),
     supabase.from("orders").select("id", { count: "exact", head: true }).eq("store_id", store.id).in("status", ["pending", "shipped"]),

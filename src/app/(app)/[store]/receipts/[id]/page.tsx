@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ReceiptEditor, type EditorLine } from "../receipt-editor";
+import { ReopenButton } from "../reopen-button";
 import { RECEIPT_STATUS, PAYMENT_METHOD_LABEL } from "../labels";
 
 type Item = {
@@ -124,6 +125,7 @@ export default async function ReceiptPage({
 
   const st = RECEIPT_STATUS[r.status as keyof typeof RECEIPT_STATUS];
   const remaining = r.total - r.paid_amount;
+  const canReopen = r.status === "confirmed" && ["sadmin", "admin"].includes(ctx.profile.role);
   return (
     <div className="space-y-4">
       <PageHeader
@@ -135,6 +137,7 @@ export default async function ReceiptPage({
             {r.invoice_no ? ` - HĐ ${r.invoice_no}` : ""}
           </span>
         }
+        actions={canReopen ? <ReopenButton storeCode={store.code} receiptId={r.id} /> : undefined}
       />
       {r.status === "cancelled" && (
         <p className="rounded-lg bg-muted px-3 py-2 text-sm">Đã hủy. Lý do: {r.cancel_reason}</p>
@@ -220,7 +223,11 @@ export default async function ReceiptPage({
           )}
           {r.note && <p className="mt-2 text-foreground">Ghi chú: {r.note}</p>}
           {r.status === "confirmed" && (
-            <p className="mt-2">Phiếu đã xác nhận không sửa được. Sai số lượng thì dùng phiếu điều chỉnh tồn kho.</p>
+            <p className="mt-2">
+              {canReopen
+                ? 'Cần sửa số lượng/giá/HSD thì bấm "Sửa phiếu" ở trên để mở lại phiếu (đảo tồn và công nợ, đưa về nháp). Chỉ làm được khi hàng chưa bán/chuyển và phiếu chưa thanh toán; nếu không, dùng phiếu điều chỉnh tồn kho.'
+                : "Phiếu đã xác nhận không sửa được. Sai số lượng thì dùng phiếu điều chỉnh tồn kho."}
+            </p>
           )}
         </div>
       </div>

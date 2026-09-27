@@ -6,8 +6,8 @@ import { GOODS_TYPE_LABEL } from "@/lib/text";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
-import { NativeSelect } from "@/components/native-select";
 import { AutoSubmitForm } from "@/components/auto-submit-form";
+import { FilterChip } from "@/components/filter-chip";
 import { Pagination } from "@/components/pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,7 +39,9 @@ type Row = {
   total_count: number;
 };
 
-type SP = { q?: string; status?: string; type?: string; cat?: string; page?: string };
+type SP = { q?: string; status?: string | string[]; type?: string | string[]; cat?: string | string[]; page?: string };
+
+const toArr = (v: string | string[] | undefined) => (Array.isArray(v) ? v : v ? [v] : []);
 
 export default async function InventoryPage({ params, searchParams }: { params: Promise<{ store: string }>; searchParams: Promise<SP> }) {
   const { store: code } = await params;
@@ -49,14 +51,18 @@ export default async function InventoryPage({ params, searchParams }: { params: 
   const page = Math.max(1, Number(sp.page) || 1);
   const supabase = await createClient();
 
+  const statusSel = toArr(sp.status).filter((s) => s === "out" || s === "low" || s === "in_stock");
+  const typeSel = toArr(sp.type).filter((t) => t === "cont" || t === "air");
+  const catSel = toArr(sp.cat);
+
   const [{ data: cats }, { data, error }] = await Promise.all([
     supabase.from("categories").select("id, name").order("name"),
     supabase.rpc("inventory_status", {
       p_store_id: store.id,
       p_q: sp.q || null,
-      p_status: sp.status || null,
-      p_category: sp.cat || null,
-      p_goods_type: sp.type === "cont" || sp.type === "air" ? sp.type : null,
+      p_status: statusSel.length ? statusSel : null,
+      p_category: catSel.length ? catSel : null,
+      p_goods_type: typeSel.length ? typeSel : null,
       p_limit: PAGE_SIZE,
       p_offset: (page - 1) * PAGE_SIZE,
     }),
@@ -78,30 +84,27 @@ export default async function InventoryPage({ params, searchParams }: { params: 
         }
       />
       <InventoryTabs storeCode={store.code} />
-      <AutoSubmitForm action={`/${store.code}/inventory`} debounceMs={400} className="my-3 grid gap-2 sm:grid-cols-[1fr_150px_130px_180px_auto]" role="search">
-        <Input type="search" enterKeyHint="search" name="q" defaultValue={sp.q} placeholder="Tìm tên, SKU hoặc quét mã" aria-label="Tìm sản phẩm" />
-        <NativeSelect name="status" defaultValue={sp.status ?? ""} aria-label="Trạng thái tồn">
-          <option value="">Mọi trạng thái</option>
-          <option value="out">Hết hàng</option>
-          <option value="low">Sắp hết</option>
-          <option value="in_stock">Còn hàng</option>
-        </NativeSelect>
-        <NativeSelect name="type" defaultValue={sp.type ?? ""} aria-label="Loại hàng">
-          <option value="">Mọi loại</option>
-          <option value="cont">Cont</option>
-          <option value="air">Air</option>
-        </NativeSelect>
-        <NativeSelect name="cat" defaultValue={sp.cat ?? ""} aria-label="Nhóm hàng">
-          <option value="">Mọi nhóm hàng</option>
-          {(cats ?? []).map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </NativeSelect>
-        <Button type="submit" variant="secondary">
-          Lọc
-        </Button>
+      <AutoSubmitForm action={`/${store.code}/inventory`} debounceMs={400} className="my-3 space-y-2.5" role="search">
+        <Input type="search" enterKeyHint="search" name="q" defaultValue={sp.q} placeholder="Tìm tên, SKU hoặc quét mã" aria-label="Tìm sản phẩm" className="sm:max-w-md" />
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <div role="group" aria-label="Trạng thái tồn" className="flex flex-wrap items-center gap-1.5">
+            <span className="mr-1 text-xs font-medium text-muted-foreground">Trạng thái</span>
+            <FilterChip name="status" value="in_stock" label="Còn hàng" checked={statusSel.includes("in_stock")} />
+            <FilterChip name="status" value="low" label="Sắp hết" checked={statusSel.includes("low")} />
+            <FilterChip name="status" value="out" label="Hết hàng" checked={statusSel.includes("out")} />
+          </div>
+          <div role="group" aria-label="Loại hàng" className="flex flex-wrap items-center gap-1.5">
+            <span className="mr-1 text-xs font-medium text-muted-foreground">Loại</span>
+            <FilterChip name="type" value="cont" label="Cont" checked={typeSel.includes("cont")} />
+            <FilterChip name="type" value="air" label="Air" checked={typeSel.includes("air")} />
+          </div>
+          <div role="group" aria-label="Nhóm hàng" className="flex flex-wrap items-center gap-1.5">
+            <span className="mr-1 text-xs font-medium text-muted-foreground">Nhóm hàng</span>
+            {(cats ?? []).map((c) => (
+              <FilterChip key={c.id} name="cat" value={c.id} label={c.name} checked={catSel.includes(c.id)} />
+            ))}
+          </div>
+        </div>
       </AutoSubmitForm>
 
       {error ? (
@@ -189,7 +192,7 @@ export default async function InventoryPage({ params, searchParams }: { params: 
         pageSize={PAGE_SIZE}
         total={Number(total)}
         basePath={`/${store.code}/inventory`}
-        params={{ q: sp.q, status: sp.status, type: sp.type, cat: sp.cat }}
+        params={{ q: sp.q, status: statusSel, type: typeSel, cat: catSel }}
       />
     </div>
   );

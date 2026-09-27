@@ -13,12 +13,15 @@ export function Pagination({
   pageSize: number;
   total: number;
   basePath: string;
-  params: Record<string, string | undefined>;
+  params: Record<string, string | string[] | undefined>;
 }) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const href = (p: number) => {
     const sp = new URLSearchParams();
-    for (const [k, v] of Object.entries(params)) if (v) sp.set(k, v);
+    for (const [k, v] of Object.entries(params)) {
+      if (Array.isArray(v)) for (const item of v) sp.append(k, item);
+      else if (v) sp.set(k, v);
+    }
     sp.set("page", String(p));
     return `${basePath}?${sp.toString()}`;
   };
