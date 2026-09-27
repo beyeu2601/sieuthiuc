@@ -24,7 +24,7 @@ Web app (PWA) quản lý bán hàng, kho, công nợ nhà cung cấp, thu chi v�
 
 | Hạng mục | Giá trị |
 |---|---|
-| Production | https://sieuthiuc.vercel.app (project Vercel `sieuthiuc` đã tạo, chưa nối GitHub) |
+| Production | https://sieuthiuc.vercel.app (project Vercel `sieuthiuc` đã nối GitHub, tự build khi push lên `main`) |
 | Mã nguồn | https://github.com/beyeu2601/sieuthiuc (public, không chứa dữ liệu kinh doanh) |
 | Database | Supabase project `mmnfhppaupmvkdggekbz` (một môi trường duy nhất: production) |
 | Phạm vi | Toàn bộ P0, một cửa hàng, schema sẵn sàng cho nhiều cửa hàng |
@@ -197,7 +197,7 @@ supabase link --project-ref mmnfhppaupmvkdggekbz
 supabase db push                # áp dụng migration
 supabase config push            # tắt đăng ký công khai, mật khẩu tối thiểu 8
 npm run db:test                 # phải đạt trước khi deploy app
-git push origin main            # Vercel tự build khi đã nối GitHub
+git push origin main            # Vercel tự build (đã nối GitHub). Webhook lỡ thì trigger tay trên Vercel
 ```
 
 Khởi tạo lần đầu (một lần):
