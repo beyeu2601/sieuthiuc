@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { transferAction } from "../actions";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 export function TransferButtons({
   storeCode,
@@ -19,8 +20,9 @@ export function TransferButtons({
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
-  function act(a: "send" | "receive" | "return" | "cancel", ok: string, ask?: string) {
-    if (ask && !confirm(ask)) return;
+  const { confirm, dialog } = useConfirm();
+  async function act(a: "send" | "receive" | "return" | "cancel", ok: string, ask?: string) {
+    if (ask && !(await confirm({ title: ask }))) return;
     start(async () => {
       const res = await transferAction(storeCode, id, a);
       if (!res.ok) return void toast.error(res.error);
@@ -30,6 +32,7 @@ export function TransferButtons({
   }
   return (
     <div className="flex flex-wrap gap-2">
+      {dialog}
       {status === "draft" && isFrom && (
         <>
           <Button className="h-10" disabled={pending} onClick={() => act("send", "Đã gửi hàng", "Gửi hàng? Tồn cửa hàng gửi sẽ giảm ngay.")}>

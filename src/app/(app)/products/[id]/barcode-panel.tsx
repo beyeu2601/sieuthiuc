@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { addBarcode, deleteBarcode, generateInternalBarcode, setPrimaryBarcode } from "../actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -22,6 +23,7 @@ export function BarcodePanel({
   const [code, setCode] = useState("");
   const [pack, setPack] = useState("1");
   const [pending, start] = useTransition();
+  const { confirm, dialog } = useConfirm();
 
   function run(fn: () => Promise<{ ok: boolean; error?: string }>, success: string) {
     start(async () => {
@@ -47,6 +49,7 @@ export function BarcodePanel({
 
   return (
     <div className="space-y-4">
+      {dialog}
       <p className="text-sm text-muted-foreground">
         Mã vạch dùng để <strong>quét ở màn Bán hàng</strong>: quét đúng mã là thêm ngay sản phẩm vào giỏ. Một sản phẩm
         có thể gắn nhiều mã (mã lẻ, mã lốc/thùng). <strong>Mã chính</strong> là mã được in lên tem và hiện khi tra cứu.
@@ -89,8 +92,9 @@ export function BarcodePanel({
                     variant="ghost"
                     className="text-destructive"
                     disabled={pending}
-                    onClick={() => {
-                      if (confirm(`Xóa mã ${b.barcode}?`)) run(() => deleteBarcode(productId, b.id), "Đã xóa mã vạch");
+                    onClick={async () => {
+                      if (await confirm({ title: `Xóa mã ${b.barcode}?`, danger: true }))
+                        run(() => deleteBarcode(productId, b.id), "Đã xóa mã vạch");
                     }}
                   >
                     Xóa

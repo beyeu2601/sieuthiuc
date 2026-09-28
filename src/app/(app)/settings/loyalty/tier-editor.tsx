@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { deleteTier, saveTier, type TierInput } from "../actions";
 import { MoneyInput } from "@/components/money-input";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 
 type Tier = TierInput & { id: string };
@@ -15,6 +16,7 @@ function TierRow({ row, nextRank, onSaved }: { row: Tier | null; nextRank: numbe
     row ?? { name: "", rank: nextRank, min_total_spent: 0, earn_multiplier: 1, discount_pct: 0 }
   );
   const [pending, start] = useTransition();
+  const { confirm, dialog } = useConfirm();
 
   function save(e: React.FormEvent) {
     e.preventDefault();
@@ -26,8 +28,9 @@ function TierRow({ row, nextRank, onSaved }: { row: Tier | null; nextRank: numbe
     });
   }
 
-  function remove() {
-    if (!row || !confirm(`Xóa hạng ${row.name}?`)) return;
+  async function remove() {
+    if (!row) return;
+    if (!(await confirm({ title: `Xóa hạng ${row.name}?`, danger: true }))) return;
     start(async () => {
       const res = await deleteTier(row.id);
       if (!res.ok) return void toast.error(res.error);
@@ -38,6 +41,7 @@ function TierRow({ row, nextRank, onSaved }: { row: Tier | null; nextRank: numbe
 
   return (
     <form onSubmit={save} className="grid grid-cols-2 items-end gap-2 py-3 sm:grid-cols-[1fr_150px_100px_100px_auto]">
+      {dialog}
       <label className="space-y-1 text-xs text-muted-foreground">
         Tên hạng
         <Input value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} placeholder="Tên hạng mới" />

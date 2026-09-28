@@ -12,6 +12,7 @@ import { MoneyInput } from "@/components/money-input";
 import { NativeSelect } from "@/components/native-select";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -217,6 +218,8 @@ export function PosClient({
     return () => window.removeEventListener("keydown", onKey);
   }, [pay]);
 
+  const { confirm, dialog } = useConfirm();
+
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
       <section className="space-y-3" aria-label="Giỏ hàng">
@@ -229,8 +232,9 @@ export function PosClient({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                if (confirm("Xóa toàn bộ giỏ hàng?")) setCart(newCart());
+              onClick={async () => {
+                if (await confirm({ title: "Xóa toàn bộ giỏ hàng?", danger: true }))
+                  setCart(newCart());
               }}
             >
               Xóa giỏ
@@ -430,6 +434,7 @@ export function PosClient({
           toast.success(`${name} đã duyệt giảm giá. Bấm thanh toán lại.`);
         }}
       />
+      {dialog}
     </div>
   );
 }

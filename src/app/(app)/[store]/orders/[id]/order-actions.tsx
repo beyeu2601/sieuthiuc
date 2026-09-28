@@ -2,26 +2,32 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { changeOrderStatus } from "../actions";
+import { baoTheoKetQua } from "@/lib/feedback";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 export function OrderActions({ storeCode, id, status }: { storeCode: string; id: string; status: string }) {
   const router = useRouter();
   const [pending, start] = useTransition();
-  function go(to: "shipped" | "delivered" | "cancelled", ok: string) {
+  const { confirm, dialog } = useConfirm();
+  async function go(to: "shipped" | "delivered" | "cancelled", ok: string) {
     let note: string | null = null;
     if (to === "cancelled") {
       note = prompt("Lý do hủy đơn?");
       if (!note?.trim()) return;
-    } else if (to === "delivered" && !confirm("Xác nhận khách đã nhận hàng? Hệ thống sẽ ghi doanh thu và trừ kho.")) {
+    } else if (
+      to === "delivered" &&
+      !(await confirm({
+        title: "Khách đã nhận hàng?",
+        description: "Hệ thống sẽ ghi doanh thu và trừ kho.",
+      }))
+    ) {
       return;
     }
     start(async () => {
       const res = await changeOrderStatus(storeCode, id, to, note);
-      if (!res.ok) return void toast.error(res.error);
-      toast.success(ok);
-      router.refresh();
+      if (baoTheoKetQua(res, ok)) router.refresh();
     });
   }
   if (status !== "pending" && status !== "shipped") return null;
@@ -38,6 +44,7 @@ export function OrderActions({ storeCode, id, status }: { storeCode: string; id:
       <Button className="h-10" variant="ghost" disabled={pending} onClick={() => go("cancelled", "Đã hủy đơn, trả hàng về khả dụng")}>
         Hủy đơn
       </Button>
+      {dialog}
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { productImageUrl } from "@/components/product-thumb";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 type Img = { id: string; drive_file_id: string; drive_thumb_id: string; is_thumbnail: boolean };
 
@@ -51,6 +52,7 @@ export function ImageGallery({
   const [progress, setProgress] = useState<string | null>(null);
   const [open, setOpen] = useState<Img | null>(null);
   const [pending, start] = useTransition();
+  const { confirm, dialog } = useConfirm();
 
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const all = Array.from(e.target.files ?? []);
@@ -97,6 +99,7 @@ export function ImageGallery({
 
   return (
     <div className="space-y-3">
+      {dialog}
       {images.length === 0 && !canEdit && <p className="text-sm text-muted-foreground">Chưa có ảnh.</p>}
       <ul className="grid grid-cols-3 gap-2 sm:grid-cols-5" aria-label={`Ảnh của ${productName}`}>
         {images.map((img, i) => (
@@ -149,8 +152,14 @@ export function ImageGallery({
                   <Button
                     variant="destructive"
                     disabled={pending}
-                    onClick={() => {
-                      if (confirm("Xóa ảnh này? Ảnh được chuyển vào thùng rác Google Drive.")) {
+                    onClick={async () => {
+                      if (
+                        await confirm({
+                          title: "Xóa ảnh này?",
+                          description: "Ảnh được chuyển vào thùng rác Google Drive.",
+                          danger: true,
+                        })
+                      ) {
                         act(() => deleteProductImage(productId, open.id), "Đã xóa ảnh");
                       }
                     }}

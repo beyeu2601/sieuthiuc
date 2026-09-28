@@ -7,6 +7,7 @@ import { adjustShiftCount, approveShift, closeShift, openShift } from "./actions
 import { formatMoney } from "@/lib/format";
 import { MoneyInput } from "@/components/money-input";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -51,12 +52,19 @@ export function CloseShiftForm({ storeCode, shiftId, expected }: { storeCode: st
   const denomTotal = useMemo(() => DENOMS.reduce((s, d) => s + d * (Number(counts[d]) || 0), 0), [counts]);
   const counted = mode === "denom" ? denomTotal : (total ?? 0);
   const diff = counted - expected;
+  const { confirm, dialog } = useConfirm();
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (mode === "total" && total == null) return void toast.error("Nhập tiền mặt thực đếm");
     if (diff !== 0 && !note.trim()) return void toast.error("Tiền lệch: ghi rõ lý do");
-    if (!confirm(`Chốt ca với tiền mặt thực đếm ${formatMoney(counted)}? Ca đã chốt không mở lại được.`)) return;
+    if (
+      !(await confirm({
+        title: "Chốt ca?",
+        description: `Tiền mặt thực đếm ${formatMoney(counted)}. Ca đã chốt không mở lại được.`,
+      }))
+    )
+      return;
     start(async () => {
       const res = await closeShift(storeCode, shiftId, counted, note);
       if (!res.ok) return void toast.error(res.error);
@@ -67,6 +75,7 @@ export function CloseShiftForm({ storeCode, shiftId, expected }: { storeCode: st
 
   return (
     <form onSubmit={submit} className="space-y-3">
+      {dialog}
       <div className="flex gap-1" role="group" aria-label="Cách nhập tiền đếm">
         <Button type="button" size="sm" variant={mode === "denom" ? "default" : "outline"} onClick={() => setMode("denom")}>
           Đếm theo mệnh giá
