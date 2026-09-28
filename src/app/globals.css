@@ -48,6 +48,42 @@
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
   --color-danger-soft: var(--danger-soft);
+  /* Bac 500 cua thang xanh thuong hieu, chi dung lam cham mau trong chu thich.
+     Cac thang khac (emerald/amber/rose/red/sky/indigo/purple/slate) lay bac 500
+     mac dinh cua Tailwind. */
+  --color-brand-500: var(--brand-500);
+  /* Bo ba chip ngu nghia nen/chu/vien - hop dong mau o docs/KE-HOACH-UI.md muc 3.
+     La lop DUY NHAT co ban toi rieng (khai o .dark) va ban in rieng (@media print),
+     nen cho goi chip khong phai viet dark: gi ca. */
+  --color-nen-brand: var(--nen-brand);
+  --color-chu-brand: var(--chu-brand);
+  --color-vien-brand: var(--vien-brand);
+  --color-nen-emerald: var(--nen-emerald);
+  --color-chu-emerald: var(--chu-emerald);
+  --color-vien-emerald: var(--vien-emerald);
+  --color-nen-amber: var(--nen-amber);
+  --color-chu-amber: var(--chu-amber);
+  --color-vien-amber: var(--vien-amber);
+  --color-nen-rose: var(--nen-rose);
+  --color-chu-rose: var(--chu-rose);
+  --color-vien-rose: var(--vien-rose);
+  --color-nen-red: var(--nen-red);
+  --color-chu-red: var(--chu-red);
+  --color-vien-red: var(--vien-red);
+  --color-nen-indigo: var(--nen-indigo);
+  --color-chu-indigo: var(--chu-indigo);
+  --color-vien-indigo: var(--vien-indigo);
+  --color-nen-sky: var(--nen-sky);
+  --color-chu-sky: var(--chu-sky);
+  --color-vien-sky: var(--vien-sky);
+  --color-nen-purple: var(--nen-purple);
+  --color-chu-purple: var(--chu-purple);
+  --color-vien-purple: var(--vien-purple);
+  --color-nen-slate: var(--nen-slate);
+  --color-chu-slate: var(--chu-slate);
+  --color-vien-slate: var(--vien-slate);
+  --color-chu-slate-mo: var(--chu-slate-mo);
+  --color-chu-slate-dam: var(--chu-slate-dam);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -102,6 +138,45 @@
   --sidebar-accent-foreground: #263c82;
   --sidebar-border: #dde2ee;
   --sidebar-ring: #324ca0;
+
+  /* Bac 500 cua thang xanh thuong hieu (cham mau). */
+  --brand-500: #4863c4;
+
+  /* Bo ba chip ngu nghia, ban sang. Nen bac 100, chu bac 800, vien bac 300 theo
+     khuon Tailwind (rieng brand rut tu logo #324ca0). Tuong phan nen-chu da do,
+     nguong WCAG AA 4.5:1:
+       brand 9.2   emerald 6.78  amber 6.37  rose 6.68  red 6.80
+       indigo 8.06  sky 6.59  purple 7.39  slate 9.45
+       chu-slate-mo 6.9  chu-slate-dam 13.4 */
+  --nen-brand: #dde5f6;
+  --chu-brand: #263c82;
+  --vien-brand: #9db0e3;
+  --nen-emerald: #d1fae5;
+  --chu-emerald: #065f46;
+  --vien-emerald: #6ee7b7;
+  --nen-amber: #fef3c7;
+  --chu-amber: #92400e;
+  --vien-amber: #fcd34d;
+  --nen-rose: #ffe4e6;
+  --chu-rose: #9f1239;
+  --vien-rose: #fda4af;
+  --nen-red: #fee2e2;
+  --chu-red: #991b1b;
+  --vien-red: #fca5a5;
+  --nen-indigo: #e0e7ff;
+  --chu-indigo: #3730a3;
+  --vien-indigo: #a5b4fc;
+  --nen-sky: #e0f2fe;
+  --chu-sky: #075985;
+  --vien-sky: #7dd3fc;
+  --nen-purple: #f3e8ff;
+  --chu-purple: #6b21a8;
+  --vien-purple: #d8b4fe;
+  --nen-slate: #f1f5f9;
+  --chu-slate: #334155;
+  --vien-slate: #cbd5e1;
+  --chu-slate-mo: #475569;
+  --chu-slate-dam: #1e293b;
 }
 
 /* Che do toi: cung he mau, chon lai buoc sang toi (khong dao nguoc tu dong). --brand la mau chu/bieu tuong,
@@ -150,6 +225,42 @@
   --sidebar-accent-foreground: #c3cff7;
   --sidebar-border: #2a3350;
   --sidebar-ring: #9db0f0;
+
+  /* Bo ba chip ngu nghia, ban toi. Nen bac 900/950 giam bao hoa keo ve hue cua
+     card, chu bac 200/300, vien bac 700/800. Khong giu bac 100 lam nen: tren nen
+     toi thi chip sang trung con chu chim mat. Tuong phan nen-chu da do, nguong 4.5:
+       brand 9.7   emerald 9.81  amber 10.78  rose 10.47  red 10.28
+       indigo 9.21  sky 10.14  purple 11.19  slate 11.60
+       chu-slate-mo 9.63  chu-slate-dam 13.66 */
+  --nen-brand: #1e2748;
+  --chu-brand: #c3cff7;
+  --vien-brand: #3a56b4;
+  --nen-emerald: #123a2d;
+  --chu-emerald: #a7f3d0;
+  --vien-emerald: #065f46;
+  --nen-amber: #3d2c0c;
+  --chu-amber: #fde68a;
+  --vien-amber: #92400e;
+  --nen-rose: #431b25;
+  --chu-rose: #fecdd3;
+  --vien-rose: #9f1239;
+  --nen-red: #45191f;
+  --chu-red: #fecaca;
+  --vien-red: #991b1b;
+  --nen-indigo: #242a52;
+  --chu-indigo: #c7d2fe;
+  --vien-indigo: #3730a3;
+  --nen-sky: #10314a;
+  --chu-sky: #bae6fd;
+  --vien-sky: #075985;
+  --nen-purple: #33194a;
+  --chu-purple: #e9d5ff;
+  --vien-purple: #6b21a8;
+  --nen-slate: #1c2a46;
+  --chu-slate: #e2e8f0;
+  --vien-slate: #334155;
+  --chu-slate-mo: #cbd5e1;
+  --chu-slate-dam: #f8fafc;
 }
 
 @layer base {
@@ -170,5 +281,44 @@
   /* so tien, so luong: chu so dong deu de doc cot */
   .tabular-nums {
     font-feature-settings: "tnum" 1, "lnum" 1;
+  }
+}
+
+/* In giay (hoa don, tem): ep bo ba chip ve ban sang cho ca .dark. May in ra
+   giay trang, neu nguoi dung bat che do toi thi nen chip la mau sam, in ra ton
+   muc ma chu van khong doc duoc. Khoi nay nam SAU .dark nen cung do dac hieu thi
+   thang. Chi ep token chip; phan con lai cua ban in do tung trang tu lo. */
+@media print {
+  :root,
+  .dark {
+    --nen-brand: #dde5f6;
+    --chu-brand: #263c82;
+    --vien-brand: #9db0e3;
+    --nen-emerald: #d1fae5;
+    --chu-emerald: #065f46;
+    --vien-emerald: #6ee7b7;
+    --nen-amber: #fef3c7;
+    --chu-amber: #92400e;
+    --vien-amber: #fcd34d;
+    --nen-rose: #ffe4e6;
+    --chu-rose: #9f1239;
+    --vien-rose: #fda4af;
+    --nen-red: #fee2e2;
+    --chu-red: #991b1b;
+    --vien-red: #fca5a5;
+    --nen-indigo: #e0e7ff;
+    --chu-indigo: #3730a3;
+    --vien-indigo: #a5b4fc;
+    --nen-sky: #e0f2fe;
+    --chu-sky: #075985;
+    --vien-sky: #7dd3fc;
+    --nen-purple: #f3e8ff;
+    --chu-purple: #6b21a8;
+    --vien-purple: #d8b4fe;
+    --nen-slate: #f1f5f9;
+    --chu-slate: #334155;
+    --vien-slate: #cbd5e1;
+    --chu-slate-mo: #475569;
+    --chu-slate-dam: #1e293b;
   }
 }

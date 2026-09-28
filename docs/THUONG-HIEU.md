@@ -6,6 +6,7 @@ Tài liệu cho người phát triển và người thiết kế. Mọi màu, ch
 
 - [1. Phân tích logo](#1-phân-tích-logo)
 - [2. Màu](#2-màu)
+  - [Màu ngữ nghĩa trạng thái](#màu-ngữ-nghĩa-trạng-thái)
 - [3. Chữ](#3-chữ)
 - [4. Tệp logo và icon](#4-tệp-logo-và-icon)
 - [5. Bố cục và điều hướng](#5-bố-cục-và-điều-hướng)
@@ -41,9 +42,30 @@ Tệp gốc: `logo.jpg` (2048 x 2048). Logo là hình con kangaroo đẩy xe mua
 
 Quy tắc:
 
-- Chỉ một màu nhấn là xanh thương hiệu. Xanh lá, cam, đỏ dành riêng cho trạng thái, không dùng để trang trí.
+- Một màu HÀNH ĐỘNG, nhiều màu NGỮ NGHĨA. Xanh thương hiệu là màu hành động duy nhất: nút chính, liên kết, mục đang chọn, vòng focus. Ngoài ra có một bảng màu ngữ nghĩa cho trạng thái, kênh bán và loại hàng (xem mục dưới). Màu không dùng để trang trí; màu chính là ngữ nghĩa.
 - Trạng thái luôn đi kèm chữ hoặc biểu tượng, không chỉ dựa vào màu (người mù màu vẫn đọc được).
 - Mọi cặp chữ và nền đạt WCAG AA (từ 4,5:1).
+- Không ghi cứng mã hex ngoài `src/app/globals.css`.
+
+### Màu ngữ nghĩa trạng thái
+
+Học từ dự án 26c Academy (xem `docs/KE-HOACH-UI.md`). Kiến trúc ba lớp trong `globals.css`: thang thô -> bộ ba chip `nen`/`chu`/`vien` cho từng sắc -> token nền trang. Bộ ba chip là lớp duy nhất có bản tối riêng và bản in riêng, nên component gọi chip không phải viết `dark:`. Dùng qua `src/components/ui/chip.tsx` (`ChipSac` và các helper theo miền), không tự chọn mã màu ở trang.
+
+Chín sắc và nghĩa cố định:
+
+| Sắc | Dùng cho |
+|---|---|
+| `brand` (xanh logo) | Ca đã duyệt; kênh bán tại quầy (POS). Đồng thời là màu hành động. |
+| `emerald` | Đang mở, đã xong, đã xác nhận, giao thành công, đã trả, lãi/số dương |
+| `amber` | Chờ một bước nữa: chờ duyệt, chờ xác nhận, tồn thấp, cận date; kênh Shopee |
+| `rose` | Cảnh báo nhẹ (nhắc nhở), tách khỏi đỏ tiền. KHÔNG phải màu nợ. |
+| `red` | Tiền/lỗ/số âm, hết hạn, hết hàng, hủy, quá hạn |
+| `indigo` | Đơn giữ hàng; loại hàng Cont |
+| `sky` | Đang giao; kênh Facebook; loại hàng Air |
+| `purple` | Phân loại phụ (dành cho nhóm chưa có nghĩa cố định) |
+| `slate` | Trung tính: nháp, đủ tồn, còn hạn, kênh khác |
+
+`rose` và `red` là hai thang khác nhau, cố ý không gộp. Nhãn tự do (nhóm hàng, tên nhà cung cấp) dùng `sacTheoNhan` để một tên luôn ra một sắc ổn định. Bảng ánh xạ đầy đủ nghĩa -> sắc ở `docs/KE-HOACH-UI.md` mục 3.
 
 ## 3. Chữ
 
