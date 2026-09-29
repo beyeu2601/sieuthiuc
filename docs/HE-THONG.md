@@ -115,6 +115,27 @@ Các RPC chính theo nghiệp vụ:
 - RPC báo lỗi bằng `RAISE EXCEPTION`: thông điệp tiếng Việt ở `message`, mã lỗi (`FORBIDDEN`, `VALIDATION`, `INSUFFICIENT_STOCK`, `EXPIRED_LOT`, `DISCOUNT_LIMIT`, `PAYMENT_MISMATCH`, `DEBT_OVERPAY`, `SHIFT_NOT_OPEN`...) ở `hint`. `src/lib/errors.ts` chuyển thành câu cho người dùng.
 - Hàm mới: `set search_path = ''`, kiểm tra quyền ở đầu hàm, `revoke execute ... from public, anon`, kèm test pgTAP.
 
+Thành phần giao diện dùng chung (đợt nâng UX/UI 09/2026, chi tiết thiết kế ở `docs/THUONG-HIEU.md`). Dùng lại trước khi tự viết:
+
+| Việc | Dùng | Ghi chú |
+|---|---|---|
+| Tô màu trạng thái, kênh, loại hàng | `src/components/ui/chip.tsx` (`ChipSac` + helper theo miền) | Không tô màu thủ công ở trang, không ghi mã hex ngoài `globals.css` |
+| Đang tải | `loading.tsx` + `SkeletonTrang` hoặc `Skeleton` | Khung phải có `aria-busy` |
+| Không có dữ liệu | `EmptyState` (`icon`, `action`) | |
+| Hỏi xác nhận | `useConfirm()` trả `{ confirm, dialog }`, render `{dialog}` | Không dùng `confirm()` của trình duyệt |
+| Báo kết quả | `src/lib/feedback.ts` (`baoTheoKetQua`) | |
+| Thẻ chỉ số | `KpiCard` + `HangKpi` | Là Link sang màn chi tiết |
+| Tiến độ x/y | `ThanhTienDo` | Luôn in kèm số x/y |
+| Biểu đồ | `DailyBars`, `charts/thanh-co-cau.tsx` (`ThanhCoCau`) | Không thêm thư viện biểu đồ |
+| Bảng trên điện thoại | `MobileCardList` + `MobileCard`, bảng bọc `hidden md:block` | |
+| Phân trang | `Pagination` qua `?page=` | Số dòng mỗi trang cố định ở server (`PAGE_SIZE`) |
+| Hộp thoại | `DialogContent` > `DialogHeader` / `DialogBody` / `DialogFooter` | Chỉ `DialogBody` cuộn; nằm trong `<form>` thì form `flex min-h-0 flex-col` |
+| Form nhiều bước | `FormWizard` (+ `Stepper`) | Mọi bước đều mount; đang dùng ở phiếu nhập |
+| Thanh dính đáy | `sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] lg:bottom-0` | Tránh bị tab dưới đáy điện thoại che |
+| Chuyển động | tiện ích `tw-animate-css` với `motion-safe:` | Không viết keyframes riêng |
+
+Phiếu nhập (mới và sửa nháp) đi theo 4 bước: Nhà cung cấp -> Hàng nhập -> Chi phí -> Kiểm tra. "Lưu nháp" có ở mọi bước; phiếu nháp mở lại vào thẳng bước Kiểm tra. Thanh toán và hạn nợ vẫn chọn ở hộp thoại Xác nhận nhập kho vì RPC xác nhận cần phiếu đã lưu. Ô tìm sản phẩm (`ProductPicker`) nhận phím lên/xuống và Enter chọn dòng đang sáng; khi chưa chọn dòng nào, Enter vẫn tìm và tự chọn khi khớp đúng mã (máy quét không đổi).
+
 ## 7. Quyết định đã chốt và khác biệt so với SPEC
 
 Quyết định của khách ngày 25/09/2026:

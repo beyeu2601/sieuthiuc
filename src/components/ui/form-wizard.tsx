@@ -85,14 +85,14 @@ export function FormWizard({
               {hienTai.lyDo}
             </p>
           ) : null}
-          <Button type="button" variant="outline" className="h-10" disabled={chiSo === 0} onClick={() => sangBuoc(Math.max(0, chiSo - 1))}>
+          <Button type="button" variant="outline" className="h-11" disabled={chiSo === 0} onClick={() => sangBuoc(Math.max(0, chiSo - 1))}>
             Quay lại
           </Button>
           {nutPhu}
           {buocCuoi ? (
             nutCuoi
           ) : (
-            <Button type="button" className="h-10" disabled={!hienTai?.hopLe} onClick={() => sangBuoc(Math.min(buoc.length - 1, chiSo + 1))}>
+            <Button type="button" className="h-11" disabled={!hienTai?.hopLe} onClick={() => sangBuoc(Math.min(buoc.length - 1, chiSo + 1))}>
               Tiếp tục
             </Button>
           )}

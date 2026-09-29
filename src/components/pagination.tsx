@@ -26,14 +26,14 @@ export function Pagination({
     sp.set("page", String(p));
     return `${basePath}?${sp.toString()}`;
   };
-  // Nut bi khoa van giu cho de hang nut khong nhay khi sang trang dau/cuoi
+  // Nut bi khoa van giu cho de hang nut khong nhay khi sang trang dau/cuoi. Vung cham 44px.
   const nav = (target: number, enabled: boolean, content: React.ReactNode, label?: string) =>
     enabled ? (
-      <Button variant="outline" size={label ? "icon-sm" : "sm"} aria-label={label} title={label} render={<Link href={href(target)} />}>
+      <Button variant="outline" size={label ? "icon-lg" : "default"} className={label ? undefined : "h-11"} aria-label={label} title={label} render={<Link href={href(target)} />}>
         {content}
       </Button>
     ) : (
-      <Button variant="outline" size={label ? "icon-sm" : "sm"} aria-label={label} disabled>
+      <Button variant="outline" size={label ? "icon-lg" : "default"} className={label ? undefined : "h-11"} aria-label={label} disabled>
         {content}
       </Button>
     );

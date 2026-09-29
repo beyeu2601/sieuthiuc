@@ -12,6 +12,8 @@ Tài liệu cho người phát triển và người thiết kế. Mọi màu, ch
 - [5. Bố cục và điều hướng](#5-bố-cục-và-điều-hướng)
 - [6. Kích thước và vùng chạm](#6-kích-thước-và-vùng-chạm)
   - [Chế độ tối](#chế-độ-tối)
+  - [Chuyển động](#chuyển-động)
+  - [Biểu đồ](#biểu-đồ)
 - [7. Nguyên tắc tâm lý và sinh lý người dùng](#7-nguyên-tắc-tâm-lý-và-sinh-lý-người-dùng)
 - [8. Việc còn lại](#8-việc-còn-lại)
 
@@ -67,6 +69,17 @@ Chín sắc và nghĩa cố định:
 
 `rose` và `red` là hai thang khác nhau, cố ý không gộp. Nhãn tự do (nhóm hàng, tên nhà cung cấp) dùng `sacTheoNhan` để một tên luôn ra một sắc ổn định. Bảng ánh xạ đầy đủ nghĩa -> sắc ở `docs/KE-HOACH-UI.md` mục 3.
 
+Tương phản đo lại ngày 30/09/2026 từ mã màu trong `globals.css` (bản sáng / tối / in):
+
+| Cặp | Thấp nhất | Ngưỡng |
+|---|---|---|
+| Chữ chip trên nền chip, 9 sắc | 6,37 (amber) / 9,21 (indigo) / 6,37 | 4,5 |
+| Chữ sắc trên nền thẻ (nhãn thẻ chỉ số) | 7,09 / 10,83 / 7,09 | 4,5 |
+| Phần đã chạy của thanh tiến độ (`bg-chu-*`) trên `muted` | 6,27 / 9,49 / 6,27 | 3 (hình khối) |
+| Chữ phụ trên nền thẻ, nền trang, nền `muted` | 5,47 / 6,45 / 5,47 | 4,5 |
+
+Chấm màu (`CHAM_SAC`, bậc 500) và các lát của thanh cơ cấu là hình minh họa, luôn đi kèm chữ nên không áp ngưỡng chữ.
+
 ## 3. Chữ
 
 | Vai trò | Font | Ghi chú |
@@ -111,8 +124,13 @@ Không kéo giãn, không đổi màu logo ngoài hai bản xanh và trắng, ch
 | Mục điều hướng thanh bên | 40px |
 | Tab dưới đáy điện thoại | 64px, cộng vùng an toàn của máy |
 | Nút thanh toán POS | 56px |
+| Nút phân trang, nút điều hướng wizard (Quay lại, Tiếp tục, Lưu nháp) | 44px |
+| Bước trên thanh tiến trình wizard | 44px |
+| Thẻ chỉ số dashboard, dòng cảnh báo | 56px / 48px |
 
-Ô tên sản phẩm trong bảng được xuống dòng để các cột giá, tồn luôn nằm trong màn hình. Trên điện thoại (dưới 768px), bảng Tồn kho và Nhập xuất tồn chuyển thành thẻ: tên và trạng thái ở trên, số liệu có nhãn ở dưới (`src/components/mobile-card.tsx`).
+Ô tên sản phẩm trong bảng được xuống dòng để các cột giá, tồn luôn nằm trong màn hình. Trên điện thoại (dưới 768px), bảng nhiều cột chuyển thành thẻ: tên và trạng thái ở trên, số liệu có nhãn ở dưới (`src/components/mobile-card.tsx`). Đã áp cho Tồn kho, Nhập xuất tồn, Sản phẩm, Giá vốn, Lãi lỗ, Bán chạy, Công nợ, Phiếu nhập.
+
+Thanh dính đáy (tổng tiền, nút lưu) trên điện thoại đặt cách đáy bằng chiều cao tab dưới đáy (`bottom-[calc(4rem+env(safe-area-inset-bottom))]`, về `bottom-0` từ `lg`), nếu không sẽ bị tab che.
 
 ### Chế độ tối
 
@@ -120,6 +138,18 @@ Không kéo giãn, không đổi màu logo ngoài hai bản xanh và trắng, ch
 - Cùng hệ màu, chọn lại bước sáng tối chứ không đảo tự động. Trên nền tối `--brand` (chữ, biểu tượng) là `#9DB0F0`, tách khỏi `--primary` (nền nút) là `#3A56B4`.
 - Tương phản trên nền tối: chữ 13,9-15,2:1, chữ phụ 7,4:1, nút xanh chữ trắng 6,6:1, màu trạng thái từ 7:1.
 - Dùng khi làm việc buổi tối hoặc chỗ thiếu sáng; tại quầy sáng đèn nên giữ chế độ sáng.
+
+### Chuyển động
+
+- Chỉ chuyển động ngắn (150-200ms) để xác nhận thao tác: nội dung mờ dần khi đổi màn, dòng bảng/thẻ/dòng giỏ POS mới xuất hiện mờ dần, nút co nhẹ `scale-[0.98]` khi nhấn. Không có chuyển động trang trí.
+- Dùng tiện ích của `tw-animate-css` bọc trong `motion-safe:`, không tự viết keyframes.
+- Người bật "giảm chuyển động" ở hệ điều hành: khối `prefers-reduced-motion: reduce` cuối `globals.css` đưa mọi animation/transition về 0,01ms (không phải 0, để hộp thoại Base UI vẫn nhận `transitionend` và đóng được). Riêng vòng quay "đang xử lý" vẫn quay, chậm hơn.
+
+### Biểu đồ
+
+- Không dùng thư viện biểu đồ. Cột theo ngày (`daily-bars.tsx`) vẽ bằng SVG, nhãn trục là chữ HTML 12px để không bị thu nhỏ theo khung; trục giá trị rút gọn kiểu `850 N`, `12,5 Tr`.
+- Cơ cấu (doanh thu theo kênh, phương thức, loại hàng; chi phí theo nhóm) dùng thanh ngang 100% (`charts/thanh-co-cau.tsx`), không dùng donut: dễ so trên màn hẹp. Kênh bán và loại hàng tô theo sắc ngữ nghĩa; mục không có nghĩa màu lấy màu theo thứ tự cố định để một mục giữ màu giữa các kỳ.
+- Hình là minh họa (`aria-hidden`), số liệu đầy đủ luôn có ở dạng chữ bên cạnh (chú giải, bảng số liệu).
 
 ## 7. Nguyên tắc tâm lý và sinh lý người dùng
 
@@ -137,4 +167,6 @@ Không kéo giãn, không đổi màu logo ngoài hai bản xanh và trắng, ch
 ## 8. Việc còn lại
 
 - Logo trên hóa đơn đã dùng bản đen thuần nhưng chưa thử trên máy in nhiệt thật (cửa hàng chưa có máy in).
-- Các bảng khác (giao dịch, công nợ, phiếu nhập) trên điện thoại vẫn cuộn ngang; chuyển sang thẻ bằng `MobileCard` khi cần.
+- Các bảng còn cuộn ngang trên điện thoại, chuyển sang thẻ bằng `MobileCard` khi cần: giao dịch bán (danh sách, chi tiết), ca (danh sách, chi tiết), đơn online (danh sách, chi tiết), chuyển kho (danh sách, chi tiết), thu chi, đối soát, hạn sử dụng, cần nhập thêm, lịch sử biến động kho, nhà cung cấp, người dùng, chi tiết sản phẩm, gợi ý giá, import Excel.
+- Chip lọc (`filter-chip.tsx`) cao khoảng 32px, dưới mức 44px; nên nâng khi rà lại màn Tồn kho.
+- Một số helper chip đã khai nhưng chưa trang nào dùng: `ChipTrangThaiCa`, `ChipTrangThaiPhieu`, `sacTonKho`, `sacHan`, `sacTheoNhan`; màn ca và phiếu nhập vẫn dùng `Badge`. Giữ lại vì là bảng ánh xạ đã chốt ở mục 2; chuyển các `Badge` trạng thái sang chip khi rà lại các màn đó.

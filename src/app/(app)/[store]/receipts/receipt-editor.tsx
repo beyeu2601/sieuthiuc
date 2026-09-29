@@ -461,13 +461,13 @@ export function ReceiptEditor({
             </div>
           }
           nutPhu={
-            <Button type="button" variant="outline" className="h-10" disabled={pending} onClick={() => save(false)}>
+            <Button type="button" variant="outline" className="h-11" disabled={pending} onClick={() => save(false)}>
               {pending ? "Đang lưu..." : "Lưu nháp"}
             </Button>
           }
           nutCuoi={
             canConfirm && (
-              <Button type="button" className="h-10" disabled={pending} onClick={() => save(true)}>
+              <Button type="button" className="h-11" disabled={pending} onClick={() => save(true)}>
                 Xác nhận nhập kho
               </Button>
             )

@@ -31,7 +31,7 @@ export function DailyBars({ data, label }: { data: { day: string; value: number 
   return (
     <div className="relative">
       <div className="flex gap-2">
-        <div className="relative h-40 w-12 shrink-0 text-right text-[11px] text-muted-foreground tabular-nums" aria-hidden="true">
+        <div className="relative h-40 w-14 shrink-0 text-right text-xs text-muted-foreground tabular-nums" aria-hidden="true">
           <span className="absolute right-0 -translate-y-1/2" style={{ top: 0 }}>
             {compact.format(max)}
           </span>
@@ -75,7 +75,7 @@ export function DailyBars({ data, label }: { data: { day: string; value: number 
               );
             })}
           </svg>
-          <div className="relative mt-1 h-4 text-[11px] text-muted-foreground" aria-hidden="true">
+          <div className="relative mt-1 h-5 text-xs text-muted-foreground" aria-hidden="true">
             {data.map((d, i) =>
               i % step === 0 ? (
                 <span key={d.day} className="absolute -translate-x-1/2 whitespace-nowrap" style={{ left: `${((i + 0.5) / data.length) * 100}%` }}>
