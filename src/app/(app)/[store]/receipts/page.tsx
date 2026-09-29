@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { NativeSelect } from "@/components/native-select";
 import { Pagination } from "@/components/pagination";
 import { Badge } from "@/components/ui/badge";
@@ -71,45 +72,69 @@ export default async function ReceiptsPage({ params, searchParams }: { params: P
       {rows.length === 0 ? (
         <EmptyState title="Chưa có phiếu nhập">Tạo phiếu nhập để đưa hàng vào kho.</EmptyState>
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Mã phiếu</TableHead>
-                <TableHead>Ngày</TableHead>
-                <TableHead>Nhà cung cấp</TableHead>
-                <TableHead>Số HĐ</TableHead>
-                <TableHead className="text-right">Tổng</TableHead>
-                <TableHead className="text-right">Còn nợ</TableHead>
-                <TableHead>Trạng thái</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((r) => {
-                const st = RECEIPT_STATUS[r.status as keyof typeof RECEIPT_STATUS];
-                return (
-                  <TableRow key={r.id}>
-                    <TableCell>
-                      <Link href={`/${store.code}/receipts/${r.id}`} className="font-medium hover:underline">
-                        {r.code}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{new Date(r.receipt_date).toLocaleDateString("vi-VN")}</TableCell>
-                    <TableCell>{(r.suppliers as unknown as { name: string } | null)?.name}</TableCell>
-                    <TableCell>{r.invoice_no ?? "-"}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatMoney(r.total)}</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {r.status === "confirmed" ? formatMoney(r.total - r.paid_amount) : "-"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={st.variant}>{st.label}</Badge>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+        <>
+          <MobileCardList label="Phiếu nhập">
+            {rows.map((r) => {
+              const st = RECEIPT_STATUS[r.status as keyof typeof RECEIPT_STATUS];
+              return (
+                <MobileCard
+                  key={r.id}
+                  title={
+                    <Link href={`/${store.code}/receipts/${r.id}`} className="underline-offset-4 hover:underline">
+                      {r.code}
+                    </Link>
+                  }
+                  subtitle={`${new Date(r.receipt_date).toLocaleDateString("vi-VN")} - ${(r.suppliers as unknown as { name: string } | null)?.name ?? ""}`}
+                  badge={<Badge variant={st.variant}>{st.label}</Badge>}
+                  stats={[
+                    { label: "Tổng", value: formatMoney(r.total), strong: true },
+                    { label: "Còn nợ", value: r.status === "confirmed" ? formatMoney(r.total - r.paid_amount) : "-" },
+                    { label: "Số HĐ", value: r.invoice_no ?? "-" },
+                  ]}
+                />
+              );
+            })}
+          </MobileCardList>
+          <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Mã phiếu</TableHead>
+                  <TableHead>Ngày</TableHead>
+                  <TableHead>Nhà cung cấp</TableHead>
+                  <TableHead>Số HĐ</TableHead>
+                  <TableHead className="text-right">Tổng</TableHead>
+                  <TableHead className="text-right">Còn nợ</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((r) => {
+                  const st = RECEIPT_STATUS[r.status as keyof typeof RECEIPT_STATUS];
+                  return (
+                    <TableRow key={r.id}>
+                      <TableCell>
+                        <Link href={`/${store.code}/receipts/${r.id}`} className="font-medium hover:underline">
+                          {r.code}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{new Date(r.receipt_date).toLocaleDateString("vi-VN")}</TableCell>
+                      <TableCell>{(r.suppliers as unknown as { name: string } | null)?.name}</TableCell>
+                      <TableCell>{r.invoice_no ?? "-"}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatMoney(r.total)}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {r.status === "confirmed" ? formatMoney(r.total - r.paid_amount) : "-"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={st.variant}>{st.label}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
       <Pagination
         page={page}

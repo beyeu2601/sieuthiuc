@@ -5,6 +5,7 @@ import { formatDateVN } from "@/lib/dates";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { NativeSelect } from "@/components/native-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ReportFilter } from "../report-filter";
@@ -68,33 +69,49 @@ export default async function BestSellersPage({
       {rows.length === 0 ? (
         <EmptyState title="Chưa có dữ liệu bán trong kỳ" />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>#</TableHead>
-                <TableHead className="min-w-56">Sản phẩm</TableHead>
-                <TableHead className="text-right">Số lượng</TableHead>
-                <TableHead className="text-right">Doanh thu</TableHead>
-                <TableHead className="text-right">Lãi gộp</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((x, i) => (
-                <TableRow key={x.product_id}>
-                  <TableCell>{i + 1}</TableCell>
-                  <TableCell className="min-w-56 whitespace-normal">
-                    {x.name}
-                    <div className="text-xs text-muted-foreground">{x.sku}</div>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">{formatNumber(x.qty)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatMoney(x.revenue)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatMoney(x.gross_profit)}</TableCell>
+        <>
+          <MobileCardList label="Sản phẩm bán chạy">
+            {rows.map((x, i) => (
+              <MobileCard
+                key={x.product_id}
+                title={`${i + 1}. ${x.name}`}
+                subtitle={x.sku}
+                stats={[
+                  { label: "Số lượng", value: formatNumber(x.qty), strong: true },
+                  { label: "Doanh thu", value: formatMoney(x.revenue) },
+                  { label: "Lãi gộp", value: formatMoney(x.gross_profit) },
+                ]}
+              />
+            ))}
+          </MobileCardList>
+          <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>#</TableHead>
+                  <TableHead className="min-w-56">Sản phẩm</TableHead>
+                  <TableHead className="text-right">Số lượng</TableHead>
+                  <TableHead className="text-right">Doanh thu</TableHead>
+                  <TableHead className="text-right">Lãi gộp</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {rows.map((x, i) => (
+                  <TableRow key={x.product_id}>
+                    <TableCell>{i + 1}</TableCell>
+                    <TableCell className="min-w-56 whitespace-normal">
+                      {x.name}
+                      <div className="text-xs text-muted-foreground">{x.sku}</div>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{formatNumber(x.qty)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatMoney(x.revenue)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatMoney(x.gross_profit)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
     </div>
   );

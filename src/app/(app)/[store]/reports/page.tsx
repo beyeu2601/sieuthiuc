@@ -5,6 +5,7 @@ import { formatDateVN, previousPeriod } from "@/lib/dates";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { DailyBars } from "@/components/daily-bars";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { ReportFilter } from "./report-filter";
@@ -130,51 +131,86 @@ export default async function PnlPage({ params, searchParams }: { params: Promis
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-            <section className="overflow-x-auto rounded-xl border bg-card">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Khoản mục</TableHead>
-                    <TableHead className="text-right">Kỳ này</TableHead>
-                    <TableHead className="text-right">Kỳ trước</TableHead>
-                    <TableHead className="text-right">Thay đổi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {lines.map((l) => {
-                    const v = p[l.key] as number;
-                    const pv = (b?.[l.key] as number) ?? 0;
-                    const c = change(v, pv);
-                    return (
-                      <TableRow key={l.key} className={l.strong ? "bg-muted/50 font-semibold" : ""}>
-                        <TableCell>
-                          {l.href ? (
-                            <Link href={l.href} className="underline-offset-4 hover:underline">
-                              {l.sign ? `${l.sign} ` : ""}
-                              {l.label}
-                            </Link>
-                          ) : (
-                            <>
-                              {l.sign ? `${l.sign} ` : ""}
-                              {l.label}
-                            </>
-                          )}
-                        </TableCell>
-                        <TableCell className={cn("text-right tabular-nums", v < 0 && "text-destructive")}>{formatMoney(v)}</TableCell>
-                        <TableCell className="text-right text-muted-foreground tabular-nums">{formatMoney(pv)}</TableCell>
-                        <TableCell className="text-right text-muted-foreground tabular-nums">{c == null ? "-" : `${c > 0 ? "+" : ""}${c}%`}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                  <TableRow>
-                    <TableCell>Biên lãi gộp / biên lãi ròng</TableCell>
-                    <TableCell className="text-right tabular-nums" colSpan={3}>
-                      {p.gross_margin == null ? "N/A" : `${p.gross_margin}%`} / {p.net_margin == null ? "N/A" : `${p.net_margin}%`}
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-              <p className="p-3 text-xs text-muted-foreground">
+            <section className="rounded-xl border bg-card">
+              {/* Dien thoai: bao cao doc tu tren xuong, moi khoan muc mot dong, ky truoc va thay doi o dong phu */}
+              <ul className="divide-y md:hidden" aria-label="Bảng lãi lỗ">
+                {lines.map((l) => {
+                  const v = p[l.key] as number;
+                  const pv = (b?.[l.key] as number) ?? 0;
+                  const c = change(v, pv);
+                  const label = `${l.sign ? `${l.sign} ` : ""}${l.label}`;
+                  return (
+                    <li key={l.key} className={cn("px-4 py-2.5", l.strong && "bg-muted/50 font-semibold")}>
+                      <div className="flex items-baseline justify-between gap-3">
+                        {l.href ? (
+                          <Link href={l.href} className="underline underline-offset-4">
+                            {label}
+                          </Link>
+                        ) : (
+                          <span>{label}</span>
+                        )}
+                        <span className={cn("whitespace-nowrap tabular-nums", v < 0 && "text-destructive")}>{formatMoney(v)}</span>
+                      </div>
+                      <div className="text-xs font-normal text-muted-foreground tabular-nums">
+                        Kỳ trước {formatMoney(pv)}
+                        {c != null && ` - ${c > 0 ? "+" : ""}${c}%`}
+                      </div>
+                    </li>
+                  );
+                })}
+                <li className="flex items-baseline justify-between gap-3 px-4 py-2.5">
+                  <span>Biên lãi gộp / ròng</span>
+                  <span className="tabular-nums">
+                    {p.gross_margin == null ? "N/A" : `${p.gross_margin}%`} / {p.net_margin == null ? "N/A" : `${p.net_margin}%`}
+                  </span>
+                </li>
+              </ul>
+              <div className="hidden overflow-x-auto md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Khoản mục</TableHead>
+                      <TableHead className="text-right">Kỳ này</TableHead>
+                      <TableHead className="text-right">Kỳ trước</TableHead>
+                      <TableHead className="text-right">Thay đổi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {lines.map((l) => {
+                      const v = p[l.key] as number;
+                      const pv = (b?.[l.key] as number) ?? 0;
+                      const c = change(v, pv);
+                      return (
+                        <TableRow key={l.key} className={l.strong ? "bg-muted/50 font-semibold" : ""}>
+                          <TableCell>
+                            {l.href ? (
+                              <Link href={l.href} className="underline-offset-4 hover:underline">
+                                {l.sign ? `${l.sign} ` : ""}
+                                {l.label}
+                              </Link>
+                            ) : (
+                              <>
+                                {l.sign ? `${l.sign} ` : ""}
+                                {l.label}
+                              </>
+                            )}
+                          </TableCell>
+                          <TableCell className={cn("text-right tabular-nums", v < 0 && "text-destructive")}>{formatMoney(v)}</TableCell>
+                          <TableCell className="text-right text-muted-foreground tabular-nums">{formatMoney(pv)}</TableCell>
+                          <TableCell className="text-right text-muted-foreground tabular-nums">{c == null ? "-" : `${c > 0 ? "+" : ""}${c}%`}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    <TableRow>
+                      <TableCell>Biên lãi gộp / biên lãi ròng</TableCell>
+                      <TableCell className="text-right tabular-nums" colSpan={3}>
+                        {p.gross_margin == null ? "N/A" : `${p.gross_margin}%`} / {p.net_margin == null ? "N/A" : `${p.net_margin}%`}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+              <p className="border-t p-3 text-xs text-muted-foreground md:border-t-0">
                 Thanh toán nhà cung cấp và trả khoản chi không vào lãi lỗ (đã tính qua giá vốn và chi phí ghi theo ngày phát sinh). Hoàn trả và hàng
                 hủy có ở giai đoạn 2.
               </p>
@@ -213,29 +249,46 @@ export default async function PnlPage({ params, searchParams }: { params: Promis
             <DailyBars label="Doanh thu thuần" data={days.map((d) => ({ day: d.day, value: d.net_revenue }))} />
             <details className="mt-2 text-sm">
               <summary className="cursor-pointer text-muted-foreground">Xem bảng số liệu theo ngày</summary>
-              <div className="mt-2 overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Ngày</TableHead>
-                      <TableHead className="text-right">Số GD</TableHead>
-                      <TableHead className="text-right">Doanh thu thuần</TableHead>
-                      <TableHead className="text-right">Lãi gộp</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {days
-                      .filter((d) => d.sales_count > 0)
-                      .map((d) => (
-                        <TableRow key={d.day}>
-                          <TableCell>{formatDateVN(d.day)}</TableCell>
-                          <TableCell className="text-right">{d.sales_count}</TableCell>
-                          <TableCell className="text-right tabular-nums">{formatMoney(d.net_revenue)}</TableCell>
-                          <TableCell className="text-right tabular-nums">{formatMoney(d.gross_profit)}</TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
+              <div className="mt-2">
+                <MobileCardList label="Số liệu theo ngày">
+                  {days
+                    .filter((d) => d.sales_count > 0)
+                    .map((d) => (
+                      <MobileCard
+                        key={d.day}
+                        title={formatDateVN(d.day)}
+                        stats={[
+                          { label: "Doanh thu thuần", value: formatMoney(d.net_revenue), strong: true },
+                          { label: "Lãi gộp", value: formatMoney(d.gross_profit) },
+                          { label: "Số GD", value: d.sales_count },
+                        ]}
+                      />
+                    ))}
+                </MobileCardList>
+                <div className="hidden overflow-x-auto md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Ngày</TableHead>
+                        <TableHead className="text-right">Số GD</TableHead>
+                        <TableHead className="text-right">Doanh thu thuần</TableHead>
+                        <TableHead className="text-right">Lãi gộp</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {days
+                        .filter((d) => d.sales_count > 0)
+                        .map((d) => (
+                          <TableRow key={d.day}>
+                            <TableCell>{formatDateVN(d.day)}</TableCell>
+                            <TableCell className="text-right">{d.sales_count}</TableCell>
+                            <TableCell className="text-right tabular-nums">{formatMoney(d.net_revenue)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{formatMoney(d.gross_profit)}</TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             </details>
           </section>

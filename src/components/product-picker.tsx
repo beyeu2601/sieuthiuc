@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { searchCatalog, type CatalogItem } from "@/app/(app)/[store]/catalog-actions";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { GOODS_TYPE_LABEL } from "@/lib/text";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { CameraScanButton } from "@/components/camera-scan-button";
 
 // O tim san pham: go ten (khong dau duoc) hoac quet ma vach roi Enter.
@@ -30,6 +31,11 @@ export function ProductPicker({
   const [q, setQ] = useState("");
   const [items, setItems] = useState<CatalogItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Dong dang sang khi dung phim len/xuong. -1 = chua chon: Enter giu hanh vi cu
+  // (tim va tu chon khi khop dung ma) de may quet ma vach khong bi anh huong.
+  const [active, setActive] = useState(-1);
+  const listId = useId();
+  const listRef = useRef<HTMLUListElement>(null);
   const [pending, start] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -54,6 +60,7 @@ export function ProductPicker({
         return;
       }
       setItems(rows);
+      setActive(-1);
     });
   }
 
@@ -61,8 +68,16 @@ export function ProductPicker({
     onPick(it);
     setQ("");
     setItems(null);
+    setActive(-1);
     inputRef.current?.focus();
   }
+
+  // Dua dong dang sang vao tam nhin khi doi lua chon
+  useEffect(() => {
+    listRef.current?.querySelector('[data-active="true"]')?.scrollIntoView({ block: "nearest" });
+  }, [active]);
+
+  const open = !!items && items.length > 0;
 
   useEffect(() => () => {
     if (timer.current) clearTimeout(timer.current);
@@ -77,22 +92,37 @@ export function ProductPicker({
         autoComplete="off"
         placeholder={placeholder}
         aria-label="Tìm sản phẩm"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={open}
+        aria-controls={open ? listId : undefined}
+        aria-activedescendant={open && active >= 0 ? `${listId}-${active}` : undefined}
         className="h-11 text-base"
         onChange={(e) => {
           const v = e.target.value;
           setQ(v);
+          setActive(-1);
           if (timer.current) clearTimeout(timer.current);
           // go tay: tu tim sau 350ms; may quet go rat nhanh roi Enter nen khong kip kich hoat
           if (v.trim().length >= 2) timer.current = setTimeout(() => run(v, false), 350);
           else setItems(null);
         }}
         onKeyDown={(e) => {
-          if (e.key === "Enter") {
+          if (open && e.key === "ArrowDown") {
+            e.preventDefault();
+            setActive((a) => (a + 1) % items.length);
+          } else if (open && e.key === "ArrowUp") {
+            e.preventDefault();
+            setActive((a) => (a <= 0 ? items.length - 1 : a - 1));
+          } else if (e.key === "Enter") {
             e.preventDefault();
             if (timer.current) clearTimeout(timer.current);
-            run(q, true);
+            const it = open && active >= 0 ? items[active] : undefined;
+            if (it) pick(it);
+            else run(q, true);
           } else if (e.key === "Escape") {
             setItems(null);
+            setActive(-1);
           }
         }}
       />
@@ -123,15 +153,21 @@ export function ProductPicker({
               Không tìm thấy sản phẩm &quot;{q}&quot;. Nếu là hàng mới, nhờ quản lý tạo sản phẩm và gán mã vạch.
             </p>
           ) : (
-            <ul role="listbox" aria-label="Kết quả tìm sản phẩm">
-              {items.map((it) => (
+            <ul ref={listRef} id={listId} role="listbox" aria-label="Kết quả tìm sản phẩm">
+              {items.map((it, idx) => (
                 <li key={it.product_id}>
                   <button
                     type="button"
+                    id={`${listId}-${idx}`}
                     role="option"
-                    aria-selected={false}
+                    aria-selected={idx === active}
+                    data-active={idx === active}
                     onClick={() => pick(it)}
-                    className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm hover:bg-muted focus:bg-muted focus:outline-none"
+                    onMouseMove={() => setActive(idx)}
+                    className={cn(
+                      "flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm hover:bg-muted focus:bg-muted focus:outline-none",
+                      idx === active && "bg-brand-soft text-brand-strong hover:bg-brand-soft"
+                    )}
                   >
                     <span>
                       <span className="font-medium">{it.name}</span>

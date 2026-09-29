@@ -4,6 +4,7 @@ import { hasPerm, requireStore } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime, formatMoney, formatNumber } from "@/lib/format";
 import { GOODS_TYPE_LABEL } from "@/lib/text";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -142,7 +143,24 @@ export default async function ReceiptPage({
       {r.status === "cancelled" && (
         <p className="rounded-lg bg-muted px-3 py-2 text-sm">Đã hủy. Lý do: {r.cancel_reason}</p>
       )}
-      <div className="overflow-x-auto rounded-xl border bg-card">
+      <MobileCardList label="Dòng hàng">
+        {rows.map((i) => (
+          <MobileCard
+            key={i.id}
+            title={`${i.line_no}. ${i.products?.name ?? ""}`}
+            subtitle={`${i.products?.sku} - ${GOODS_TYPE_LABEL[i.goods_type]} - Lô ${i.lot_no ?? r.code}`}
+            stats={[
+              { label: "SL", value: `${formatNumber(i.qty)} ${i.unit}`, strong: true },
+              { label: "Đơn giá", value: formatMoney(i.unit_cost) },
+              { label: "Thành tiền", value: formatMoney(i.line_total) },
+              { label: "CP phân bổ", value: formatMoney(i.allocated_cost) },
+              { label: "Giá vốn nhập", value: formatMoney(i.landed_unit_cost) },
+              { label: "HSD", value: i.expiry_date ? new Date(i.expiry_date).toLocaleDateString("vi-VN") : "-" },
+            ]}
+          />
+        ))}
+      </MobileCardList>
+      <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
         <Table>
           <TableHeader>
             <TableRow>

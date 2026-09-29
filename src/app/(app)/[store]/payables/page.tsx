@@ -6,6 +6,7 @@ import { diffDays, formatDateVN, todayVN } from "@/lib/dates";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -156,140 +157,152 @@ export default async function PayablesPage({
         bySupplier.size === 0 ? (
           <EmptyState title="Chưa có công nợ" />
         ) : (
-          <div className="overflow-x-auto rounded-xl border bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nhà cung cấp</TableHead>
-                  <TableHead className="text-right">Số khoản</TableHead>
-                  <TableHead className="text-right">Phát sinh</TableHead>
-                  <TableHead className="text-right">Đã trả</TableHead>
-                  <TableHead className="text-right">Còn nợ</TableHead>
-                  <TableHead className="text-right">Quá hạn</TableHead>
-                  <TableHead />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {[...bySupplier.entries()]
-                  .sort((a, b) => b[1].remaining - a[1].remaining)
-                  .map(([id, g]) => (
-                    <TableRow key={id}>
-                      <TableCell>
-                        <Link href={`?tab=all&supplier=${id}`} className="font-medium hover:underline">
-                          {g.name}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-right">{g.count}</TableCell>
-                      <TableCell className="text-right tabular-nums">{formatMoney(g.total)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{formatMoney(g.paid)}</TableCell>
-                      <TableCell className="text-right font-medium tabular-nums">{formatMoney(g.remaining)}</TableCell>
-                      <TableCell className={cn("text-right tabular-nums", g.overdue > 0 && "text-destructive")}>{formatMoney(g.overdue)}</TableCell>
-                      <TableCell className="text-right">
-                        {g.remaining > 0 && (
-                          <Button size="sm" variant="outline" render={<Link href={`/${store.code}/payables/pay?supplier=${id}`} />}>
-                            Thanh toán
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-          </div>
+          <>
+            <MobileCardList label="Công nợ theo nhà cung cấp">
+              {[...bySupplier.entries()]
+                .sort((a, b) => b[1].remaining - a[1].remaining)
+                .map(([id, g]) => (
+                  <MobileCard
+                    key={id}
+                    title={
+                      <Link href={`?tab=all&supplier=${id}`} className="underline-offset-4 hover:underline">
+                        {g.name}
+                      </Link>
+                    }
+                    subtitle={`${g.count} khoản`}
+                    badge={
+                      g.remaining > 0 && (
+                        <Button size="sm" variant="outline" render={<Link href={`/${store.code}/payables/pay?supplier=${id}`} />}>
+                          Thanh toán
+                        </Button>
+                      )
+                    }
+                    stats={[
+                      { label: "Còn nợ", value: formatMoney(g.remaining), strong: true },
+                      { label: "Quá hạn", value: <span className={cn(g.overdue > 0 && "text-destructive")}>{formatMoney(g.overdue)}</span> },
+                      { label: "Đã trả", value: formatMoney(g.paid) },
+                    ]}
+                  />
+                ))}
+            </MobileCardList>
+            <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nhà cung cấp</TableHead>
+                    <TableHead className="text-right">Số khoản</TableHead>
+                    <TableHead className="text-right">Phát sinh</TableHead>
+                    <TableHead className="text-right">Đã trả</TableHead>
+                    <TableHead className="text-right">Còn nợ</TableHead>
+                    <TableHead className="text-right">Quá hạn</TableHead>
+                    <TableHead />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {[...bySupplier.entries()]
+                    .sort((a, b) => b[1].remaining - a[1].remaining)
+                    .map(([id, g]) => (
+                      <TableRow key={id}>
+                        <TableCell>
+                          <Link href={`?tab=all&supplier=${id}`} className="font-medium hover:underline">
+                            {g.name}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-right">{g.count}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatMoney(g.total)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatMoney(g.paid)}</TableCell>
+                        <TableCell className="text-right font-medium tabular-nums">{formatMoney(g.remaining)}</TableCell>
+                        <TableCell className={cn("text-right tabular-nums", g.overdue > 0 && "text-destructive")}>{formatMoney(g.overdue)}</TableCell>
+                        <TableCell className="text-right">
+                          {g.remaining > 0 && (
+                            <Button size="sm" variant="outline" render={<Link href={`/${store.code}/payables/pay?supplier=${id}`} />}>
+                              Thanh toán
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         )
       ) : tab === "payments" ? (
         (payments ?? []).length === 0 ? (
           <EmptyState title="Chưa có thanh toán nào" />
         ) : (
-          <div className="overflow-x-auto rounded-xl border bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Mã</TableHead>
-                  <TableHead>Ngày</TableHead>
-                  <TableHead>Nhà cung cấp</TableHead>
-                  <TableHead>Phương thức</TableHead>
-                  <TableHead className="text-right">Số tiền</TableHead>
-                  <TableHead>Phân bổ (số dư trước - sau)</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(payments ?? []).map((p) => {
-                  const allocs = (p.supplier_payment_allocations ?? []) as unknown as {
-                    amount: number;
-                    remaining_before: number;
-                    remaining_after: number;
-                    supplier_debts: { code: string } | null;
-                  }[];
-                  return (
-                    <TableRow key={p.id}>
-                      <TableCell className="font-medium">{p.code}</TableCell>
-                      <TableCell>{formatDateVN(p.payment_date)}</TableCell>
-                      <TableCell>{(p.suppliers as unknown as { name: string } | null)?.name}</TableCell>
-                      <TableCell>
-                        {PAYMENT_METHOD_LABEL[p.method as keyof typeof PAYMENT_METHOD_LABEL]}
-                        {p.reference ? ` - ${p.reference}` : ""}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">{formatMoney(p.amount)}</TableCell>
-                      <TableCell className="text-xs">
-                        {allocs.length === 0
-                          ? "Trả ngay khi nhập hàng"
-                          : allocs.map((a, i) => (
-                              <div key={i}>
-                                {a.supplier_debts?.code}: {formatMoney(a.amount)} ({formatMoney(a.remaining_before)} - {formatMoney(a.remaining_after)})
-                              </div>
-                            ))}
-                        <div className="text-muted-foreground">{formatDateTime(p.created_at)}</div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        )
-      ) : (
-        (() => {
-          const rows = tab === "due" ? open.sort((a, b) => (a.due_date ?? "9999") .localeCompare(b.due_date ?? "9999")) : all;
-          return rows.length === 0 ? (
-            <EmptyState title={tab === "due" ? "Không có khoản nào cần thanh toán" : "Chưa có công nợ"} />
-          ) : (
-            <div className="overflow-x-auto rounded-xl border bg-card">
+          <>
+            <MobileCardList label="Lịch sử thanh toán">
+              {(payments ?? []).map((p) => {
+                const allocs = (p.supplier_payment_allocations ?? []) as unknown as {
+                  amount: number;
+                  remaining_before: number;
+                  remaining_after: number;
+                  supplier_debts: { code: string } | null;
+                }[];
+                return (
+                  <MobileCard
+                    key={p.id}
+                    title={(p.suppliers as unknown as { name: string } | null)?.name}
+                    subtitle={`${p.code} - ${formatDateTime(p.created_at)}`}
+                    stats={[
+                      { label: "Số tiền", value: formatMoney(p.amount), strong: true },
+                      { label: "Ngày", value: formatDateVN(p.payment_date) },
+                      {
+                        label: "Phương thức",
+                        value: `${PAYMENT_METHOD_LABEL[p.method as keyof typeof PAYMENT_METHOD_LABEL]}${p.reference ? ` - ${p.reference}` : ""}`,
+                      },
+                      {
+                        label: "Phân bổ",
+                        value:
+                          allocs.length === 0
+                            ? "Trả ngay khi nhập hàng"
+                            : allocs.map((a) => `${a.supplier_debts?.code}: ${formatMoney(a.amount)}`).join(", "),
+                      },
+                    ]}
+                  />
+                );
+              })}
+            </MobileCardList>
+            <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Mã nợ</TableHead>
+                    <TableHead>Mã</TableHead>
+                    <TableHead>Ngày</TableHead>
                     <TableHead>Nhà cung cấp</TableHead>
-                    <TableHead>Phiếu nhập</TableHead>
-                    <TableHead>Ngày phát sinh</TableHead>
-                    <TableHead>Hạn trả</TableHead>
-                    <TableHead className="text-right">Tổng</TableHead>
-                    <TableHead className="text-right">Còn nợ</TableHead>
-                    <TableHead>Tình trạng</TableHead>
+                    <TableHead>Phương thức</TableHead>
+                    <TableHead className="text-right">Số tiền</TableHead>
+                    <TableHead>Phân bổ (số dư trước - sau)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rows.map((d) => {
-                    const ds = DUE[dueStatus(d)];
+                  {(payments ?? []).map((p) => {
+                    const allocs = (p.supplier_payment_allocations ?? []) as unknown as {
+                      amount: number;
+                      remaining_before: number;
+                      remaining_after: number;
+                      supplier_debts: { code: string } | null;
+                    }[];
                     return (
-                      <TableRow key={d.id}>
-                        <TableCell className="font-medium">{d.code}</TableCell>
-                        <TableCell>{d.suppliers?.name}</TableCell>
+                      <TableRow key={p.id}>
+                        <TableCell className="font-medium">{p.code}</TableCell>
+                        <TableCell>{formatDateVN(p.payment_date)}</TableCell>
+                        <TableCell>{(p.suppliers as unknown as { name: string } | null)?.name}</TableCell>
                         <TableCell>
-                          {d.receipt_id ? (
-                            <Link href={`/${store.code}/receipts/${d.receipt_id}`} className="underline underline-offset-4">
-                              {d.purchase_receipts?.code}
-                            </Link>
-                          ) : (
-                            "-"
-                          )}
+                          {PAYMENT_METHOD_LABEL[p.method as keyof typeof PAYMENT_METHOD_LABEL]}
+                          {p.reference ? ` - ${p.reference}` : ""}
                         </TableCell>
-                        <TableCell>{formatDateVN(d.issued_date)}</TableCell>
-                        <TableCell>{formatDateVN(d.due_date)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{formatMoney(d.total_amount)}</TableCell>
-                        <TableCell className="text-right font-medium tabular-nums">{formatMoney(d.remaining)}</TableCell>
-                        <TableCell>
-                          <Badge variant={ds.variant}>{ds.label}</Badge>
+                        <TableCell className="text-right tabular-nums">{formatMoney(p.amount)}</TableCell>
+                        <TableCell className="text-xs">
+                          {allocs.length === 0
+                            ? "Trả ngay khi nhập hàng"
+                            : allocs.map((a, i) => (
+                                <div key={i}>
+                                  {a.supplier_debts?.code}: {formatMoney(a.amount)} ({formatMoney(a.remaining_before)} - {formatMoney(a.remaining_after)})
+                                </div>
+                              ))}
+                          <div className="text-muted-foreground">{formatDateTime(p.created_at)}</div>
                         </TableCell>
                       </TableRow>
                     );
@@ -297,6 +310,89 @@ export default async function PayablesPage({
                 </TableBody>
               </Table>
             </div>
+          </>
+        )
+      ) : (
+        (() => {
+          const rows = tab === "due" ? open.sort((a, b) => (a.due_date ?? "9999") .localeCompare(b.due_date ?? "9999")) : all;
+          return rows.length === 0 ? (
+            <EmptyState title={tab === "due" ? "Không có khoản nào cần thanh toán" : "Chưa có công nợ"} />
+          ) : (
+            <>
+              <MobileCardList label="Khoản công nợ">
+                {rows.map((d) => {
+                  const ds = DUE[dueStatus(d)];
+                  return (
+                    <MobileCard
+                      key={d.id}
+                      title={d.suppliers?.name}
+                      subtitle={
+                        <>
+                          {d.code}
+                          {d.receipt_id && (
+                            <>
+                              {" - "}
+                              <Link href={`/${store.code}/receipts/${d.receipt_id}`} className="underline underline-offset-4">
+                                {d.purchase_receipts?.code}
+                              </Link>
+                            </>
+                          )}
+                        </>
+                      }
+                      badge={<Badge variant={ds.variant}>{ds.label}</Badge>}
+                      stats={[
+                        { label: "Còn nợ", value: formatMoney(d.remaining), strong: true },
+                        { label: "Tổng", value: formatMoney(d.total_amount) },
+                        { label: "Hạn trả", value: formatDateVN(d.due_date) },
+                      ]}
+                    />
+                  );
+                })}
+              </MobileCardList>
+              <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Mã nợ</TableHead>
+                      <TableHead>Nhà cung cấp</TableHead>
+                      <TableHead>Phiếu nhập</TableHead>
+                      <TableHead>Ngày phát sinh</TableHead>
+                      <TableHead>Hạn trả</TableHead>
+                      <TableHead className="text-right">Tổng</TableHead>
+                      <TableHead className="text-right">Còn nợ</TableHead>
+                      <TableHead>Tình trạng</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((d) => {
+                      const ds = DUE[dueStatus(d)];
+                      return (
+                        <TableRow key={d.id}>
+                          <TableCell className="font-medium">{d.code}</TableCell>
+                          <TableCell>{d.suppliers?.name}</TableCell>
+                          <TableCell>
+                            {d.receipt_id ? (
+                              <Link href={`/${store.code}/receipts/${d.receipt_id}`} className="underline underline-offset-4">
+                                {d.purchase_receipts?.code}
+                              </Link>
+                            ) : (
+                              "-"
+                            )}
+                          </TableCell>
+                          <TableCell>{formatDateVN(d.issued_date)}</TableCell>
+                          <TableCell>{formatDateVN(d.due_date)}</TableCell>
+                          <TableCell className="text-right tabular-nums">{formatMoney(d.total_amount)}</TableCell>
+                          <TableCell className="text-right font-medium tabular-nums">{formatMoney(d.remaining)}</TableCell>
+                          <TableCell>
+                            <Badge variant={ds.variant}>{ds.label}</Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           );
         })()
       )}
