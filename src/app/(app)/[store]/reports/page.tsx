@@ -5,6 +5,8 @@ import { formatDateVN, previousPeriod } from "@/lib/dates";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { DailyBars } from "@/components/daily-bars";
+import { ThanhCoCau, sacTheoThuTu } from "@/components/charts/thanh-co-cau";
+import { sacKenhBan, sacLoaiHang, type SacNguNghia } from "@/components/ui/chip";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
@@ -220,26 +222,23 @@ export default async function PnlPage({ params, searchParams }: { params: Promis
               <h2 className="font-medium">Cơ cấu doanh thu</h2>
               {breakdown && (
                 <>
-                  <Breakdown title="Theo kênh" data={breakdown.by_channel} labels={CHANNEL_LABEL} />
+                  <Breakdown title="Theo kênh" data={breakdown.by_channel} labels={CHANNEL_LABEL} sacOf={sacKenhBan} />
                   <Breakdown title="Theo phương thức" data={breakdown.by_method} labels={PAYMENT_METHOD_LABEL} />
-                  <Breakdown title="Theo loại hàng (tiền hàng)" data={breakdown.by_goods_type} labels={{ cont: "Cont", air: "Air" }} />
+                  <Breakdown title="Theo loại hàng (tiền hàng)" data={breakdown.by_goods_type} labels={{ cont: "Cont", air: "Air" }} sacOf={sacLoaiHang} />
                 </>
               )}
               <h2 className="pt-2 font-medium">Chi phí theo nhóm</h2>
               {expenses.length === 0 ? (
                 <p className="text-muted-foreground">Không có chi phí trong kỳ.</p>
               ) : (
-                <ul className="space-y-1">
-                  {expenses.map((e) => (
-                    <li key={e.category} className="flex justify-between gap-2">
-                      <span>
-                        {e.category}
-                        {e.unpaid > 0 && <span className="text-xs text-muted-foreground"> (chưa trả {formatMoney(e.unpaid)})</span>}
-                      </span>
-                      <span className="tabular-nums">{formatMoney(e.amount)}</span>
-                    </li>
-                  ))}
-                </ul>
+                <ThanhCoCau
+                  items={expenses.map((e) => ({
+                    key: e.category,
+                    label: e.category,
+                    value: e.amount,
+                    note: e.unpaid > 0 && <span className="text-xs text-muted-foreground"> (chưa trả {formatMoney(e.unpaid)})</span>,
+                  }))}
+                />
               )}
             </section>
           </div>
@@ -298,24 +297,25 @@ export default async function PnlPage({ params, searchParams }: { params: Promis
   );
 }
 
-function Breakdown({ title, data, labels }: { title: string; data: Record<string, number>; labels: Record<string, string> }) {
-  const entries = Object.entries(data ?? {}).sort((a, b) => b[1] - a[1]);
-  const total = entries.reduce((s, [, v]) => s + v, 0);
+function Breakdown({
+  title,
+  data,
+  labels,
+  sacOf,
+}: {
+  title: string;
+  data: Record<string, number>;
+  labels: Record<string, string>;
+  sacOf?: (key: string) => SacNguNghia;
+}) {
+  // Khong co sac ngu nghia thi lay mau theo vi tri khoa trong bang nhan co dinh, de mau khong doi khi mot muc vang trong ky
   return (
-    <div>
-      <div className="text-muted-foreground">{title}</div>
-      {entries.length === 0 ? (
-        <div className="text-muted-foreground">-</div>
-      ) : (
-        entries.map(([k, v]) => (
-          <div key={k} className="flex justify-between gap-2">
-            <span>{labels[k] ?? k}</span>
-            <span className="tabular-nums">
-              {formatMoney(v)} <span className="text-xs text-muted-foreground">({total ? Math.round((v / total) * 100) : 0}%)</span>
-            </span>
-          </div>
-        ))
-      )}
-    </div>
+    <ThanhCoCau
+      title={title}
+      items={Object.entries(data ?? {}).map(([k, v], i) => {
+        const pos = Object.keys(labels).indexOf(k);
+        return { key: k, label: labels[k] ?? k, value: v, sac: sacOf ? sacOf(k) : sacTheoThuTu(pos >= 0 ? pos : Object.keys(labels).length + i) };
+      })}
+    />
   );
 }
