@@ -12,7 +12,8 @@ import { ProductPicker } from "@/components/product-picker";
 import { MoneyInput } from "@/components/money-input";
 import { NativeSelect } from "@/components/native-select";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FormWizard } from "@/components/ui/form-wizard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -185,6 +186,247 @@ export function ReceiptEditor({
     });
   }
 
+  // Ly do buoc "Hang nhap" chua di tiep duoc; cung dieu kien voi validate(false)
+  const lineIssue = (() => {
+    if (lines.length === 0) return "Thêm ít nhất một dòng hàng";
+    for (const [i, l] of lines.entries()) {
+      if (!(l.qty > 0)) return `Dòng ${i + 1}: số lượng phải lớn hơn 0`;
+      if (l.unit_cost == null) return `Dòng ${i + 1}: nhập đơn giá nhập`;
+    }
+    return null;
+  })();
+  const total = subtotal + extra;
+  const termsDays = supplier?.payment_terms_days ?? 0;
+  const missingExpiry = lines.filter((l) => l.expiry_level === "lot" && !l.expiry_date);
+
+  const headerStep = (
+    <section className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="space-y-1.5 sm:col-span-2">
+        <Label htmlFor="supplier">Nhà cung cấp *</Label>
+        <div className="flex gap-2">
+          <NativeSelect id="supplier" value={h.supplier_id} onChange={(e) => setH({ ...h, supplier_id: e.target.value })}>
+            <option value="">Chọn nhà cung cấp</option>
+            {suppliers.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({s.code})
+              </option>
+            ))}
+          </NativeSelect>
+          {canCreateSupplier && (
+            <Button type="button" variant="outline" className="shrink-0" onClick={() => setSupplierOpen(true)}>
+              <PlusIcon /> Thêm NCC
+            </Button>
+          )}
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="rdate">Ngày nhập *</Label>
+        <Input id="rdate" type="date" value={h.receipt_date} onChange={(e) => setH({ ...h, receipt_date: e.target.value })} />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="inv">Số hóa đơn NCC</Label>
+        <Input id="inv" value={h.invoice_no} onChange={(e) => setH({ ...h, invoice_no: e.target.value })} />
+      </div>
+      <div className="space-y-1.5 sm:col-span-2 lg:col-span-4">
+        <Label htmlFor="note">Ghi chú</Label>
+        <Textarea id="note" rows={1} value={h.note} onChange={(e) => setH({ ...h, note: e.target.value })} />
+      </div>
+    </section>
+  );
+
+  const reviewStep = (
+    <section className="space-y-3 rounded-xl border bg-card p-4 text-sm">
+      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+        <dt className="text-muted-foreground">Nhà cung cấp</dt>
+        <dd>{supplier ? `${supplier.name} (${supplier.code})` : "-"}</dd>
+        <dt className="text-muted-foreground">Ngày nhập</dt>
+        <dd>{h.receipt_date ? new Date(`${h.receipt_date}T00:00:00`).toLocaleDateString("vi-VN") : "-"}</dd>
+        <dt className="text-muted-foreground">Số hóa đơn</dt>
+        <dd>{h.invoice_no || "-"}</dd>
+      </dl>
+      <div>
+        <h3 className="mb-1 font-medium">{lines.length} dòng hàng</h3>
+        {lines.length > 0 && (
+          <ul className="divide-y rounded-lg border">
+            {lines.map((l, i) => (
+              <li key={l.key} className="flex items-baseline justify-between gap-3 px-3 py-2">
+                <span className="min-w-0">
+                  {i + 1}. {l.name}
+                  <span className="block text-xs text-muted-foreground">
+                    {l.qty} {l.unit} x {formatMoney(l.unit_cost ?? 0)}
+                    {l.expiry_date ? ` - HSD ${new Date(`${l.expiry_date}T00:00:00`).toLocaleDateString("vi-VN")}` : ""}
+                  </span>
+                </span>
+                <span className="shrink-0 tabular-nums">{formatMoney(Math.round(l.qty * (l.unit_cost ?? 0)))}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      {costs.some((c) => (c.amount ?? 0) > 0) && (
+        <div>
+          <h3 className="mb-1 font-medium">Chi phí kèm theo</h3>
+          <ul className="space-y-0.5">
+            {costs
+              .filter((c) => (c.amount ?? 0) > 0)
+              .map((c) => (
+                <li key={c.key} className="flex justify-between gap-3">
+                  <span>
+                    {COST_TYPES[c.cost_type]}
+                    {c.note ? ` - ${c.note}` : ""}
+                  </span>
+                  <span className="tabular-nums">{formatMoney(c.amount)}</span>
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
+      {canConfirm && missingExpiry.length > 0 && (
+        <p className="rounded-lg border border-vien-amber bg-nen-amber px-3 py-2 text-chu-amber">
+          Cần nhập hạn sử dụng trước khi xác nhận nhập kho: {missingExpiry.map((l) => l.name).join(", ")}. Lưu nháp vẫn được.
+        </p>
+      )}
+      {receiptId && (
+        <div className="border-t pt-3">
+          <CancelButton storeCode={storeCode} receiptId={receiptId} />
+        </div>
+      )}
+    </section>
+  );
+
+  const linesStep = (
+    <section className="space-y-3 rounded-xl border bg-card p-4">
+      <h2 className="font-medium">Hàng nhập</h2>
+      <ProductPicker storeId={storeId} onPick={addProduct} showStock={false} />
+      {canCreateProduct && (
+        <div>
+          <Button type="button" variant="outline" size="sm" onClick={() => setAddOpen(true)}>
+            <PlusIcon /> Thêm sản phẩm
+          </Button>
+        </div>
+      )}
+      {lines.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Quét mã vạch hoặc tìm tên để thêm hàng. Quét lại cùng mã sẽ tăng số lượng. Cùng một mặt hàng nhiều hạn dùng thì bấm &quot;+ Thêm lô/date khác&quot; trên dòng.</p>
+      ) : (
+        <div className="space-y-2">
+          {lines.map((l, i) => (
+            <div key={l.key} className="grid grid-cols-2 gap-2 rounded-lg border p-3 md:grid-cols-[2fr_80px_120px_120px_110px_120px_auto] md:items-end">
+              <div className="col-span-2 md:col-span-1">
+                <div className="text-sm font-medium">
+                  {i + 1}. {l.name}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {l.sku} - {GOODS_TYPE_LABEL[l.goods_type]} - Thành tiền {formatMoney(Math.round(l.qty * (l.unit_cost ?? 0)))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => addLot(l)}
+                  className="mt-1 text-xs font-medium text-primary underline underline-offset-2"
+                >
+                  + Thêm lô/date khác
+                </button>
+              </div>
+              <label className="space-y-1 text-xs text-muted-foreground">
+                SL ({l.unit})
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step="any"
+                  value={l.qty}
+                  onChange={(e) => upd(l.key, { qty: Number(e.target.value) })}
+                />
+              </label>
+              <label className="space-y-1 text-xs text-muted-foreground">
+                Đơn giá nhập
+                <MoneyInput value={l.unit_cost} onChange={(n) => upd(l.key, { unit_cost: n })} />
+              </label>
+              <label className="space-y-1 text-xs text-muted-foreground">
+                Giá bán
+                <MoneyInput value={l.sell_price} onChange={(n) => upd(l.key, { sell_price: n })} />
+              </label>
+              <label className="space-y-1 text-xs text-muted-foreground">
+                Số lô
+                <Input value={l.lot_no} placeholder="Theo mã phiếu" onChange={(e) => upd(l.key, { lot_no: e.target.value })} />
+              </label>
+              <label className="space-y-1 text-xs text-muted-foreground">
+                Hạn sử dụng{l.expiry_level === "lot" ? " *" : ""}
+                <Input type="date" value={l.expiry_date} onChange={(e) => upd(l.key, { expiry_date: e.target.value })} />
+              </label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`Xóa dòng ${l.name}`}
+                onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}
+              >
+                <TrashIcon />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+
+  const costsStep = (
+    <section className="space-y-3 rounded-xl border bg-card p-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-medium">Chi phí kèm theo</h2>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setCosts((c) => [...c, { key: newKey(), cost_type: "shipping", amount: null, allocation: "by_value", note: "" }])}
+        >
+          Thêm chi phí
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Vận chuyển, thuế, phí được cộng vào giá vốn từng dòng hàng khi xác nhận (theo giá trị hoặc theo số lượng).
+      </p>
+      {costs.map((c) => (
+        <div key={c.key} className="grid grid-cols-2 gap-2 md:grid-cols-[150px_160px_170px_1fr_auto] md:items-end">
+          <NativeSelect
+            aria-label="Loại chi phí"
+            value={c.cost_type}
+            onChange={(e) => setCosts((cs) => cs.map((x) => (x.key === c.key ? { ...x, cost_type: e.target.value } : x)))}
+          >
+            {Object.entries(COST_TYPES).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
+          </NativeSelect>
+          <MoneyInput
+            aria-label="Số tiền"
+            value={c.amount}
+            onChange={(n) => setCosts((cs) => cs.map((x) => (x.key === c.key ? { ...x, amount: n } : x)))}
+          />
+          <NativeSelect
+            aria-label="Cách phân bổ"
+            value={c.allocation}
+            onChange={(e) =>
+              setCosts((cs) => cs.map((x) => (x.key === c.key ? { ...x, allocation: e.target.value as "by_value" | "by_qty" } : x)))
+            }
+          >
+            <option value="by_value">Phân bổ theo giá trị</option>
+            <option value="by_qty">Phân bổ theo số lượng</option>
+          </NativeSelect>
+          <Input
+            aria-label="Ghi chú chi phí"
+            placeholder="Ghi chú"
+            value={c.note}
+            onChange={(e) => setCosts((cs) => cs.map((x) => (x.key === c.key ? { ...x, note: e.target.value } : x)))}
+          />
+          <Button type="button" variant="ghost" size="icon" aria-label="Xóa chi phí" onClick={() => setCosts((cs) => cs.filter((x) => x.key !== c.key))}>
+            <TrashIcon />
+          </Button>
+        </div>
+      ))}
+    </section>
+  );
+
   return (
     <div className="space-y-4">
       {error && (
@@ -193,190 +435,71 @@ export function ReceiptEditor({
         </p>
       )}
 
-      <section className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="space-y-1.5 sm:col-span-2">
-          <Label htmlFor="supplier">Nhà cung cấp *</Label>
-          <div className="flex gap-2">
-            <NativeSelect id="supplier" value={h.supplier_id} onChange={(e) => setH({ ...h, supplier_id: e.target.value })}>
-              <option value="">Chọn nhà cung cấp</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.code})
-                </option>
-              ))}
-            </NativeSelect>
-            {canCreateSupplier && (
-              <Button type="button" variant="outline" className="shrink-0" onClick={() => setSupplierOpen(true)}>
-                <PlusIcon /> Thêm NCC
-              </Button>
-            )}
-          </div>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="rdate">Ngày nhập *</Label>
-          <Input id="rdate" type="date" value={h.receipt_date} onChange={(e) => setH({ ...h, receipt_date: e.target.value })} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="inv">Số hóa đơn NCC</Label>
-          <Input id="inv" value={h.invoice_no} onChange={(e) => setH({ ...h, invoice_no: e.target.value })} />
-        </div>
-        <div className="space-y-1.5 sm:col-span-2 lg:col-span-4">
-          <Label htmlFor="note">Ghi chú</Label>
-          <Textarea id="note" rows={1} value={h.note} onChange={(e) => setH({ ...h, note: e.target.value })} />
-        </div>
-      </section>
-
-      <section className="space-y-3 rounded-xl border bg-card p-4">
-        <h2 className="font-medium">Hàng nhập</h2>
-        <ProductPicker storeId={storeId} onPick={addProduct} showStock={false} autoFocus={!receiptId} />
-        {canCreateProduct && (
-          <div>
-            <Button type="button" variant="outline" size="sm" onClick={() => setAddOpen(true)}>
-              <PlusIcon /> Thêm sản phẩm
-            </Button>
-          </div>
-        )}
-        {lines.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Quét mã vạch hoặc tìm tên để thêm hàng. Quét lại cùng mã sẽ tăng số lượng. Cùng một mặt hàng nhiều hạn dùng thì bấm &quot;+ Thêm lô/date khác&quot; trên dòng.</p>
-        ) : (
-          <div className="space-y-2">
-            {lines.map((l, i) => (
-              <div key={l.key} className="grid grid-cols-2 gap-2 rounded-lg border p-3 md:grid-cols-[2fr_80px_120px_120px_110px_120px_auto] md:items-end">
-                <div className="col-span-2 md:col-span-1">
-                  <div className="text-sm font-medium">
-                    {i + 1}. {l.name}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {l.sku} - {GOODS_TYPE_LABEL[l.goods_type]} - Thành tiền {formatMoney(Math.round(l.qty * (l.unit_cost ?? 0)))}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => addLot(l)}
-                    className="mt-1 text-xs font-medium text-primary underline underline-offset-2"
-                  >
-                    + Thêm lô/date khác
-                  </button>
-                </div>
-                <label className="space-y-1 text-xs text-muted-foreground">
-                  SL ({l.unit})
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    step="any"
-                    value={l.qty}
-                    onChange={(e) => upd(l.key, { qty: Number(e.target.value) })}
-                  />
-                </label>
-                <label className="space-y-1 text-xs text-muted-foreground">
-                  Đơn giá nhập
-                  <MoneyInput value={l.unit_cost} onChange={(n) => upd(l.key, { unit_cost: n })} />
-                </label>
-                <label className="space-y-1 text-xs text-muted-foreground">
-                  Giá bán
-                  <MoneyInput value={l.sell_price} onChange={(n) => upd(l.key, { sell_price: n })} />
-                </label>
-                <label className="space-y-1 text-xs text-muted-foreground">
-                  Số lô
-                  <Input value={l.lot_no} placeholder="Theo mã phiếu" onChange={(e) => upd(l.key, { lot_no: e.target.value })} />
-                </label>
-                <label className="space-y-1 text-xs text-muted-foreground">
-                  Hạn sử dụng{l.expiry_level === "lot" ? " *" : ""}
-                  <Input type="date" value={l.expiry_date} onChange={(e) => upd(l.key, { expiry_date: e.target.value })} />
-                </label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`Xóa dòng ${l.name}`}
-                  onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}
-                >
-                  <TrashIcon />
-                </Button>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+        <FormWizard
+          buocDau={receiptId ? 3 : 0}
+          buoc={[
+            {
+              id: "ncc",
+              nhan: "Nhà cung cấp",
+              hopLe: !!h.supplier_id && !!h.receipt_date,
+              lyDo: !h.supplier_id ? "Chọn nhà cung cấp" : "Chọn ngày nhập",
+              noiDung: headerStep,
+            },
+            { id: "hang", nhan: "Hàng nhập", hopLe: lineIssue == null, lyDo: lineIssue, noiDung: linesStep },
+            { id: "chiphi", nhan: "Chi phí", hopLe: true, noiDung: costsStep },
+            { id: "kiemtra", nhan: "Kiểm tra", hopLe: true, noiDung: reviewStep },
+          ]}
+          // Dien thoai: tru chieu cao thanh tab duoi day (h-16) de hang nut khong bi che
+          lopChan="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 lg:bottom-0"
+          chanTrai={
+            <div className="lg:hidden">
+              Tổng phiếu <strong className="text-base tabular-nums">{formatMoney(total)}</strong>
+              <div className="text-xs text-muted-foreground">
+                Hàng {formatMoney(subtotal)} + chi phí {formatMoney(extra)}
               </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="space-y-3 rounded-xl border bg-card p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-medium">Chi phí kèm theo</h2>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setCosts((c) => [...c, { key: newKey(), cost_type: "shipping", amount: null, allocation: "by_value", note: "" }])}
-          >
-            Thêm chi phí
-          </Button>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Vận chuyển, thuế, phí được cộng vào giá vốn từng dòng hàng khi xác nhận (theo giá trị hoặc theo số lượng).
-        </p>
-        {costs.map((c) => (
-          <div key={c.key} className="grid grid-cols-2 gap-2 md:grid-cols-[150px_160px_170px_1fr_auto] md:items-end">
-            <NativeSelect
-              aria-label="Loại chi phí"
-              value={c.cost_type}
-              onChange={(e) => setCosts((cs) => cs.map((x) => (x.key === c.key ? { ...x, cost_type: e.target.value } : x)))}
-            >
-              {Object.entries(COST_TYPES).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </NativeSelect>
-            <MoneyInput
-              aria-label="Số tiền"
-              value={c.amount}
-              onChange={(n) => setCosts((cs) => cs.map((x) => (x.key === c.key ? { ...x, amount: n } : x)))}
-            />
-            <NativeSelect
-              aria-label="Cách phân bổ"
-              value={c.allocation}
-              onChange={(e) =>
-                setCosts((cs) => cs.map((x) => (x.key === c.key ? { ...x, allocation: e.target.value as "by_value" | "by_qty" } : x)))
-              }
-            >
-              <option value="by_value">Phân bổ theo giá trị</option>
-              <option value="by_qty">Phân bổ theo số lượng</option>
-            </NativeSelect>
-            <Input
-              aria-label="Ghi chú chi phí"
-              placeholder="Ghi chú"
-              value={c.note}
-              onChange={(e) => setCosts((cs) => cs.map((x) => (x.key === c.key ? { ...x, note: e.target.value } : x)))}
-            />
-            <Button type="button" variant="ghost" size="icon" aria-label="Xóa chi phí" onClick={() => setCosts((cs) => cs.filter((x) => x.key !== c.key))}>
-              <TrashIcon />
+            </div>
+          }
+          nutPhu={
+            <Button type="button" variant="outline" className="h-10" disabled={pending} onClick={() => save(false)}>
+              {pending ? "Đang lưu..." : "Lưu nháp"}
             </Button>
-          </div>
-        ))}
-      </section>
+          }
+          nutCuoi={
+            canConfirm && (
+              <Button type="button" className="h-10" disabled={pending} onClick={() => save(true)}>
+                Xác nhận nhập kho
+              </Button>
+            )
+          }
+        />
 
-      <section className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4 shadow-sm">
-        <div className="text-sm">
-          <div>
-            Tiền hàng <strong className="tabular-nums">{formatMoney(subtotal)}</strong> + chi phí{" "}
-            <strong className="tabular-nums">{formatMoney(extra)}</strong>
-          </div>
-          <div className="text-lg">
-            Tổng phiếu <strong className="tabular-nums">{formatMoney(subtotal + extra)}</strong>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {receiptId && <CancelButton storeCode={storeCode} receiptId={receiptId} />}
-          <Button variant="outline" className="h-10" disabled={pending} onClick={() => save(false)}>
-            {pending ? "Đang lưu..." : "Lưu nháp"}
-          </Button>
-          {canConfirm && (
-            <Button className="h-10" disabled={pending} onClick={() => save(true)}>
-              Xác nhận nhập kho
-            </Button>
+        {/* May tinh: tom tat cap nhat ngay khi nhap, dinh ben phai */}
+        <aside className="hidden space-y-3 rounded-xl border bg-card p-4 text-sm lg:sticky lg:top-6 lg:block" aria-label="Tóm tắt phiếu">
+          <h2 className="font-medium">Tóm tắt</h2>
+          <dl className="grid grid-cols-2 gap-y-1">
+            <dt className="text-muted-foreground">Nhà cung cấp</dt>
+            <dd className="truncate text-right">{supplier?.name ?? "-"}</dd>
+            <dt className="text-muted-foreground">Số dòng</dt>
+            <dd className="text-right tabular-nums">{lines.length}</dd>
+            <dt className="text-muted-foreground">Tiền hàng</dt>
+            <dd className="text-right tabular-nums">{formatMoney(subtotal)}</dd>
+            <dt className="text-muted-foreground">Chi phí</dt>
+            <dd className="text-right tabular-nums">{formatMoney(extra)}</dd>
+            <dt className="font-medium">Tổng phiếu</dt>
+            <dd className="text-right text-base font-semibold tabular-nums">{formatMoney(total)}</dd>
+          </dl>
+          {supplier && total > 0 && (
+            <p className="border-t pt-3 text-xs text-muted-foreground">
+              Nếu chưa trả: công nợ {formatMoney(total)}
+              {termsDays > 0 && h.receipt_date
+                ? `, hạn ${new Date(`${addDays(h.receipt_date, termsDays)}T00:00:00`).toLocaleDateString("vi-VN")} (${termsDays} ngày)`
+                : ", nhà cung cấp không cho nợ"}
+              . Số tiền trả chọn ở bước xác nhận.
+            </p>
           )}
-        </div>
-      </section>
+        </aside>
+      </div>
 
       {receiptId && (
         <ConfirmDialog
@@ -460,45 +583,47 @@ function QuickSupplierDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        <form onSubmit={submit} className="space-y-3">
+        <form onSubmit={submit} className="flex min-h-0 flex-col gap-3">
           <DialogHeader>
             <DialogTitle>Thêm nhà cung cấp</DialogTitle>
             <DialogDescription>Tạo nhanh nhà cung cấp chưa có trong danh sách. Mã NCC tự sinh. Sửa thêm thông tin ở màn Nhà cung cấp.</DialogDescription>
           </DialogHeader>
-          {error && (
-            <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {error}
-            </p>
-          )}
-          <div className="space-y-1.5">
-            <Label htmlFor="qs-name">Tên nhà cung cấp *</Label>
-            <Input id="qs-name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
+          <DialogBody className="space-y-3">
+            {error && (
+              <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {error}
+              </p>
+            )}
             <div className="space-y-1.5">
-              <Label htmlFor="qs-phone">Điện thoại</Label>
-              <Input id="qs-phone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <Label htmlFor="qs-name">Tên nhà cung cấp *</Label>
+              <Input id="qs-name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="qs-terms">Số ngày được nợ</Label>
-              <Input
-                id="qs-terms"
-                type="number"
-                min={0}
-                max={365}
-                value={terms}
-                onChange={(e) => setTerms(Math.max(0, Number(e.target.value) || 0))}
-              />
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="qs-phone">Điện thoại</Label>
+                <Input id="qs-phone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="qs-terms">Số ngày được nợ</Label>
+                <Input
+                  id="qs-terms"
+                  type="number"
+                  min={0}
+                  max={365}
+                  value={terms}
+                  onChange={(e) => setTerms(Math.max(0, Number(e.target.value) || 0))}
+                />
+              </div>
             </div>
-          </div>
-          <div className="flex justify-end gap-2">
+          </DialogBody>
+          <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               Hủy
             </Button>
             <Button type="submit" disabled={pending || !name.trim()}>
               {pending ? "Đang tạo..." : "Tạo và chọn"}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
@@ -547,45 +672,47 @@ function QuickProductDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        <form onSubmit={submit} className="space-y-3">
+        <form onSubmit={submit} className="flex min-h-0 flex-col gap-3">
           <DialogHeader>
             <DialogTitle>Thêm sản phẩm mới</DialogTitle>
             <DialogDescription>Tạo nhanh sản phẩm chưa từng bán để đưa vào phiếu nhập. SKU tự sinh.</DialogDescription>
           </DialogHeader>
-          {error && (
-            <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {error}
-            </p>
-          )}
-          <div className="space-y-1.5">
-            <Label htmlFor="qp-name">Tên sản phẩm *</Label>
-            <Input id="qp-name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
+          <DialogBody className="space-y-3">
+            {error && (
+              <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {error}
+              </p>
+            )}
             <div className="space-y-1.5">
-              <Label htmlFor="qp-type">Loại hàng</Label>
-              <NativeSelect id="qp-type" value={goodsType} onChange={(e) => setGoodsType(e.target.value as "cont" | "air")}>
-                <option value="air">Air</option>
-                <option value="cont">Cont</option>
-              </NativeSelect>
+              <Label htmlFor="qp-name">Tên sản phẩm *</Label>
+              <Input id="qp-name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="qp-type">Loại hàng</Label>
+                <NativeSelect id="qp-type" value={goodsType} onChange={(e) => setGoodsType(e.target.value as "cont" | "air")}>
+                  <option value="air">Air</option>
+                  <option value="cont">Cont</option>
+                </NativeSelect>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="qp-unit">Đơn vị tính *</Label>
+                <Input id="qp-unit" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="Hộp, Lon, Cái..." />
+              </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="qp-unit">Đơn vị tính *</Label>
-              <Input id="qp-unit" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="Hộp, Lon, Cái..." />
+              <Label htmlFor="qp-price">Giá bán</Label>
+              <MoneyInput id="qp-price" value={sellPrice} onChange={setSellPrice} />
             </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="qp-price">Giá bán</Label>
-            <MoneyInput id="qp-price" value={sellPrice} onChange={setSellPrice} />
-          </div>
-          <div className="flex justify-end gap-2">
+          </DialogBody>
+          <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               Hủy
             </Button>
             <Button type="submit" disabled={pending || !name.trim() || !unit.trim()}>
               {pending ? "Đang tạo..." : "Tạo và thêm vào phiếu"}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
@@ -670,81 +797,83 @@ export function ConfirmDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        <form onSubmit={submit} className="space-y-3">
+        <form onSubmit={submit} className="flex min-h-0 flex-col gap-3">
           <DialogHeader>
             <DialogTitle>Xác nhận nhập kho</DialogTitle>
             <DialogDescription>
               Tổng phiếu {formatMoney(total)}. Sau khi xác nhận, tồn kho và công nợ được cập nhật, phiếu không sửa được nữa.
             </DialogDescription>
           </DialogHeader>
-          {error && (
-            <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {error}
-            </p>
-          )}
-          <div className="space-y-1.5">
-            <Label htmlFor="paid">Đã trả nhà cung cấp</Label>
-            <MoneyInput id="paid" value={paid} onChange={setPaid} />
-            <div className="flex gap-2">
-              <Button type="button" size="sm" variant="outline" onClick={() => setPaid(total)}>
-                Trả đủ
-              </Button>
-              <Button type="button" size="sm" variant="outline" onClick={() => setPaid(0)}>
-                Chưa trả
-              </Button>
-            </div>
-          </div>
-          {(paid ?? 0) > 0 && (
+          <DialogBody className="space-y-3">
+            {error && (
+              <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {error}
+              </p>
+            )}
             <div className="space-y-1.5">
-              <Label htmlFor="method">Phương thức</Label>
-              <NativeSelect
-                id="method"
-                value={method}
-                onChange={(e) => {
-                  const m = e.target.value as typeof method;
-                  setMethod(m);
-                  setAccount((a) => a || pickAccount(m));
-                }}
-              >
-                <option value="transfer">Chuyển khoản</option>
-                <option value="cash">Tiền mặt</option>
-                <option value="other">Khác</option>
-              </NativeSelect>
-              {accounts.length > 0 && (
-                <div className="pt-1">
-                  <Label htmlFor="acc">Tài khoản giữ tiền</Label>
-                  <NativeSelect id="acc" value={account} onChange={(e) => setAccount(e.target.value)}>
-                    <option value="">Chọn tài khoản</option>
-                    {accounts.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </NativeSelect>
-                </div>
-              )}
-              {method === "cash" && (
-                <label className="flex items-center gap-2 pt-1 text-sm">
-                  <input type="checkbox" className="size-4" checked={inShift} onChange={(e) => setInShift(e.target.checked)} />
-                  Lấy tiền từ két ca đang mở của tôi (trừ vào tiền mặt ca)
-                </label>
-              )}
+              <Label htmlFor="paid">Đã trả nhà cung cấp</Label>
+              <MoneyInput id="paid" value={paid} onChange={setPaid} />
+              <div className="flex gap-2">
+                <Button type="button" size="sm" variant="outline" onClick={() => setPaid(total)}>
+                  Trả đủ
+                </Button>
+                <Button type="button" size="sm" variant="outline" onClick={() => setPaid(0)}>
+                  Chưa trả
+                </Button>
+              </div>
             </div>
-          )}
-          {remaining > 0 && (
-            <div className="space-y-1.5">
-              <Label htmlFor="due">Hạn thanh toán phần còn nợ ({formatMoney(remaining)})</Label>
-              <Input id="due" type="date" value={due} onChange={(e) => setDue(e.target.value)} />
-            </div>
-          )}
-          <div className="flex justify-end gap-2">
+            {(paid ?? 0) > 0 && (
+              <div className="space-y-1.5">
+                <Label htmlFor="method">Phương thức</Label>
+                <NativeSelect
+                  id="method"
+                  value={method}
+                  onChange={(e) => {
+                    const m = e.target.value as typeof method;
+                    setMethod(m);
+                    setAccount((a) => a || pickAccount(m));
+                  }}
+                >
+                  <option value="transfer">Chuyển khoản</option>
+                  <option value="cash">Tiền mặt</option>
+                  <option value="other">Khác</option>
+                </NativeSelect>
+                {accounts.length > 0 && (
+                  <div className="pt-1">
+                    <Label htmlFor="acc">Tài khoản giữ tiền</Label>
+                    <NativeSelect id="acc" value={account} onChange={(e) => setAccount(e.target.value)}>
+                      <option value="">Chọn tài khoản</option>
+                      {accounts.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name}
+                        </option>
+                      ))}
+                    </NativeSelect>
+                  </div>
+                )}
+                {method === "cash" && (
+                  <label className="flex items-center gap-2 pt-1 text-sm">
+                    <input type="checkbox" className="size-4" checked={inShift} onChange={(e) => setInShift(e.target.checked)} />
+                    Lấy tiền từ két ca đang mở của tôi (trừ vào tiền mặt ca)
+                  </label>
+                )}
+              </div>
+            )}
+            {remaining > 0 && (
+              <div className="space-y-1.5">
+                <Label htmlFor="due">Hạn thanh toán phần còn nợ ({formatMoney(remaining)})</Label>
+                <Input id="due" type="date" value={due} onChange={(e) => setDue(e.target.value)} />
+              </div>
+            )}
+          </DialogBody>
+          <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               Để sau
             </Button>
             <Button type="submit" disabled={pending}>
               {pending ? "Đang xác nhận..." : "Xác nhận"}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

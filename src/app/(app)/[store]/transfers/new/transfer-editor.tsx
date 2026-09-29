@@ -130,7 +130,8 @@ export function TransferEditor({
           </div>
         ))}
       </div>
-      <div className="flex gap-2">
+      {/* Nut luon thay khi danh sach lo dai; dien thoai tru chieu cao thanh tab duoi day */}
+      <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 flex flex-wrap gap-2 rounded-xl border bg-card p-3 shadow-sm lg:bottom-0">
         <Button variant="outline" className="h-10" disabled={pending || !to || lines.length === 0} onClick={() => submit(false)}>
           Lưu nháp
         </Button>

@@ -158,7 +158,8 @@ export function OrderForm({ storeId, storeCode }: { storeId: string; storeCode: 
         </div>
       </section>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4">
+      {/* Tong va nut tao luon thay khi danh sach dai; dien thoai tru chieu cao thanh tab duoi day */}
+      <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4 shadow-sm lg:bottom-0">
         <div className="text-sm">
           Tiền hàng {formatMoney(subtotal)} + ship {formatMoney(h.shipping_fee ?? 0)} - giảm {formatMoney(h.discount_amount ?? 0)}
           <div className="text-lg font-semibold">Tổng đơn {formatMoney(total)}</div>
