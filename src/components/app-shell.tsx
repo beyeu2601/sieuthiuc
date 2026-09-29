@@ -251,7 +251,12 @@ export function AppShell({ fullName, role, stores, defaultStoreCode, children }:
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl px-4 pt-5 pb-28 lg:px-8 lg:pt-8 lg:pb-10">{children}</main>
+        <main className="mx-auto max-w-7xl px-4 pt-5 pb-28 lg:px-8 lg:pt-8 lg:pb-10">
+          {/* key theo pathname: moi lan doi man, noi dung mo dan va nhich len nhe */}
+          <div key={pathname} className="motion-safe:animate-in fade-in slide-in-from-bottom-1 duration-200">
+            {children}
+          </div>
+        </main>
 
         {/* Dien thoai: tab duoi day, trong tam ngon cai */}
         <nav

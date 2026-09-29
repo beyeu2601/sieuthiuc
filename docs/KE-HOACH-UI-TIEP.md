@@ -22,7 +22,8 @@ Tính đến 29/09/2026:
 - Phase 1 xong (commit `2b21d5d`): mở rộng thang màu ngữ nghĩa + bộ ba chip trong `globals.css`, tạo `src/components/ui/chip.tsx`, cập nhật `docs/THUONG-HIEU.md`.
 - Phase 2 xong (commit `c14b240`): `skeleton.tsx` + `skeleton-trang.tsx` + 10 file `loading.tsx`, `empty-state.tsx` thêm `icon`/`action`, `confirm-dialog.tsx` (`ConfirmDialog` + hook `useConfirm`), `feedback.ts`, thay 8 chỗ `confirm()` gốc trình duyệt.
 - Cả hai đã deploy lên prod (Vercel tự build từ `main`).
-- Còn lại: Phase 3, 4, 5, 6, 7, 8.
+- Phase 3 xong: dùng tiện ích `tw-animate-css` bọc `motion-safe:` (không tự viết keyframes); khối `prefers-reduced-motion: reduce` toàn cục lấy từ 26c trong `globals.css`; nút nhấn `scale-[0.98]`; nội dung trang mờ dần khi đổi màn (`app-shell.tsx`, key theo pathname); dòng `TableRow`, `MobileCard` và dòng giỏ POS mờ dần khi xuất hiện. `Card` chưa được trang nào dùng và chưa có biến thể bấm được nên giữ nguyên. Xóa dòng giỏ POS không có hiệu ứng rời đi (cần trì hoãn cập nhật state, để tránh đụng logic giỏ).
+- Còn lại: Phase 4, 5, 6, 7, 8.
 
 Thứ tự chạy: 3 chạy được ngay (độc lập). 4, 5 sau đó (áp vào màn hình). 6 sau 5. 7 nặng nhất, sau 5. 8 chạy cuối cùng.
 

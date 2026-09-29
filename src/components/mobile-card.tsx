@@ -22,7 +22,7 @@ export function MobileCard({
   stats: CardStat[];
 }) {
   return (
-    <li className="rounded-xl border bg-card p-3.5">
+    <li className="rounded-xl border bg-card p-3.5 motion-safe:animate-in fade-in duration-200">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="font-medium">{title}</div>

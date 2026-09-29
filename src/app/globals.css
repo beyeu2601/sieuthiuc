@@ -322,3 +322,24 @@
     --chu-slate-dam: #1e293b;
   }
 }
+
+/* Giam chuyen dong (lay tu 26c). Nguoi da bat "giam chuyen dong" o he dieu hanh
+   thi moi animation/transition gan nhu tuc thi, ke ca hop thoai va lop phu cua
+   Base UI. Dung 0.01ms chu khong phai 0: hop thoai Base UI doi transitionend moi
+   go khoi DOM. Vong quay "dang xu ly" la ngoai le: no bao may con dang chay, nen
+   chi quay cham lai. Chuyen dong moi cua trang/dong/nut dung tien ich
+   motion-safe: nen voi nguoi nay khong chay tu dau. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-spin {
+    animation-duration: 1.6s !important;
+    animation-iteration-count: infinite !important;
+  }
+}

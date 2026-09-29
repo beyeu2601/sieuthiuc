@@ -249,7 +249,7 @@ export function PosClient({
         ) : (
           <ul className="divide-y rounded-xl border bg-card">
             {cart.lines.map((l) => (
-              <li key={l.product_id} className="grid grid-cols-[1fr_auto] gap-2 p-3 sm:grid-cols-[1fr_150px_120px_110px_auto] sm:items-center">
+              <li key={l.product_id} className="grid grid-cols-[1fr_auto] gap-2 p-3 motion-safe:animate-in fade-in slide-in-from-top-1 duration-200 sm:grid-cols-[1fr_150px_120px_110px_auto] sm:items-center">
                 <div>
                   <div className="font-medium">{l.name}</div>
                   <div className="text-xs text-muted-foreground">
