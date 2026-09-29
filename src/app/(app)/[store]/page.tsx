@@ -4,7 +4,10 @@ import { ROLE_LABEL } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 import { todayVN } from "@/lib/dates";
 import { formatMoney, formatNumber } from "@/lib/format";
-import { AlertTriangleIcon, CheckCircle2Icon, ChevronRightIcon, PackagePlusIcon, ScanLineIcon, ShoppingCartIcon, TruckIcon } from "lucide-react";
+import { ChipHan, ChipSac, ChipTonKho, ChipTrangThaiDon } from "@/components/ui/chip";
+import { HangKpi, KpiCard } from "@/components/ui/kpi-card";
+import { ThanhTienDo } from "@/components/ui/thanh-tien-do";
+import { CheckCircle2Icon, ChevronRightIcon, PackagePlusIcon, ScanLineIcon, ShoppingCartIcon, TruckIcon } from "lucide-react";
 
 type Overview = { active_products: number; skus_in_stock: number; total_qty: number; stock_value: number | null };
 type Pnl = { net_revenue: number; gross_profit: number; net_profit: number };
@@ -31,24 +34,27 @@ export default async function StoreHome({ params }: { params: Promise<{ store: s
   const nearCount = ((nearRes.data as unknown[] | null) ?? []).length;
   const debt = debtRes.data as { overdue_count: number; due_soon_count: number; remaining: number } | null;
 
+  // Moi canh bao mang mot chip ngu nghia: ton thap/can date amber, qua han do,
+  // cho giao indigo (giu hang). Chu cua chip noi nghia, mau chi bo tro.
   const alerts = [
-    lowCount > 0 && { href: `/${store.code}/inventory/low`, text: `${lowCount} sản phẩm dưới mức tồn tối thiểu` },
-    nearCount > 0 && { href: `/${store.code}/expiry`, text: `${nearCount} lô sắp hết hạn` },
-    (pendingOrders.count ?? 0) > 0 && { href: `/${store.code}/orders`, text: `${pendingOrders.count} đơn online đang chờ giao` },
-    debt && debt.overdue_count > 0 && { href: `/${store.code}/payables`, text: `${debt.overdue_count} khoản công nợ quá hạn` },
-    debt && debt.due_soon_count > 0 && { href: `/${store.code}/payables`, text: `${debt.due_soon_count} khoản công nợ sắp đến hạn` },
-  ].filter(Boolean) as { href: string; text: string }[];
-
-  const cards = [
-    ...(pnl
-      ? [
-          { label: "Doanh thu thuần hôm nay", value: formatMoney(pnl.net_revenue), href: `/${store.code}/reports?preset=today` },
-          { label: "Lãi gộp hôm nay", value: formatMoney(pnl.gross_profit), href: `/${store.code}/reports?preset=today` },
-        ]
-      : []),
-    { label: "Mã còn tồn", value: formatNumber(o?.skus_in_stock), href: `/${store.code}/inventory` },
-    ...(o?.stock_value != null ? [{ label: "Giá trị tồn (giá vốn)", value: formatMoney(o.stock_value), href: `/${store.code}/inventory` }] : []),
-  ];
+    lowCount > 0 && { href: `/${store.code}/inventory/low`, text: `${lowCount} sản phẩm dưới mức tồn tối thiểu`, chip: <ChipTonKho ma="thap">Tồn thấp</ChipTonKho> },
+    nearCount > 0 && { href: `/${store.code}/expiry`, text: `${nearCount} lô sắp hết hạn`, chip: <ChipHan ma="canDate">Cận date</ChipHan> },
+    (pendingOrders.count ?? 0) > 0 && {
+      href: `/${store.code}/orders`,
+      text: `${pendingOrders.count} đơn online đang chờ giao`,
+      chip: <ChipTrangThaiDon ma="giuHang">Chờ giao</ChipTrangThaiDon>,
+    },
+    debt && debt.overdue_count > 0 && {
+      href: `/${store.code}/payables`,
+      text: `${debt.overdue_count} khoản công nợ quá hạn`,
+      chip: <ChipSac sac="red" dam>Quá hạn</ChipSac>,
+    },
+    debt && debt.due_soon_count > 0 && {
+      href: `/${store.code}/payables`,
+      text: `${debt.due_soon_count} khoản công nợ sắp đến hạn`,
+      chip: <ChipSac sac="amber">Sắp đến hạn</ChipSac>,
+    },
+  ].filter(Boolean) as { href: string; text: string; chip: React.ReactNode }[];
 
   const quick = [
     { href: `/${store.code}/lookup`, label: "Tra cứu", icon: ScanLineIcon },
@@ -95,19 +101,34 @@ export default async function StoreHome({ params }: { params: Promise<{ store: s
         </div>
       )}
 
-      {/* Dien thoai: moi chi so mot hang (nhan trai, so phai) de so tien dai khong bi cat */}
-      <div className="grid gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
-        {cards.map((c) => (
-          <Link
-            key={c.label}
-            href={c.href}
-            className="flex min-h-14 items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3 transition-colors hover:border-primary sm:block sm:p-4"
-          >
-            <div className="text-sm text-muted-foreground">{c.label}</div>
-            <div className="text-lg font-semibold whitespace-nowrap tabular-nums sm:mt-1 sm:text-2xl">{c.value}</div>
-          </Link>
-        ))}
-      </div>
+      <HangKpi>
+        {pnl && (
+          <>
+            <KpiCard nhan="Doanh thu thuần hôm nay" giaTri={formatMoney(pnl.net_revenue)} href={`/${store.code}/reports?preset=today`} />
+            {/* Lai gop am la tin hieu that (ban duoi gia von), nen to theo dau */}
+            <KpiCard
+              nhan="Lãi gộp hôm nay"
+              giaTri={formatMoney(pnl.gross_profit)}
+              href={`/${store.code}/reports?preset=today`}
+              sac={pnl.gross_profit < 0 ? "red" : "emerald"}
+            />
+          </>
+        )}
+        <KpiCard
+          nhan="Mã còn tồn"
+          giaTri={formatNumber(o?.skus_in_stock)}
+          href={`/${store.code}/inventory`}
+          chuGiai="Số mã sản phẩm có tồn lớn hơn 0, so với số mã đang bán"
+        >
+          <ThanhTienDo
+            giaTri={o?.skus_in_stock ?? 0}
+            tong={o?.active_products ?? 0}
+            donVi="mã"
+            nhanAria={`${formatNumber(o?.skus_in_stock)} mã còn tồn trên ${formatNumber(o?.active_products)} mã đang bán`}
+          />
+        </KpiCard>
+        {o?.stock_value != null && <KpiCard nhan="Giá trị tồn (giá vốn)" giaTri={formatMoney(o.stock_value)} href={`/${store.code}/inventory`} />}
+      </HangKpi>
 
       <section className="rounded-2xl border bg-card p-4 lg:p-5" aria-labelledby="alerts-title">
         <h2 id="alerts-title" className="mb-3 font-heading text-2xl font-bold tracking-wide">
@@ -124,11 +145,11 @@ export default async function StoreHome({ params }: { params: Promise<{ store: s
               <li key={a.text}>
                 <Link
                   href={a.href}
-                  className="flex min-h-12 items-center gap-3 rounded-xl bg-warning-soft px-4 py-2.5 text-sm font-medium text-warning transition-colors hover:brightness-95"
+                  className="flex min-h-12 items-center gap-3 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors hover:border-primary hover:bg-brand-soft/60"
                 >
-                  <AlertTriangleIcon className="size-5 shrink-0" aria-hidden />
+                  {a.chip}
                   <span className="flex-1">{a.text}</span>
-                  <ChevronRightIcon className="size-5 shrink-0" aria-hidden />
+                  <ChevronRightIcon className="size-5 shrink-0 text-muted-foreground" aria-hidden />
                 </Link>
               </li>
             ))}
