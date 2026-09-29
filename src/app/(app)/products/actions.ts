@@ -8,7 +8,8 @@ import { productSchema, type ProductInput } from "@/lib/schemas/product";
 export async function saveProduct(id: string | null, input: ProductInput): Promise<ActionResult<{ id: string }>> {
   const parsed = productSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Dữ liệu không hợp lệ" };
-  const { barcode, ...v } = parsed.data;
+  // Giá vốn chỉ nhập khi tạo; sau đó do nhập hàng (giá vốn bình quân) cập nhật.
+  const { barcode, cost_price_ref, ...v } = parsed.data;
   const row = {
     ...v,
     expiry_date: v.expiry_level === "product" ? v.expiry_date : null,
@@ -21,7 +22,7 @@ export async function saveProduct(id: string | null, input: ProductInput): Promi
     const { error } = await supabase.from("products").update(row).eq("id", id);
     if (error) return { ok: false, error: errorMessage(error) };
   } else {
-    const { data, error } = await supabase.from("products").insert(row).select("id").single();
+    const { data, error } = await supabase.from("products").insert({ ...row, cost_price_ref: cost_price_ref ?? 0 }).select("id").single();
     if (error) return { ok: false, error: errorMessage(error) };
     productId = data.id;
     if (barcode) {

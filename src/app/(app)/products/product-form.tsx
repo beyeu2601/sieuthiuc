@@ -41,9 +41,10 @@ export function ProductForm({
 
   const catPct = categories.find((c) => c.id === v.category_id)?.benefit_pct ?? null;
   const pct = v.benefit_pct ?? catPct;
+  const cost = id ? costPriceRef : (v.cost_price_ref ?? 0);
   const preview =
-    v.pricing_method === "benefit" && pct != null && costPriceRef > 0
-      ? Math.round((costPriceRef * (1 + pct / 100)) / roundingUnit) * roundingUnit
+    v.pricing_method === "benefit" && pct != null && cost > 0
+      ? Math.round((cost * (1 + pct / 100)) / roundingUnit) * roundingUnit
       : null;
 
   function submit(e: React.FormEvent) {
@@ -111,6 +112,13 @@ export function ProductForm({
           </NativeSelect>
         </div>
 
+        {!id && (
+          <div className="space-y-1.5">
+            <Label htmlFor="cost_price_ref">Giá vốn (₫)</Label>
+            <MoneyInput id="cost_price_ref" value={v.cost_price_ref ?? 0} onChange={(n) => set("cost_price_ref", n ?? 0)} />
+            <p className="text-xs text-muted-foreground">Không bắt buộc. Khi nhập hàng, giá vốn tự cập nhật theo bình quân.</p>
+          </div>
+        )}
         <div className="space-y-1.5">
           <Label htmlFor="pricing_method">Cách đặt giá</Label>
           <NativeSelect
@@ -142,7 +150,7 @@ export function ProductForm({
               onChange={(e) => set("benefit_pct", e.target.value === "" ? null : Number(e.target.value))}
             />
             <p className="text-xs text-muted-foreground">
-              Giá vốn tham chiếu {formatMoney(costPriceRef)}.{" "}
+              Giá vốn tham chiếu {formatMoney(cost)}.{" "}
               {preview != null
                 ? `Giá bán sẽ là ${formatMoney(preview)} (làm tròn ${formatMoney(roundingUnit)}).`
                 : "Chưa có giá vốn hoặc %, giá bán giữ nguyên cho tới khi nhập hàng."}

@@ -149,6 +149,7 @@ Khác biệt kỹ thuật so với SPEC:
 - Thanh toán POS bắt buộc chọn phương thức (bỏ mặc định tiền mặt toàn bộ khi để trống).
 - Tài khoản giữ tiền (két, ngân hàng, ví) do sadmin quản lý ở Cài đặt > Tài khoản tiền. Thu chi, thu bán hàng (từng phương thức) và trả NCC đều chọn tài khoản để theo dõi số dư; `account_id` là tùy chọn ở RPC (validate khi có), bắt buộc chọn ở giao diện.
 - Phiếu nhập có cột giá bán mỗi dòng và nút "Thêm sản phẩm" tạo nhanh (sadmin/admin); xác nhận nhập kho cập nhật giá bán sản phẩm (ghi lịch sử giá) khi dòng có nhập giá bán khác giá cũ.
+- Màn Thêm sản phẩm có ô Giá vốn (không bắt buộc, ghi vào `products.cost_price_ref`) để có giá vốn tham chiếu trước lần nhập hàng đầu; dùng luôn cho % Benefit. Màn sửa sản phẩm không cho sửa giá vốn; phiếu nhập xác nhận sẽ ghi đè bằng giá vốn bình quân.
 - Phiếu nhập có nút "Thêm NCC" cạnh ô chọn nhà cung cấp (sadmin/admin/kế toán): tạo nhanh NCC (tên, điện thoại, số ngày được nợ), mã NCC tự sinh, tạo xong tự chọn vào phiếu.
 - Tìm sản phẩm ở ô tra cứu/phiếu nhập nhận nhiều từ khóa rời: gõ "yến mạch 500gr" vẫn ra "Yến Mạch Uncle 500gr" vì mọi từ đều phải khớp `search_key` nhưng không cần liền nhau hay đúng thứ tự.
 - Nhóm hàng bỏ cấu hình % Benefit ở giao diện; sản phẩm đặt giá theo % Benefit dùng % riêng. Hạng thành viên tạm ẩn khỏi Cài đặt (trang `/settings/loyalty` vẫn còn).

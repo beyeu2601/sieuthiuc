@@ -18,6 +18,7 @@ export const productSchema = z
     status: z.enum(["active", "inactive"]),
     note: z.string().max(1000).nullable(),
     barcode: z.string().trim().max(32).nullable().optional(),
+    cost_price_ref: z.number().int().min(0, "Giá vốn không âm").optional(),
   })
   .refine((v) => v.expiry_level !== "product" || !!v.expiry_date, {
     message: "Nhập hạn sử dụng khi quản lý hạn theo sản phẩm",
