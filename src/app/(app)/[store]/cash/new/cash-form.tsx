@@ -44,7 +44,7 @@ export function CashForm({
     doc_no: null,
     note: null,
     payment_status: "paid",
-    record_in_shift: isStaff,
+    record_in_shift: isStaff || openShiftCode !== null,
     account_id: pickAccount("cash") || null,
   });
   const [pending, start] = useTransition();
