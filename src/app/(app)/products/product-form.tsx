@@ -116,7 +116,7 @@ export function ProductForm({
           <div className="space-y-1.5">
             <Label htmlFor="cost_price_ref">Giá vốn (₫)</Label>
             <MoneyInput id="cost_price_ref" value={v.cost_price_ref ?? 0} onChange={(n) => set("cost_price_ref", n ?? 0)} />
-            <p className="text-xs text-muted-foreground">Không bắt buộc. Khi nhập hàng, giá vốn tự cập nhật theo bình quân.</p>
+            <p className="text-xs text-muted-foreground">Không bắt buộc, có thể nhập sau ở trang sản phẩm. Khi nhập hàng, giá vốn tự cập nhật theo bình quân.</p>
           </div>
         )}
         <div className="space-y-1.5">

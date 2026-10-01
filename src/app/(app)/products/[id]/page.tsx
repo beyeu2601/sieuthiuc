@@ -11,6 +11,7 @@ import { ProductForm } from "../product-form";
 import { BarcodePanel } from "./barcode-panel";
 import { LabelPreview } from "./label-preview";
 import { ImageGallery } from "./image-gallery";
+import { StockCostPanel } from "./stock-cost-panel";
 
 const FIELD_LABEL: Record<string, string> = {
   sell_price: "Giá bán",
@@ -42,7 +43,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     .maybeSingle();
   if (!p) notFound();
 
-  const [{ data: categories }, { data: brands }, { data: barcodes }, { data: history }, { data: lots }, roundingUnit, labelSize, { data: images }] =
+  const [{ data: categories }, { data: brands }, { data: barcodes }, { data: history }, { data: lots }, roundingUnit, labelSize, { data: images }, { data: stock }] =
     await Promise.all([
       supabase.from("categories").select("id, name, benefit_pct, description").order("name"),
       supabase.from("brands").select("id, name").order("name"),
@@ -70,11 +71,22 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         .select("id, drive_file_id, drive_thumb_id, is_thumbnail")
         .eq("product_id", id)
         .order("sort_order"),
+      supabase.from("inventory").select("store_id, qty_on_hand, qty_reserved, avg_cost").eq("product_id", id),
     ]);
 
   const bcList = (barcodes ?? []) as { barcode: string; is_primary: boolean }[];
   const primaryBarcode = bcList.find((b) => b.is_primary)?.barcode ?? bcList[0]?.barcode ?? p.sku;
   const [labelW, labelH] = String(labelSize).split("x").map(Number);
+  const storeStock = ctx.stores.map((st) => {
+    const row = (stock ?? []).find((r) => r.store_id === st.id);
+    return {
+      storeId: st.id,
+      storeCode: st.code,
+      qty: Number(row?.qty_on_hand ?? 0),
+      reserved: Number(row?.qty_reserved ?? 0),
+      avgCost: Number(row?.avg_cost ?? 0),
+    };
+  });
 
   return (
     <div className="space-y-6">
@@ -114,6 +126,18 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           }}
         />
       </section>
+
+      {canEdit && storeStock.length > 0 && (
+        <section className="rounded-xl border bg-card p-4" aria-labelledby="stock">
+          <h2 id="stock" className="mb-1 font-medium">
+            Tồn kho và giá vốn
+          </h2>
+          <p className="mb-3 text-sm text-muted-foreground">
+            Chỉnh thẳng số tồn khi hàng về, không cần tạo phiếu nhập. Mỗi lần chỉnh được ghi vào lịch sử biến động kho.
+          </p>
+          <StockCostPanel productId={p.id} stores={storeStock} lotExpiry={p.expiry_level === "lot"} />
+        </section>
+      )}
 
       <section className="rounded-xl border bg-card p-4" aria-labelledby="images">
         <h2 id="images" className="mb-1 font-medium">

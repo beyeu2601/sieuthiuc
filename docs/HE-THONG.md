@@ -97,12 +97,13 @@ Cơ chế:
 | `20261002000001` | Giá cận date: enum `product_date_type` và cột `products.date_type` (short/long); cấu hình `expiry.short_date_days` (15), `expiry.long_date_days` (60), `expiry.markup_vnd` (50000); `lot_expiry` dùng ngưỡng theo loại date và trả thêm `date_type`, `near_days`, `suggested_price` |
 | `20261004000001` | Tìm sản phẩm linh hoạt: `catalog_search` tách câu tìm thành các từ, yêu cầu mọi từ đều có trong `search_key` (không cần đúng thứ tự); vẫn ưu tiên khớp mã vạch và SKU |
 | `20261005000001` | Nhập nhiều HSD cho một mặt hàng trong cùng phiếu: `confirm_purchase_receipt` tự đặt số lô `{mã phiếu}-1`, `{mã phiếu}-2`... cho các dòng cùng sản phẩm để trống số lô, mỗi HSD thành một lô riêng |
+| `20261007000001` | Chỉnh trực tiếp tồn kho và giá vốn: `adjust_product_stock` (sadmin/admin của cửa hàng) |
 
 Các RPC chính theo nghiệp vụ:
 
 - Bán hàng: `complete_sale` (idempotent theo khóa, giá lấy từ DB, FEFO, khóa tồn theo thứ tự sản phẩm), `cancel_sale`, `request_discount_approval`.
 - Ca: `open_shift`, `close_shift`, `approve_shift`, `adjust_shift_count`, `shift_expected_cash`, `shift_summary`.
-- Kho: `save_purchase_receipt`, `confirm_purchase_receipt`, `cancel_purchase_receipt`, `save_transfer`, `send_transfer`, `receive_transfer`, `cancel_transfer`.
+- Kho: `adjust_product_stock`, `save_purchase_receipt`, `confirm_purchase_receipt`, `cancel_purchase_receipt`, `save_transfer`, `send_transfer`, `receive_transfer`, `cancel_transfer`.
 - Đơn online: `create_order`, `update_order_status` (giao thành công tạo giao dịch bán theo kênh), `reconcile_reservations`.
 - Tài chính: `record_supplier_payment`, `debt_overview`, `create_cash_transaction`, `review_cash_transaction`, `mark_cash_transaction_paid`, `reconcile_report`, `save_reconciliation_note`.
 - Báo cáo: `pnl_report`, `pnl_daily`, `revenue_breakdown`, `cogs_report`, `expense_report`, `best_sellers`, `inventory_status`, `inventory_period`, `lot_expiry`, `stock_movement_list`.
@@ -170,7 +171,8 @@ Khác biệt kỹ thuật so với SPEC:
 - Thanh toán POS bắt buộc chọn phương thức (bỏ mặc định tiền mặt toàn bộ khi để trống).
 - Tài khoản giữ tiền (két, ngân hàng, ví) do sadmin quản lý ở Cài đặt > Tài khoản tiền. Thu chi, thu bán hàng (từng phương thức) và trả NCC đều chọn tài khoản để theo dõi số dư; `account_id` là tùy chọn ở RPC (validate khi có), bắt buộc chọn ở giao diện.
 - Phiếu nhập có cột giá bán mỗi dòng và nút "Thêm sản phẩm" tạo nhanh (sadmin/admin); xác nhận nhập kho cập nhật giá bán sản phẩm (ghi lịch sử giá) khi dòng có nhập giá bán khác giá cũ.
-- Màn Thêm sản phẩm có ô Giá vốn (không bắt buộc, ghi vào `products.cost_price_ref`) để có giá vốn tham chiếu trước lần nhập hàng đầu; dùng luôn cho % Benefit. Màn sửa sản phẩm không cho sửa giá vốn; phiếu nhập xác nhận sẽ ghi đè bằng giá vốn bình quân.
+- Màn Thêm sản phẩm có ô Giá vốn (không bắt buộc, ghi vào `products.cost_price_ref`) để có giá vốn tham chiếu trước lần nhập hàng đầu; dùng luôn cho % Benefit. Giá vốn sửa sau ở khối "Tồn kho và giá vốn" của trang sản phẩm; phiếu nhập xác nhận sẽ ghi đè bằng giá vốn bình quân.
+- Chỉnh tồn kho và giá vốn không qua phiếu nhập (khách yêu cầu 01/10/2026): trang chi tiết sản phẩm có khối "Tồn kho và giá vốn" theo từng cửa hàng (sadmin/admin). Nhập số tồn thực tế: tăng thì tạo lô mới `DC-yymmddhhmmss` theo giá vốn hiện tại (HSD tùy chọn), giảm thì trừ lô theo FEFO; biến động loại `adjustment`, không phát sinh công nợ NCC. Không cho thấp hơn số đang giữ cho đơn online. Sửa giá vốn ghi đè `inventory.avg_cost`, giá vốn các lô còn hàng và `products.cost_price_ref`; giao dịch bán đã ghi giữ nguyên giá vốn cũ; sản phẩm đặt giá theo % Benefit không tự đổi giá bán (xem Gợi ý giá).
 - Phiếu nhập có nút "Thêm NCC" cạnh ô chọn nhà cung cấp (sadmin/admin/kế toán): tạo nhanh NCC (tên, điện thoại, số ngày được nợ), mã NCC tự sinh, tạo xong tự chọn vào phiếu.
 - Tìm sản phẩm ở ô tra cứu/phiếu nhập nhận nhiều từ khóa rời: gõ "yến mạch 500gr" vẫn ra "Yến Mạch Uncle 500gr" vì mọi từ đều phải khớp `search_key` nhưng không cần liền nhau hay đúng thứ tự.
 - Nhóm hàng bỏ cấu hình % Benefit ở giao diện; sản phẩm đặt giá theo % Benefit dùng % riêng. Hạng thành viên tạm ẩn khỏi Cài đặt (trang `/settings/loyalty` vẫn còn).

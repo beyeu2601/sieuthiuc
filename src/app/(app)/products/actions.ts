@@ -8,7 +8,7 @@ import { productSchema, type ProductInput } from "@/lib/schemas/product";
 export async function saveProduct(id: string | null, input: ProductInput): Promise<ActionResult<{ id: string }>> {
   const parsed = productSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Dữ liệu không hợp lệ" };
-  // Giá vốn chỉ nhập khi tạo; sau đó do nhập hàng (giá vốn bình quân) cập nhật.
+  // Giá vốn nhập khi tạo; sau đó sửa qua adjustProductStock hoặc do nhập hàng (giá vốn bình quân) cập nhật.
   const { barcode, cost_price_ref, ...v } = parsed.data;
   const row = {
     ...v,
@@ -36,6 +36,30 @@ export async function saveProduct(id: string | null, input: ProductInput): Promi
   revalidatePath("/products");
   revalidatePath(`/products/${productId}`);
   return { ok: true, data: { id: productId! } };
+}
+
+// Chinh truc tiep ton kho (so ton thuc te) va gia von cua san pham tai 1 cua hang. cost = null: giu gia von.
+export async function adjustProductStock(
+  productId: string,
+  storeId: string,
+  qty: number,
+  cost: number | null,
+  expiry: string | null,
+  note: string | null
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("adjust_product_stock", {
+    p_store_id: storeId,
+    p_product_id: productId,
+    p_qty: qty,
+    p_cost: cost,
+    p_expiry: expiry,
+    p_note: note,
+  });
+  if (error) return { ok: false, error: errorMessage(error) };
+  revalidatePath("/products");
+  revalidatePath(`/products/${productId}`);
+  return { ok: true };
 }
 
 export async function addBarcode(
