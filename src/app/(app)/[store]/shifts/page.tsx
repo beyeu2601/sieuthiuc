@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireStore } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { getNumberSetting } from "@/lib/settings";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { AutoSubmitForm } from "@/components/auto-submit-form";
@@ -45,12 +46,14 @@ export default async function ShiftsPage({
     .limit(200);
   if (sp.from) q = q.gte("opened_at", `${sp.from}T00:00:00+07:00`);
   if (sp.to) q = q.lte("opened_at", `${sp.to}T23:59:59+07:00`);
-  const { data } = await q;
+  const [{ data }, diffAlert] = await Promise.all([q, getNumberSetting("shift.diff_alert_amount", 50000, store.id)]);
   const rows = data ?? [];
+  // Cung nguong voi close_shift: vuot nguong do, lech nho vang
+  const diffClass = (d: number) => (Math.abs(d) > diffAlert ? "text-chu-red" : d !== 0 ? "text-chu-amber" : "");
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Ca làm việc" description="Mở ca trước khi bán hàng. Chốt ca để đối chiếu tiền mặt trong két." />
+      <PageHeader title="Ca làm việc" />
 
       {canWork && (
         <section className="rounded-xl border bg-card p-4">
@@ -110,7 +113,7 @@ export default async function ShiftsPage({
                     { label: "Thực đếm", value: formatMoney(s.counted_cash) },
                     {
                       label: "Lệch",
-                      value: <span className={diff < 0 ? "text-destructive" : diff > 0 ? "text-warning" : ""}>{s.cash_diff == null ? "-" : formatMoney(diff)}</span>,
+                      value: <span className={diffClass(diff)}>{s.cash_diff == null ? "-" : formatMoney(diff)}</span>,
                     },
                   ]}
                 />
@@ -149,7 +152,7 @@ export default async function ShiftsPage({
                       <TableCell className="text-right tabular-nums">{formatMoney(s.opening_cash)}</TableCell>
                       <TableCell className="text-right tabular-nums">{formatMoney(s.expected_cash)}</TableCell>
                       <TableCell className="text-right tabular-nums">{formatMoney(s.counted_cash)}</TableCell>
-                      <TableCell className={`text-right tabular-nums ${diff < 0 ? "text-destructive" : diff > 0 ? "text-warning" : ""}`}>
+                      <TableCell className={`text-right tabular-nums ${diffClass(diff)}`}>
                         {s.cash_diff == null ? "-" : formatMoney(diff)}
                       </TableCell>
                       <TableCell>

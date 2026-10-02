@@ -6,17 +6,19 @@ import { productLots, type CatalogItem, type LotRow } from "../catalog-actions";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { GOODS_TYPE_LABEL } from "@/lib/text";
 import { ProductPicker } from "@/components/product-picker";
-import { Badge } from "@/components/ui/badge";
+import { ChipHan, ChipSac, NEN_SAC, VIEN_SAC, sacLoaiHang } from "@/components/ui/chip";
+import { ChiSo } from "@/components/ui/chi-so";
 import { Button } from "@/components/ui/button";
 import { addBarcode } from "@/app/(app)/products/actions";
 import { baoTheoKetQua } from "@/lib/feedback";
+import { cn } from "@/lib/utils";
 
-const EXPIRY_BADGE = {
-  none: { label: "Không hạn", cls: "bg-muted text-foreground" },
-  normal: { label: "Còn hạn", cls: "bg-success-soft text-success" },
-  near: { label: "Gần hết hạn", cls: "bg-warning-soft text-warning" },
-  expired: { label: "Hết hạn", cls: "bg-danger-soft text-destructive" },
-} as const;
+function ChipHanLo({ status }: { status: LotRow["expiry_status"] }) {
+  if (status === "none") return <ChipSac sac="slate">Không hạn</ChipSac>;
+  if (status === "expired") return <ChipHan ma="hetHan">Hết hạn</ChipHan>;
+  if (status === "near") return <ChipHan ma="canDate">Gần hết hạn</ChipHan>;
+  return <ChipHan ma="conHan">Còn hạn</ChipHan>;
+}
 
 // Ma vach hang that (EAN-8/13, UPC, ITF-14): chi so, 8-14 ky tu. Go ten thi khong de nghi gan.
 const BARCODE_RE = /^\d{8,14}$/;
@@ -66,7 +68,7 @@ export function LookupClient({ storeId, canAssign }: { storeId: string; canAssig
     <div className="space-y-4">
       <ProductPicker storeId={storeId} onPick={pick} onNotFound={notFound} autoFocus camera />
       {unknownCode && (
-        <section className="space-y-3 rounded-xl border border-warning bg-warning-soft/40 p-4" aria-live="polite">
+        <section className={cn("space-y-3 rounded-xl border p-4", NEN_SAC.amber, VIEN_SAC.amber)} aria-live="polite">
           <p className="text-sm">
             Mã <span className="font-semibold tabular-nums">{unknownCode}</span> chưa gắn với sản phẩm nào. Chọn sản phẩm để gán mã này.
           </p>
@@ -103,54 +105,51 @@ export function LookupClient({ storeId, canAssign }: { storeId: string; canAssig
       {item && (
         <article className="space-y-3 rounded-xl border bg-card p-4" aria-live="polite">
           <div>
-            <h2 className="text-lg font-semibold">{item.name}</h2>
-            <p className="text-sm text-muted-foreground">
-              {item.sku} - {GOODS_TYPE_LABEL[item.goods_type]} - {item.unit}
-              {item.barcode ? ` - ${item.barcode}` : ""}
-            </p>
-            {item.status === "inactive" && <Badge variant="outline">Ngừng bán</Badge>}
+            <h2 className="text-lg leading-snug font-semibold">{item.name}</h2>
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <ChipSac sac="slate" className="font-mono">{item.sku}</ChipSac>
+              <ChipSac sac={sacLoaiHang(item.goods_type)}>{GOODS_TYPE_LABEL[item.goods_type]}</ChipSac>
+              <ChipSac sac="slate">{item.unit}</ChipSac>
+              {item.barcode ? (
+                <ChipSac sac="slate" className="tabular-nums">{item.barcode}</ChipSac>
+              ) : (
+                <ChipSac sac="amber">Chưa có mã vạch</ChipSac>
+              )}
+              {item.status === "inactive" && <ChipSac sac="red">Ngừng bán</ChipSac>}
+            </div>
           </div>
-          <p className="text-3xl font-bold tabular-nums">{formatMoney(item.sell_price)}</p>
-          <dl className="grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-lg bg-muted p-2">
-              <dt className="text-xs text-muted-foreground">Tồn thực tế</dt>
-              <dd className="text-lg font-semibold tabular-nums">{formatNumber(item.qty_on_hand)}</dd>
-            </div>
-            <div className="rounded-lg bg-muted p-2">
-              <dt className="text-xs text-muted-foreground">Đang giữ</dt>
-              <dd className="text-lg font-semibold tabular-nums">{formatNumber(item.qty_reserved)}</dd>
-            </div>
-            <div className="rounded-lg bg-muted p-2">
-              <dt className="text-xs text-muted-foreground">Khả dụng</dt>
-              <dd className="text-lg font-semibold tabular-nums">{formatNumber(item.qty_available)}</dd>
-            </div>
-          </dl>
+          <div className="grid grid-cols-2 gap-2">
+            <ChiSo nhan="Giá bán" sac="brand" giaTri={<span className="text-2xl font-bold lg:text-3xl">{formatMoney(item.sell_price)}</span>} />
+            <ChiSo
+              nhan={item.qty_available <= 0 ? "Khả dụng: hết hàng" : "Khả dụng"}
+              sac={item.qty_available <= 0 ? "red" : "emerald"}
+              giaTri={<span className="text-2xl font-bold lg:text-3xl">{formatNumber(item.qty_available)}</span>}
+              phu={`Tồn ${formatNumber(item.qty_on_hand)} - giữ cho đơn ${formatNumber(item.qty_reserved)}`}
+            />
+          </div>
           <div>
-            <h3 className="mb-2 text-sm font-medium">Lô còn hàng</h3>
+            <h3 className="mb-2 text-sm font-medium">Lô còn hàng{!pending && lots.length > 0 ? ` (${lots.length})` : ""}</h3>
             {pending ? (
               <p className="text-sm text-muted-foreground">Đang tải...</p>
             ) : lots.length === 0 ? (
               <p className="text-sm text-muted-foreground">Không có lô nào còn hàng.</p>
             ) : (
               <ul className="divide-y rounded-lg border">
-                {lots.map((l) => {
-                  const b = EXPIRY_BADGE[l.expiry_status];
-                  return (
-                    <li key={l.lot_id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
-                      <span>
-                        {l.lot_no}
-                        <span className="block text-xs text-muted-foreground">
-                          HSD {l.expiry_date ? new Date(l.expiry_date).toLocaleDateString("vi-VN") : "không có"}
-                          {l.days_left != null ? ` (${l.days_left < 0 ? `quá ${-l.days_left}` : `còn ${l.days_left}`} ngày)` : ""}
-                        </span>
+                {lots.map((l) => (
+                  <li key={l.lot_id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
+                    <span className="min-w-0">
+                      {l.lot_no}
+                      <span className="block text-xs text-muted-foreground">
+                        HSD {l.expiry_date ? new Date(l.expiry_date).toLocaleDateString("vi-VN") : "không có"}
+                        {l.days_left != null ? ` (${l.days_left < 0 ? `quá ${-l.days_left}` : `còn ${l.days_left}`} ngày)` : ""}
                       </span>
-                      <span className="flex items-center gap-2">
-                        <span className="tabular-nums">{formatNumber(l.qty_on_hand)}</span>
-                        <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${b.cls}`}>{b.label}</span>
-                      </span>
-                    </li>
-                  );
-                })}
+                    </span>
+                    <span className="flex shrink-0 items-center gap-2">
+                      <span className="font-medium tabular-nums">{formatNumber(l.qty_on_hand)}</span>
+                      <ChipHanLo status={l.expiry_status} />
+                    </span>
+                  </li>
+                ))}
               </ul>
             )}
           </div>

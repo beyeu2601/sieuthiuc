@@ -1,5 +1,7 @@
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { ChipSac } from "@/components/ui/chip";
+import { Khoi } from "@/components/khoi";
 import { StoreForm } from "./store-form";
 
 export const metadata = { title: "Cài đặt cửa hàng" };
@@ -15,14 +17,17 @@ export default async function SettingsStorePage() {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Thông tin cửa hàng in trên hóa đơn. Mã cửa hàng dùng trong đường dẫn và mã chứng từ, không đổi được ở đây.
-      </p>
       {(stores ?? []).map((s) => (
-        <section key={s.id} className="max-w-3xl rounded-xl border bg-card p-4">
-          <h2 className="mb-3 font-medium">
-            {s.code} - {s.name}
-          </h2>
+        <Khoi
+          key={s.id}
+          title={s.name}
+          className="max-w-5xl"
+          aside={
+            <ChipSac sac="slate" className="font-mono" title="Mã cửa hàng dùng trong đường dẫn và mã chứng từ, không đổi được ở đây">
+              {s.code}
+            </ChipSac>
+          }
+        >
           <StoreForm
             storeId={s.id}
             initial={{
@@ -34,7 +39,7 @@ export default async function SettingsStorePage() {
               invoice_footer: s.invoice_footer,
             }}
           />
-        </section>
+        </Khoi>
       ))}
     </div>
   );

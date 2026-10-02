@@ -9,7 +9,7 @@ export default async function NewOrderPage({ params }: { params: Promise<{ store
   const { store } = await requireStore(code, "sadmin", "admin", "staff");
   return (
     <div className="max-w-4xl">
-      <PageHeader title="Tạo đơn online" description="Hàng trong đơn được giữ lại cho tới khi giao xong hoặc hủy đơn." />
+      <PageHeader title="Tạo đơn online" />
       <OrderForm storeId={store.id} storeCode={store.code} />
     </div>
   );

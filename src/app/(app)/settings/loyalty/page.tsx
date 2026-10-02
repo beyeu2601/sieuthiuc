@@ -1,6 +1,8 @@
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { LOYALTY_SETTINGS } from "@/lib/setting-defs";
+import { Khoi } from "@/components/khoi";
+import { ChipSac } from "@/components/ui/chip";
 import { SettingsForm } from "../settings-form";
 import { ScopePicker } from "../scope-picker";
 import { loadValues, resolveScope } from "../scope";
@@ -20,24 +22,22 @@ export default async function LoyaltySettingsPage({ searchParams }: { searchPara
 
   return (
     <div className="max-w-4xl space-y-4">
-      <p className="rounded-lg bg-muted px-3 py-2 text-sm">
-        Tích điểm và dùng điểm khi bán hàng thuộc giai đoạn 2. Có thể thiết lập trước quy tắc và hạng ở đây.
-      </p>
-      <section className="rounded-xl border bg-card p-4">
-        <h2 className="mb-1 font-medium">Hạng thành viên</h2>
-        <p className="mb-3 text-sm text-muted-foreground">
-          Khách tự lên hạng khi tổng chi tiêu đạt ngưỡng. Hệ số nhân điểm tích; giảm giá áp dụng tự động khi bán.
+      <p className="text-xs text-muted-foreground">Tích điểm và dùng điểm khi bán hàng thuộc giai đoạn 2, có thể thiết lập trước.</p>
+      <Khoi title="Hạng thành viên">
+        <p
+          className="-mt-1 mb-1 text-xs text-muted-foreground"
+          title="Khách tự lên hạng khi tổng chi tiêu đạt ngưỡng. Hệ số nhân điểm tích; giảm giá áp dụng tự động khi bán."
+        >
+          Tự lên hạng khi tổng chi tiêu đạt ngưỡng.
         </p>
         <TierEditor rows={tiers ?? []} />
-      </section>
-      <section className="rounded-xl border bg-card p-4">
-        <h2 className="mb-1 font-medium">Quy tắc điểm</h2>
-        <p className="mb-3 text-sm text-muted-foreground">Đang sửa: {label}.</p>
+      </Khoi>
+      <Khoi title="Quy tắc điểm" aside={<ChipSac sac={storeId ? "indigo" : "slate"}>Đang sửa: {label}</ChipSac>}>
         <div className="mb-3">
           <ScopePicker basePath="/settings/loyalty" stores={ctx.stores} current={storeId} allowGlobal={ctx.profile.role === "sadmin"} />
         </div>
         <SettingsForm key={storeId ?? "global"} defs={LOYALTY_SETTINGS} values={values} storeId={storeId} />
-      </section>
+      </Khoi>
     </div>
   );
 }

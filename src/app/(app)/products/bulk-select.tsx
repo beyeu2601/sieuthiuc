@@ -6,7 +6,7 @@ import { PlusIcon } from "lucide-react";
 import { bulkUpdateProducts } from "./actions";
 import { QuickBrandDialog } from "./product-form";
 import { baoTheoKetQua } from "@/lib/feedback";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 
@@ -112,23 +112,21 @@ export function BulkBar({ categories, brands: initialBrands }: { categories: Opt
         <span className="text-sm font-medium" aria-live="polite">
           Đã chọn {selected.size}
         </span>
-        <NativeSelect value={cat} onChange={(e) => setCat(e.target.value)} aria-label="Nhóm hàng cần gán" className="h-11 min-w-40 flex-1">
-          <option value="">Nhóm hàng: giữ nguyên</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </NativeSelect>
+        <LuaChon
+          value={cat}
+          onChange={setCat}
+          aria-label="Nhóm hàng cần gán"
+          className="h-11 min-w-40 flex-1"
+          options={[{ value: "", label: "Nhóm hàng: giữ nguyên" }, ...categories.map((c) => ({ value: c.id, label: c.name }))]}
+        />
         <div className="flex min-w-48 flex-1 gap-1">
-          <NativeSelect value={brand} onChange={(e) => setBrand(e.target.value)} aria-label="Thương hiệu cần gán" className="h-11 flex-1">
-            <option value="">Thương hiệu: giữ nguyên</option>
-            {brands.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </NativeSelect>
+          <LuaChon
+            value={brand}
+            onChange={setBrand}
+            aria-label="Thương hiệu cần gán"
+            className="h-11 flex-1"
+            options={[{ value: "", label: "Thương hiệu: giữ nguyên" }, ...brands.map((b) => ({ value: b.id, label: b.name }))]}
+          />
           <Button type="button" variant="outline" className="size-11" aria-label="Thêm thương hiệu" onClick={() => setBrandOpen(true)}>
             <PlusIcon aria-hidden />
           </Button>

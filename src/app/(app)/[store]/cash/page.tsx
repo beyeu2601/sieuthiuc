@@ -7,8 +7,9 @@ import { PageHeader } from "@/components/page-header";
 import { AutoSubmitForm } from "@/components/auto-submit-form";
 import { FilterBar } from "@/components/filter-bar";
 import { EmptyState } from "@/components/empty-state";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
 import { ChipSac } from "@/components/ui/chip";
+import { ChiSo, HangChiSo } from "@/components/ui/chi-so";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -84,14 +85,13 @@ export default async function CashPage({ params, searchParams }: { params: Promi
     <div className="space-y-4">
       <PageHeader
         title="Thu chi"
-        description="Mọi khoản thu chi cần người giữ tài khoản duyệt mới vào số dư. Khoản chưa trả vẫn tính vào lãi lỗ và theo dõi ở mục Phải trả khác."
         actions={<Button render={<Link href={`/${store.code}/cash/new`} />}>Xin chi / báo thu</Button>}
       />
 
       {waitingMine > 0 && (
         <Link
           href={`/${store.code}/cash?approval=waiting&from=2000-01-01`}
-          className="flex min-h-11 items-center justify-between gap-2 rounded-xl border border-warning bg-warning-soft px-4 py-2 text-sm font-medium"
+          className="flex min-h-11 items-center justify-between gap-2 rounded-xl border border-vien-amber bg-nen-amber px-4 py-2 text-sm font-medium text-chu-amber"
         >
           <span>{waitingMine} khoản đang chờ bạn duyệt</span>
           <span aria-hidden>Xem -&gt;</span>
@@ -104,62 +104,72 @@ export default async function CashPage({ params, searchParams }: { params: Promi
             <Link
               key={a.id}
               href={`/${store.code}/cash/accounts/${a.id}`}
-              className="rounded-xl border bg-card p-4 transition-colors hover:bg-muted"
+              className="rounded-xl border bg-card px-4 py-3 transition-colors hover:bg-muted"
             >
               <div className="font-medium">{a.name}</div>
-              <div className="text-xs text-muted-foreground">{a.holder_name ? `Người giữ: ${a.holder_name}` : "Chưa có người giữ"}</div>
-              {a.balance !== null && <div className="mt-1 text-xl font-semibold tabular-nums">{formatMoney(a.balance)}</div>}
+              <div className={a.holder_name ? "text-xs text-muted-foreground" : "text-xs text-chu-amber"}>
+                {a.holder_name ? `Người giữ: ${a.holder_name}` : "Chưa có người giữ"}
+              </div>
+              {a.balance !== null && (
+                <div className={`mt-1 text-xl font-semibold tabular-nums ${a.balance < 0 ? "text-chu-red" : ""}`}>{formatMoney(a.balance)}</div>
+              )}
             </Link>
           ))}
         </section>
       )}
       <AutoSubmitForm action={`/${store.code}/cash`}>
         <FilterBar>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-[150px_150px_120px_180px_200px_200px]">
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-[150px_150px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
             <Input type="date" name="from" defaultValue={from} aria-label="Từ ngày" />
             <Input type="date" name="to" defaultValue={to} aria-label="Đến ngày" />
-            <NativeSelect name="kind" defaultValue={sp.kind ?? ""} aria-label="Loại">
-              <option value="">Thu và chi</option>
-              <option value="expense">Chi</option>
-              <option value="income">Thu</option>
-            </NativeSelect>
-            <NativeSelect name="cat" defaultValue={sp.cat ?? ""} aria-label="Nhóm">
-              <option value="">Mọi nhóm</option>
-              {(cats ?? []).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.kind === "income" ? "Thu: " : ""}
-                  {c.name}
-                </option>
-              ))}
-            </NativeSelect>
-            <NativeSelect name="approval" defaultValue={sp.approval ?? ""} aria-label="Duyệt">
-              <option value="">Mọi trạng thái</option>
-              <option value="waiting">Chờ duyệt (mới, sửa, xóa)</option>
-              <option value="pending">Chờ duyệt khoản mới</option>
-              <option value="approved">Đã duyệt</option>
-              <option value="rejected">Từ chối</option>
-            </NativeSelect>
-            <NativeSelect name="pay" defaultValue={sp.pay ?? ""} aria-label="Thanh toán">
-              <option value="">Đã / chưa trả</option>
-              <option value="unpaid">Phải trả khác (chưa trả)</option>
-              <option value="paid">Đã trả</option>
-            </NativeSelect>
+            <LuaChon
+              name="kind"
+              defaultValue={sp.kind ?? ""}
+              aria-label="Loại"
+              options={[
+                { value: "", label: "Thu và chi" },
+                { value: "expense", label: "Chi" },
+                { value: "income", label: "Thu" },
+              ]}
+            />
+            <LuaChon
+              name="cat"
+              defaultValue={sp.cat ?? ""}
+              aria-label="Nhóm"
+              options={[{ value: "", label: "Mọi nhóm" }, ...(cats ?? []).map((c) => ({ value: c.id, label: `${c.kind === "income" ? "Thu: " : ""}${c.name}` }))]}
+            />
+            <LuaChon
+              name="approval"
+              defaultValue={sp.approval ?? ""}
+              aria-label="Duyệt"
+              options={[
+                { value: "", label: "Mọi trạng thái" },
+                { value: "waiting", label: "Chờ duyệt (mới, sửa, xóa)" },
+                { value: "pending", label: "Chờ duyệt khoản mới" },
+                { value: "approved", label: "Đã duyệt" },
+                { value: "rejected", label: "Từ chối" },
+              ]}
+            />
+            <LuaChon
+              name="pay"
+              defaultValue={sp.pay ?? ""}
+              aria-label="Thanh toán"
+              options={[
+                { value: "", label: "Tất cả" },
+                { value: "unpaid", label: "Chưa trả" },
+                { value: "paid", label: "Đã trả" },
+              ]}
+            />
           </div>
         </FilterBar>
       </AutoSubmitForm>
 
       {canFinance && (
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border bg-card p-4">
-            <div className="text-sm text-muted-foreground">Tổng chi (đã duyệt)</div>
-            <div className="text-xl font-semibold tabular-nums">{formatMoney(totalExp)}</div>
-          </div>
-          <div className="rounded-xl border bg-card p-4">
-            <div className="text-sm text-muted-foreground">Tổng thu khác (đã duyệt)</div>
-            <div className="text-xl font-semibold tabular-nums">{formatMoney(totalInc)}</div>
-          </div>
-          <div className="rounded-xl border bg-card p-4 text-sm">
-            <div className="mb-1 text-muted-foreground">Chi theo nhóm</div>
+        <HangChiSo>
+          <ChiSo nhan="Tổng chi (đã duyệt)" sac={totalExp > 0 ? "rose" : "slate"} giaTri={formatMoney(totalExp)} />
+          <ChiSo nhan="Tổng thu khác (đã duyệt)" sac={totalInc > 0 ? "emerald" : "slate"} giaTri={formatMoney(totalInc)} />
+          <div className="col-span-2 rounded-xl border bg-card px-4 py-3 text-sm">
+            <div className="mb-1 font-medium text-muted-foreground">Chi theo nhóm</div>
             {[...byCat.entries()]
               .sort((a, b) => b[1] - a[1])
               .slice(0, 5)
@@ -170,7 +180,7 @@ export default async function CashPage({ params, searchParams }: { params: Promi
                 </div>
               ))}
           </div>
-        </div>
+        </HangChiSo>
       )}
 
       {rows.length === 0 ? (
@@ -212,7 +222,10 @@ export default async function CashPage({ params, searchParams }: { params: Promi
                       strong: true,
                     },
                     { label: "Tài khoản", value: (r.account_id && accById.get(r.account_id)?.name) || "-" },
-                    { label: "Thanh toán", value: r.payment_status === "paid" ? `Đã trả ${formatDateVN(r.paid_on)}` : "Chưa trả" },
+                    {
+                      label: "Thanh toán",
+                      value: r.payment_status === "paid" ? `Đã trả ${formatDateVN(r.paid_on)}` : <span className="text-chu-red">Chưa trả</span>,
+                    },
                   ]}
                   footer={
                     hasFooter && (
@@ -291,7 +304,15 @@ export default async function CashPage({ params, searchParams }: { params: Promi
                         {r.kind === "income" ? "+" : "-"}
                         {formatMoney(r.amount)}
                       </TableCell>
-                      <TableCell>{r.payment_status === "paid" ? `Đã trả ${formatDateVN(r.paid_on)}` : <ChipSac sac="red">Chưa trả</ChipSac>}</TableCell>
+                      <TableCell>
+                        {r.payment_status === "paid" ? (
+                          <span className="whitespace-nowrap text-muted-foreground">Đã trả {formatDateVN(r.paid_on)}</span>
+                        ) : (
+                          <ChipSac sac="red" title="Phải trả khác">
+                            Chưa trả
+                          </ChipSac>
+                        )}
+                      </TableCell>
                       <TableCell>
                         {r.pending_action ? (
                           <ChipSac sac="amber">Chờ duyệt {r.pending_action === "edit" ? "sửa" : "xóa"}</ChipSac>

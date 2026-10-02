@@ -6,9 +6,10 @@ import { PageHeader } from "@/components/page-header";
 import { AutoSubmitForm } from "@/components/auto-submit-form";
 import { FilterBar } from "@/components/filter-bar";
 import { EmptyState } from "@/components/empty-state";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
 import { Pagination } from "@/components/pagination";
 import { ChipSac } from "@/components/ui/chip";
+import { ChiSo, HangChiSo } from "@/components/ui/chi-so";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,33 +49,39 @@ export default async function SalesPage({ params, searchParams }: { params: Prom
   if (sp.q?.trim()) q = q.ilike("code", `%${sp.q.trim()}%`);
   const { data, count } = await q;
   const rows = data ?? [];
-  const completedTotal = rows.filter((r) => r.status === "completed").reduce((s, r) => s + r.total, 0);
+  const completedRows = rows.filter((r) => r.status === "completed");
+  const completedTotal = completedRows.reduce((s, r) => s + r.total, 0);
+  const cancelledCount = rows.filter((r) => r.status === "cancelled").length;
 
   return (
     <div>
       <PageHeader
         title="Giao dịch bán"
-        description="Giao dịch đã hủy vẫn hiện trong lịch sử nhưng không tính doanh thu."
         actions={<Button render={<Link href={`/${store.code}/pos`} />}>Bán hàng</Button>}
       />
       <AutoSubmitForm action={`/${store.code}/sales`} debounceMs={400} className="mb-3" role="search">
         <FilterBar search={<Input type="search" enterKeyHint="search" name="q" defaultValue={sp.q} placeholder="Mã hóa đơn" aria-label="Mã hóa đơn" />}>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-[150px_150px_150px_150px]">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-[150px_150px_minmax(240px,auto)_150px]">
             <Input type="date" name="from" defaultValue={from} aria-label="Từ ngày" />
             <Input type="date" name="to" defaultValue={to} aria-label="Đến ngày" />
-            <NativeSelect name="status" defaultValue={sp.status ?? ""} aria-label="Trạng thái">
-              <option value="">Mọi trạng thái</option>
-              <option value="completed">Hoàn tất</option>
-              <option value="cancelled">Đã hủy</option>
-            </NativeSelect>
-            <NativeSelect name="channel" defaultValue={sp.channel ?? ""} aria-label="Kênh">
-              <option value="">Mọi kênh</option>
-              {Object.entries(CHANNEL_LABEL).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </NativeSelect>
+            <LuaChon
+              name="status"
+              defaultValue={sp.status ?? ""}
+              aria-label="Trạng thái"
+              className="col-span-2 sm:col-span-1"
+              options={[
+                { value: "", label: "Tất cả" },
+                { value: "completed", label: "Hoàn tất" },
+                { value: "cancelled", label: "Đã hủy" },
+              ]}
+            />
+            <LuaChon
+              name="channel"
+              defaultValue={sp.channel ?? ""}
+              aria-label="Kênh"
+              className="col-span-2 sm:col-span-1"
+              options={[{ value: "", label: "Mọi kênh" }, ...Object.entries(CHANNEL_LABEL).map(([k, v]) => ({ value: k, label: v }))]}
+            />
           </div>
         </FilterBar>
       </AutoSubmitForm>
@@ -82,9 +89,21 @@ export default async function SalesPage({ params, searchParams }: { params: Prom
         <EmptyState title="Không có giao dịch trong khoảng đã chọn" />
       ) : (
         <>
-          <p className="mb-2 text-sm">
-            Trang này: tổng giao dịch hoàn tất <strong className="tabular-nums">{formatMoney(completedTotal)}</strong>
-          </p>
+          <HangChiSo className="mb-3">
+            <ChiSo nhan="Giao dịch" sac="brand" giaTri={count ?? rows.length} phu="Khớp bộ lọc" />
+            <ChiSo
+              nhan="Hoàn tất - trang này"
+              sac={completedRows.length > 0 ? "emerald" : "slate"}
+              giaTri={formatMoney(completedTotal)}
+              phu={`${completedRows.length} giao dịch, không tính đã hủy`}
+            />
+            <ChiSo
+              nhan={cancelledCount > 0 ? "Đã hủy - trang này" : "Không có giao dịch hủy"}
+              sac={cancelledCount > 0 ? "red" : "slate"}
+              giaTri={cancelledCount}
+              phu="Không tính doanh thu"
+            />
+          </HangChiSo>
           <MobileCardList label="Giao dịch bán">
             {rows.map((r) => {
               const st = SALE_STATUS[r.status as keyof typeof SALE_STATUS];

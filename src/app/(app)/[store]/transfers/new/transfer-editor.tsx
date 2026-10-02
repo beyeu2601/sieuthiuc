@@ -8,7 +8,7 @@ import { createTransfer } from "../actions";
 import { productLots, type CatalogItem, type LotRow } from "../../catalog-actions";
 import { formatNumber } from "@/lib/format";
 import { ProductPicker } from "@/components/product-picker";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,21 +61,26 @@ export function TransferEditor({
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="to">Cửa hàng nhận *</Label>
-          <NativeSelect id="to" value={to} onChange={(e) => setTo(e.target.value)}>
-            <option value="">Chọn cửa hàng</option>
-            {targets.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.code} - {t.name}
-              </option>
-            ))}
-          </NativeSelect>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="note">Ghi chú</Label>
-          <Input id="note" value={note} onChange={(e) => setNote(e.target.value)} />
+      <div className="@container rounded-xl border bg-card p-4">
+        <div className="grid gap-3 @md:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="to">Cửa hàng nhận *</Label>
+            <LuaChon
+              id="to"
+              aria-label="Cửa hàng nhận"
+              value={to}
+              onChange={setTo}
+              options={[
+                // Tren 3 cua hang la danh sach tha xuong, giu dong "Chon" cho trang thai chua chon
+                ...(targets.length > 3 ? [{ value: "", label: "Chọn cửa hàng" }] : []),
+                ...targets.map((t) => ({ value: t.id, label: `${t.code} - ${t.name}` })),
+              ]}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="note">Ghi chú</Label>
+            <Input id="note" value={note} onChange={(e) => setNote(e.target.value)} />
+          </div>
         </div>
       </div>
       <div className="space-y-3 rounded-xl border bg-card p-4">

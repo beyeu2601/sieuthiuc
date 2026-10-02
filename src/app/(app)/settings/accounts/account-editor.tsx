@@ -7,8 +7,8 @@ import { toast } from "sonner";
 import { saveMoneyAccount, setMoneyAccountHolder, type MoneyAccountInput } from "../actions";
 import { formatMoney } from "@/lib/format";
 import { MoneyInput } from "@/components/money-input";
-import { NativeSelect } from "@/components/native-select";
-import { Badge } from "@/components/ui/badge";
+import { LuaChon } from "@/components/lua-chon";
+import { ChipSac } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -83,25 +83,29 @@ function AccountCard({
 
   const negative = (row?.balance ?? 0) < 0;
   return (
-    <form onSubmit={save} className="space-y-3 rounded-xl border bg-card p-4" aria-label={row ? `Tài khoản ${row.name}` : "Thêm tài khoản"}>
+    <form onSubmit={save} className="@container space-y-3 rounded-xl border bg-card p-4" aria-label={row ? `Tài khoản ${row.name}` : "Thêm tài khoản"}>
       {row ? (
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-medium">{row.name}</h3>
-            <Badge variant="outline">{KIND_LABEL[row.kind]}</Badge>
-            {!row.is_active && <Badge variant="secondary">Ngừng dùng</Badge>}
+            <ChipSac sac="slate">{KIND_LABEL[row.kind]}</ChipSac>
+            {!row.is_active && <ChipSac sac="red">Ngừng dùng</ChipSac>}
           </div>
           <div className="text-right">
             <div className="text-xs text-muted-foreground">Số dư hiện tại</div>
-            <div className={`text-lg font-semibold tabular-nums ${negative ? "text-destructive" : ""}`}>{formatMoney(row.balance)}</div>
-            {negative && <div className="text-xs text-destructive">Số dư âm: kiểm tra số dư đầu kỳ hoặc khoản ghi nhầm tài khoản</div>}
+            <div className={`text-lg font-semibold tabular-nums ${negative ? "text-chu-red" : ""}`}>{formatMoney(row.balance)}</div>
+            {negative && (
+              <div className="text-xs text-chu-red" title="Kiểm tra số dư đầu kỳ hoặc khoản ghi nhầm tài khoản">
+                Số dư âm
+              </div>
+            )}
           </div>
         </div>
       ) : (
         <h3 className="font-medium">Thêm tài khoản</h3>
       )}
 
-      <fieldset disabled={pending} className="grid gap-3 sm:grid-cols-2">
+      <fieldset disabled={pending} className="grid gap-x-4 gap-y-3 @md:grid-cols-2 @3xl:grid-cols-4">
         <div className="space-y-1.5">
           <Label htmlFor={`${p}-name`}>Tên tài khoản</Label>
           <Input
@@ -115,28 +119,32 @@ function AccountCard({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor={`${p}-kind`}>Loại</Label>
-          <NativeSelect id={`${p}-kind`} value={kind} onChange={(e) => setKind(e.target.value as AccountRow["kind"])} disabled={!isSadmin} className="h-11">
-            {Object.entries(KIND_LABEL).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
-          </NativeSelect>
+          <LuaChon
+            id={`${p}-kind`}
+            aria-label="Loại tài khoản"
+            value={kind}
+            onChange={(x) => setKind(x as AccountRow["kind"])}
+            disabled={!isSadmin}
+            className="h-11"
+            options={Object.entries(KIND_LABEL).map(([k, v]) => ({ value: k, label: v }))}
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor={`${p}-opening`}>Số dư đầu kỳ</Label>
           <MoneyInput id={`${p}-opening`} value={opening} onChange={setOpening} disabled={!isSadmin} className="h-11" />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor={`${p}-holder`}>Người giữ quỹ (người duyệt thu chi)</Label>
-          <NativeSelect id={`${p}-holder`} value={holder} onChange={(e) => setHolder(e.target.value)} className="h-11">
-            <option value="">Chưa có - quản lý cửa hàng duyệt</option>
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.full_name}
-              </option>
-            ))}
-          </NativeSelect>
+          <Label htmlFor={`${p}-holder`} title="Người giữ quỹ duyệt thu chi của tài khoản này">
+            Người giữ quỹ
+          </Label>
+          <LuaChon
+            id={`${p}-holder`}
+            aria-label="Người giữ quỹ"
+            value={holder}
+            onChange={setHolder}
+            className={users.length + 1 > 3 ? "h-11" : undefined}
+            options={[{ value: "", label: "Chưa có - quản lý cửa hàng duyệt" }, ...users.map((u) => ({ value: u.id, label: u.full_name }))]}
+          />
         </div>
       </fieldset>
 

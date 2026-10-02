@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { AutoSubmitForm } from "@/components/auto-submit-form";
 import { FilterBar } from "@/components/filter-bar";
 import { EmptyState } from "@/components/empty-state";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { ChipSac } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
@@ -39,11 +39,17 @@ export default async function SuppliersPage({
       <PageHeader title="Nhà cung cấp" actions={<Button render={<Link href="/suppliers/new" />}>Thêm nhà cung cấp</Button>} />
       <AutoSubmitForm action="/suppliers" debounceMs={400} className="mb-3" role="search">
         <FilterBar search={<Input type="search" enterKeyHint="search" name="q" defaultValue={sp.q} placeholder="Tìm tên, mã, số điện thoại" aria-label="Tìm nhà cung cấp" />}>
-          <NativeSelect name="status" defaultValue={status} aria-label="Trạng thái" className="sm:w-48">
-            <option value="active">Đang giao dịch</option>
-            <option value="inactive">Ngừng giao dịch</option>
-            <option value="all">Tất cả</option>
-          </NativeSelect>
+          <LuaChon
+            name="status"
+            defaultValue={status}
+            aria-label="Trạng thái"
+            className="sm:w-96"
+            options={[
+              { value: "active", label: "Đang giao dịch" },
+              { value: "inactive", label: "Ngừng giao dịch" },
+              { value: "all", label: "Tất cả" },
+            ]}
+          />
         </FilterBar>
       </AutoSubmitForm>
       {error ? (

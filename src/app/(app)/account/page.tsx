@@ -2,6 +2,8 @@ import { requireSession } from "@/lib/auth";
 import { ROLE_LABEL } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/page-header";
+import { Khoi } from "@/components/khoi";
+import { ChipSac } from "@/components/ui/chip";
 import { PasswordChangeForm } from "./password-form";
 import { PinForm } from "./pin-form";
 
@@ -17,18 +19,29 @@ export default async function AccountPage() {
     hasPin = data === true;
   }
   return (
-    <div className="max-w-md space-y-4">
-      <PageHeader title="Tài khoản" description={`${ctx.profile.full_name} - ${ctx.profile.username} - ${ROLE_LABEL[ctx.profile.role]}`} />
-      <section className="rounded-xl border bg-card p-4">
-        <h2 className="mb-3 font-medium">Đổi mật khẩu</h2>
-        <PasswordChangeForm />
-      </section>
-      {isManager && (
-        <section className="rounded-xl border bg-card p-4">
-          <h2 className="mb-3 font-medium">Mã PIN duyệt giảm giá</h2>
-          <PinForm hasPin={hasPin} />
-        </section>
-      )}
+    <div className="max-w-4xl space-y-4">
+      <PageHeader
+        title="Tài khoản"
+        description={
+          <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <ChipSac sac="slate">{ctx.profile.full_name}</ChipSac>
+            <ChipSac sac="slate" className="font-mono">
+              {ctx.profile.username}
+            </ChipSac>
+            <ChipSac sac="brand">{ROLE_LABEL[ctx.profile.role]}</ChipSac>
+          </span>
+        }
+      />
+      <div className="grid items-start gap-4 md:grid-cols-2">
+        <Khoi title="Đổi mật khẩu">
+          <PasswordChangeForm />
+        </Khoi>
+        {isManager && (
+          <Khoi title="Mã PIN duyệt giảm giá" aside={<ChipSac sac={hasPin ? "emerald" : "amber"}>{hasPin ? "Đã đặt PIN" : "Chưa đặt PIN"}</ChipSac>}>
+            <PinForm hasPin={hasPin} />
+          </Khoi>
+        )}
+      </div>
     </div>
   );
 }

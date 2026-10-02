@@ -1,6 +1,8 @@
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/page-header";
+import { Khoi } from "@/components/khoi";
+import { ChipSac } from "@/components/ui/chip";
 import { ProductForm } from "../product-form";
 import { getNumberSetting } from "@/lib/settings";
 
@@ -16,9 +18,19 @@ export default async function NewProductPage() {
   ]);
 
   return (
-    <div className="max-w-3xl">
-      <PageHeader title="Thêm sản phẩm" description="SKU tự sinh. Mỗi loại hàng Cont/Air là một mã sản phẩm riêng." />
-      <div className="rounded-xl border bg-card p-4">
+    <div>
+      <PageHeader
+        title="Thêm sản phẩm"
+        description={
+          <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <ChipSac sac="slate">SKU tự sinh</ChipSac>
+            <ChipSac sac="slate" title="Mỗi loại hàng Cont/Air là một mã sản phẩm riêng">
+              Cont và Air là hai mã riêng
+            </ChipSac>
+          </span>
+        }
+      />
+      <Khoi title="Thông tin sản phẩm">
         <ProductForm
           id={null}
           readOnly={false}
@@ -43,7 +55,7 @@ export default async function NewProductPage() {
             barcode: null,
           }}
         />
-      </div>
+      </Khoi>
     </div>
   );
 }

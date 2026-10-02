@@ -1,6 +1,7 @@
 import { hasPerm, requireStore } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/page-header";
+import { ChipSac } from "@/components/ui/chip";
 import { ReceiptEditor, type EditorLine } from "../receipt-editor";
 
 export const metadata = { title: "Phiếu nhập mới" };
@@ -49,7 +50,17 @@ export default async function NewReceiptPage({
 
   return (
     <div>
-      <PageHeader title="Phiếu nhập mới" description={`${store.name}. Phiếu nháp chưa làm thay đổi tồn kho.`} />
+      <PageHeader
+        title="Phiếu nhập mới"
+        description={
+          <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <ChipSac sac="slate">{store.name}</ChipSac>
+            <ChipSac sac="slate" title="Phiếu nháp chưa làm thay đổi tồn kho">
+              Nháp chưa cộng tồn
+            </ChipSac>
+          </span>
+        }
+      />
       <ReceiptEditor
         storeId={store.id}
         storeCode={store.code}

@@ -38,12 +38,8 @@ export default async function PayPage({
   }));
 
   return (
-    <div className="max-w-3xl">
-      <PageHeader
-        title="Ghi thanh toán công nợ"
-        back={{ href: `/${store.code}/payables`, label: "Công nợ" }}
-        description="Một lần trả có thể phân bổ cho nhiều khoản nợ, mặc định trả khoản cũ nhất trước."
-      />
+    <div>
+      <PageHeader title="Ghi thanh toán công nợ" back={{ href: `/${store.code}/payables`, label: "Công nợ" }} />
       <PaymentForm
         storeId={store.id}
         storeCode={store.code}

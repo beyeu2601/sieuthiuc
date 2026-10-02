@@ -9,7 +9,8 @@ import type { CatalogItem } from "../../catalog-actions";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { ProductPicker } from "@/components/product-picker";
 import { MoneyInput } from "@/components/money-input";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
+import { Khoi } from "@/components/khoi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -71,15 +72,21 @@ export function OrderForm({ storeId, storeCode }: { storeId: string; storeCode: 
   }
 
   return (
-    <div className="space-y-4">
-      <section className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2">
+    <div className="@container space-y-4">
+      <section className="grid gap-x-4 gap-y-3 rounded-xl border bg-card p-4 @md:grid-cols-2 @3xl:grid-cols-4">
         <div className="space-y-1.5">
           <Label htmlFor="channel">Kênh *</Label>
-          <NativeSelect id="channel" value={h.channel} onChange={(e) => setH({ ...h, channel: e.target.value as OrderPayload["channel"] })}>
-            <option value="shopee">Shopee</option>
-            <option value="facebook">Facebook</option>
-            <option value="other">Khác</option>
-          </NativeSelect>
+          <LuaChon
+            id="channel"
+            aria-label="Kênh"
+            value={h.channel}
+            onChange={(v) => setH({ ...h, channel: v as OrderPayload["channel"] })}
+            options={[
+              { value: "shopee", label: "Shopee" },
+              { value: "facebook", label: "Facebook" },
+              { value: "other", label: "Khác" },
+            ]}
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="ext">Mã đơn trên sàn</Label>
@@ -93,14 +100,13 @@ export function OrderForm({ storeId, storeCode }: { storeId: string; storeCode: 
           <Label htmlFor="cphone">Số điện thoại</Label>
           <Input id="cphone" type="tel" inputMode="tel" value={h.customer_phone} onChange={(e) => setH({ ...h, customer_phone: e.target.value })} />
         </div>
-        <div className="space-y-1.5 sm:col-span-2">
+        <div className="space-y-1.5 @md:col-span-2 @3xl:col-span-4">
           <Label htmlFor="addr">Địa chỉ giao</Label>
           <Input id="addr" value={h.shipping_address} onChange={(e) => setH({ ...h, shipping_address: e.target.value })} />
         </div>
       </section>
 
-      <section className="space-y-3 rounded-xl border bg-card p-4">
-        <h2 className="font-medium">Sản phẩm</h2>
+      <Khoi title="Sản phẩm" className="space-y-3" aside={<span className="text-xs text-muted-foreground tabular-nums">{lines.length}</span>}>
         <ProductPicker storeId={storeId} onPick={add} />
         {lines.map((l) => (
           <div key={l.product_id} className="grid grid-cols-2 items-end gap-2 border-t pt-2 sm:grid-cols-[1fr_100px_150px_120px_auto]">
@@ -133,9 +139,9 @@ export function OrderForm({ storeId, storeCode }: { storeId: string; storeCode: 
             </Button>
           </div>
         ))}
-      </section>
+      </Khoi>
 
-      <section className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-3">
+      <section className="grid gap-x-4 gap-y-3 rounded-xl border bg-card p-4 @md:grid-cols-2 @3xl:grid-cols-4">
         <div className="space-y-1.5">
           <Label htmlFor="ship">Phí ship thu của khách</Label>
           <MoneyInput id="ship" value={h.shipping_fee} onChange={(n) => setH({ ...h, shipping_fee: n })} />
@@ -144,15 +150,21 @@ export function OrderForm({ storeId, storeCode }: { storeId: string; storeCode: 
           <Label htmlFor="disc">Giảm giá / voucher</Label>
           <MoneyInput id="disc" value={h.discount_amount} onChange={(n) => setH({ ...h, discount_amount: n })} />
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 @md:col-span-2">
           <Label htmlFor="pm">Thanh toán</Label>
-          <NativeSelect id="pm" value={h.payment_method} onChange={(e) => setH({ ...h, payment_method: e.target.value as OrderPayload["payment_method"] })}>
-            <option value="transfer">Chuyển khoản / sàn trả</option>
-            <option value="cash">Tiền mặt (COD)</option>
-            <option value="other">Khác</option>
-          </NativeSelect>
+          <LuaChon
+            id="pm"
+            aria-label="Thanh toán"
+            value={h.payment_method}
+            onChange={(v) => setH({ ...h, payment_method: v as OrderPayload["payment_method"] })}
+            options={[
+              { value: "transfer", label: "CK / sàn trả" },
+              { value: "cash", label: "Tiền mặt COD" },
+              { value: "other", label: "Khác" },
+            ]}
+          />
         </div>
-        <div className="space-y-1.5 sm:col-span-3">
+        <div className="space-y-1.5 @md:col-span-2 @3xl:col-span-4">
           <Label htmlFor="onote">Ghi chú</Label>
           <Textarea id="onote" rows={2} value={h.note} onChange={(e) => setH({ ...h, note: e.target.value })} />
         </div>
@@ -164,7 +176,12 @@ export function OrderForm({ storeId, storeCode }: { storeId: string; storeCode: 
           Tiền hàng {formatMoney(subtotal)} + ship {formatMoney(h.shipping_fee ?? 0)} - giảm {formatMoney(h.discount_amount ?? 0)}
           <div className="text-lg font-semibold">Tổng đơn {formatMoney(total)}</div>
         </div>
-        <Button className="h-11 px-6" disabled={pending || lines.length === 0} onClick={submit}>
+        <Button
+          className="h-11 px-6"
+          disabled={pending || lines.length === 0}
+          onClick={submit}
+          title="Hàng trong đơn được giữ lại cho tới khi giao xong hoặc hủy đơn"
+        >
           {pending ? "Đang tạo..." : "Tạo đơn và giữ hàng"}
         </Button>
       </div>

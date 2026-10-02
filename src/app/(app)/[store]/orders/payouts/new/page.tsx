@@ -31,11 +31,10 @@ export default async function NewPayoutPage({ params }: { params: Promise<{ stor
   }));
 
   return (
-    <div className="max-w-3xl">
+    <div>
       <PageHeader
         title="Ghi đợt tiền Shopee về"
         back={{ href: `/${store.code}/orders/payouts`, label: "Đối soát Shopee" }}
-        description="Tick các đơn có trong đợt chuyển tiền (xem ở Shopee: Tài chính > Doanh thu), nhập số tiền thực nhận. Phần chênh lệch được ghi là phí sàn."
       />
       <PayoutForm
         storeId={store.id}

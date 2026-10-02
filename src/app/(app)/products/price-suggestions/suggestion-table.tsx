@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { applyPriceSuggestions } from "../actions";
 import { formatMoney } from "@/lib/format";
 import { GOODS_TYPE_LABEL } from "@/lib/text";
+import { ChipSac, sacLoaiHang } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -83,8 +84,9 @@ export function SuggestionTable({ rows }: { rows: Suggestion[] }) {
                   </TableCell>
                   <TableCell className="min-w-56 whitespace-normal">
                     {r.name}
-                    <div className="text-xs text-muted-foreground">
-                      {r.sku} - {GOODS_TYPE_LABEL[r.goods_type]}
+                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                      {r.sku}
+                      <ChipSac sac={sacLoaiHang(r.goods_type)}>{GOODS_TYPE_LABEL[r.goods_type]}</ChipSac>
                     </div>
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{formatMoney(r.cost_price_ref)}</TableCell>
@@ -101,9 +103,11 @@ export function SuggestionTable({ rows }: { rows: Suggestion[] }) {
           </TableBody>
         </Table>
       </div>
-      <Button onClick={apply} disabled={pending || selected.size === 0} className="h-10">
-        {pending ? "Đang cập nhật..." : `Áp dụng giá mới cho ${selected.size} sản phẩm`}
-      </Button>
+      <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 rounded-xl border bg-card/95 p-3 backdrop-blur lg:bottom-0">
+        <Button onClick={apply} disabled={pending || selected.size === 0} className="h-10">
+          {pending ? "Đang cập nhật..." : `Áp dụng giá mới cho ${selected.size} sản phẩm`}
+        </Button>
+      </div>
     </div>
   );
 }

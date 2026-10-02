@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AutoSubmitForm } from "@/components/auto-submit-form";
 import { FilterBar } from "@/components/filter-bar";
 import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
 import { cn } from "@/lib/utils";
 
 const PRESETS = [
@@ -90,16 +90,21 @@ function FilterBody({
           {(showChannel || canAllStores || extra) && (
             <div className="grid grid-cols-2 items-end gap-2 sm:flex sm:flex-wrap">
               {showChannel && (
-                <label className="block space-y-1 text-sm">
-                  Kênh
-                  <NativeSelect name="channel" defaultValue={channel ?? ""}>
-                    <option value="">Mọi kênh</option>
-                    <option value="pos">Tại quầy</option>
-                    <option value="shopee">Shopee</option>
-                    <option value="facebook">Facebook</option>
-                    <option value="other">Khác</option>
-                  </NativeSelect>
-                </label>
+                <div className="space-y-1 text-sm">
+                  <span className="block">Kênh</span>
+                  <LuaChon
+                    name="channel"
+                    defaultValue={channel ?? ""}
+                    aria-label="Kênh"
+                    options={[
+                      { value: "", label: "Mọi kênh" },
+                      { value: "pos", label: "Tại quầy" },
+                      { value: "shopee", label: "Shopee" },
+                      { value: "facebook", label: "Facebook" },
+                      { value: "other", label: "Khác" },
+                    ]}
+                  />
+                </div>
               )}
               {canAllStores && (
                 <label className="flex h-10 items-center gap-2 text-sm">

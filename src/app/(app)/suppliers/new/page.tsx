@@ -7,8 +7,8 @@ export const metadata = { title: "Thêm nhà cung cấp" };
 export default async function NewSupplierPage() {
   await requireRole("sadmin", "admin", "accountant");
   return (
-    <div className="max-w-3xl">
-      <PageHeader title="Thêm nhà cung cấp" description="Mã nhà cung cấp tự sinh." />
+    <div className="max-w-5xl">
+      <PageHeader title="Thêm nhà cung cấp" />
       <div className="rounded-xl border bg-card p-4">
         <SupplierForm
           id={null}

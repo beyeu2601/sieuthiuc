@@ -4,9 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { setAccountHolder } from "../../actions";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 
 export function HolderSelect({
   storeCode,
@@ -23,20 +22,17 @@ export function HolderSelect({
   const [value, setValue] = useState(holderId ?? "");
   const [pending, start] = useTransition();
   return (
-    <div className="flex flex-wrap items-end gap-2">
-      <div className="min-w-56 space-y-1.5">
-        <Label htmlFor="holder">Người giữ tài khoản</Label>
-        <NativeSelect id="holder" value={value} onChange={(e) => setValue(e.target.value)}>
-          <option value="">Chưa có (quản lý cửa hàng duyệt)</option>
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.full_name}
-            </option>
-          ))}
-        </NativeSelect>
-      </div>
+    <div className="space-y-2">
+      <LuaChon
+        id="holder"
+        aria-label="Người giữ tài khoản"
+        value={value}
+        onChange={setValue}
+        disabled={pending}
+        options={[{ value: "", label: "Chưa có" }, ...users.map((u) => ({ value: u.id, label: u.full_name }))]}
+      />
       <Button
-        className="h-11"
+        className="h-10 w-full"
         disabled={pending || value === (holderId ?? "")}
         onClick={() =>
           start(async () => {
@@ -47,7 +43,7 @@ export function HolderSelect({
           })
         }
       >
-        Lưu
+        {pending ? "Đang lưu..." : "Lưu người giữ"}
       </Button>
     </div>
   );

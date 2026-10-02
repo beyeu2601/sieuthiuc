@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { adjustShiftCount, approveShift, closeShift, openShift } from "./actions";
 import { formatMoney } from "@/lib/format";
 import { MoneyInput } from "@/components/money-input";
+import { LuaChon } from "@/components/lua-chon";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
@@ -47,11 +48,14 @@ export function CloseShiftForm({
   shiftId,
   expected,
   waitingCount = 0,
+  diffAlert,
 }: {
   storeCode: string;
   shiftId: string;
   expected: number;
   waitingCount?: number;
+  // Nguong shift.diff_alert_amount: lech vuot nguong thi ca chuyen Can kiem tra
+  diffAlert: number;
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<"total" | "denom">("denom");
@@ -62,6 +66,7 @@ export function CloseShiftForm({
   const denomTotal = useMemo(() => DENOMS.reduce((s, d) => s + d * (Number(counts[d]) || 0), 0), [counts]);
   const counted = mode === "denom" ? denomTotal : (total ?? 0);
   const diff = counted - expected;
+  const overAlert = Math.abs(diff) > diffAlert;
   const { confirm, dialog } = useConfirm();
 
   async function submit(e: React.FormEvent) {
@@ -84,18 +89,20 @@ export function CloseShiftForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3">
+    <form onSubmit={submit} className="@container space-y-3">
       {dialog}
-      <div className="flex gap-1" role="group" aria-label="Cách nhập tiền đếm">
-        <Button type="button" size="sm" variant={mode === "denom" ? "default" : "outline"} onClick={() => setMode("denom")}>
-          Đếm theo mệnh giá
-        </Button>
-        <Button type="button" size="sm" variant={mode === "total" ? "default" : "outline"} onClick={() => setMode("total")}>
-          Nhập tổng
-        </Button>
-      </div>
+      <LuaChon
+        aria-label="Cách nhập tiền đếm"
+        className="max-w-sm"
+        value={mode}
+        onChange={(x) => setMode(x as "total" | "denom")}
+        options={[
+          { value: "denom", label: "Đếm theo mệnh giá" },
+          { value: "total", label: "Nhập tổng" },
+        ]}
+      />
       {mode === "denom" ? (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 @md:grid-cols-3">
           {DENOMS.map((d) => (
             <label key={d} className="flex items-center gap-2 text-sm">
               <span className="w-20 text-right tabular-nums">{new Intl.NumberFormat("vi-VN").format(d)}</span>
@@ -118,20 +125,22 @@ export function CloseShiftForm({
           <MoneyInput id="counted" value={total} onChange={setTotal} className="h-11 w-52 text-base" />
         </div>
       )}
-      <dl className="grid max-w-sm grid-cols-2 gap-y-1 rounded-lg bg-muted p-3 text-sm">
-        <dt>Tiền mặt kỳ vọng</dt>
-        <dd className="text-right tabular-nums">{formatMoney(expected)}</dd>
-        <dt>Thực đếm</dt>
-        <dd className="text-right tabular-nums">{formatMoney(counted)}</dd>
-        <dt className="font-medium">Chênh lệch</dt>
-        <dd className={`text-right font-medium tabular-nums ${diff < 0 ? "text-destructive" : diff > 0 ? "text-warning" : "text-success"}`}>
-          {diff > 0 ? "+" : ""}
-          {formatMoney(diff)}
-        </dd>
-      </dl>
-      <div className="space-y-1.5">
-        <Label htmlFor="close-note">Ghi chú{diff !== 0 ? " (bắt buộc khi lệch)" : ""}</Label>
-        <Textarea id="close-note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
+      <div className="grid gap-3 @md:grid-cols-2">
+        <dl className="grid grid-cols-2 content-start gap-y-1 rounded-lg bg-muted p-3 text-sm">
+          <dt>Tiền mặt kỳ vọng</dt>
+          <dd className="text-right tabular-nums">{formatMoney(expected)}</dd>
+          <dt>Thực đếm</dt>
+          <dd className="text-right tabular-nums">{formatMoney(counted)}</dd>
+          <dt className="font-medium">{overAlert ? "Lệch vượt ngưỡng" : "Chênh lệch"}</dt>
+          <dd className={`text-right font-medium tabular-nums ${overAlert ? "text-chu-red" : diff !== 0 ? "text-chu-amber" : "text-chu-emerald"}`}>
+            {diff > 0 ? "+" : ""}
+            {formatMoney(diff)}
+          </dd>
+        </dl>
+        <div className="space-y-1.5">
+          <Label htmlFor="close-note">Ghi chú{diff !== 0 ? " (bắt buộc khi lệch)" : ""}</Label>
+          <Textarea id="close-note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
+        </div>
       </div>
       <Button type="submit" className="h-11 px-6" disabled={pending}>
         {pending ? "Đang chốt..." : "Chốt ca"}

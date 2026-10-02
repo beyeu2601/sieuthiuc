@@ -7,6 +7,7 @@ import { AutoSubmitForm } from "@/components/auto-submit-form";
 import { FilterBar } from "@/components/filter-bar";
 import { EmptyState } from "@/components/empty-state";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
+import { ChipSac, sacLoaiHang } from "@/components/ui/chip";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { InventoryTabs } from "../inventory-tabs";
@@ -60,7 +61,7 @@ export default async function PeriodPage({
 
   return (
     <div>
-      <PageHeader title="Nhập xuất tồn theo kỳ" description="Tồn cuối = tồn đầu + nhập - xuất + điều chỉnh, tính từ lịch sử biến động." />
+      <PageHeader title="Nhập xuất tồn theo kỳ" description={<ChipSac sac="slate" className="mt-1.5">{store.name}</ChipSac>} />
       <InventoryTabs storeCode={store.code} />
       <AutoSubmitForm action={`/${store.code}/inventory/period`} className="my-3">
         <FilterBar>
@@ -129,7 +130,9 @@ export default async function PeriodPage({
                 <TableHead className="text-right">Nhập</TableHead>
                 <TableHead className="text-right">Xuất</TableHead>
                 <TableHead className="text-right">Điều chỉnh</TableHead>
-                <TableHead className="text-right">Tồn cuối</TableHead>
+                <TableHead className="text-right" title="Tồn cuối = tồn đầu + nhập - xuất + điều chỉnh, tính từ lịch sử biến động">
+                  Tồn cuối
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -141,7 +144,9 @@ export default async function PeriodPage({
                       {r.sku} - {r.unit}
                     </div>
                   </TableCell>
-                  <TableCell>{GOODS_TYPE_LABEL[r.goods_type]}</TableCell>
+                  <TableCell>
+                    <ChipSac sac={sacLoaiHang(r.goods_type)}>{GOODS_TYPE_LABEL[r.goods_type]}</ChipSac>
+                  </TableCell>
                   <TableCell className="text-right tabular-nums">{formatNumber(r.opening)}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatNumber(r.qty_in)}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatNumber(r.qty_out)}</TableCell>

@@ -6,7 +6,8 @@ import { formatMoney, formatNumber } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
+import { ChipSac } from "@/components/ui/chip";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ReportFilter } from "../report-filter";
 import { ReportTabs } from "../report-tabs";
@@ -43,7 +44,18 @@ export default async function BestSellersPage({
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Bán chạy" description={`${formatDateVN(r.period.from)} - ${formatDateVN(r.period.to)}. Không tính giao dịch đã hủy.`} />
+      <PageHeader
+        title="Bán chạy"
+        description={
+          <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            {r.allStores && <ChipSac sac="slate">Tất cả cửa hàng</ChipSac>}
+            <ChipSac sac="brand">
+              {formatDateVN(r.period.from)} - {formatDateVN(r.period.to)}
+            </ChipSac>
+            <ChipSac sac="slate">Không tính giao dịch đã hủy</ChipSac>
+          </span>
+        }
+      />
       <ReportTabs storeCode={store.code} />
       <ReportFilter
         basePath={`/${store.code}/reports/best-sellers`}
@@ -54,16 +66,10 @@ export default async function BestSellersPage({
         canAllStores={r.canAll}
         keep={{ order }}
         extra={
-          <label className="block space-y-1 text-sm">
-            Xếp theo
-            <NativeSelect name="order" defaultValue={order}>
-              {Object.entries(ORDERS).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </NativeSelect>
-          </label>
+          <div className="col-span-2 space-y-1 text-sm sm:min-w-72">
+            <span className="block">Xếp theo</span>
+            <LuaChon name="order" defaultValue={order} aria-label="Xếp theo" options={Object.entries(ORDERS).map(([k, v]) => ({ value: k, label: v }))} />
+          </div>
         }
       />
       {rows.length === 0 ? (

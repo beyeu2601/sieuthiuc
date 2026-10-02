@@ -6,7 +6,8 @@ import { formatMoney, formatNumber } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { DailyBars } from "@/components/daily-bars";
 import { ThanhCoCau, sacTheoThuTu } from "@/components/charts/thanh-co-cau";
-import { sacKenhBan, sacLoaiHang, type SacNguNghia } from "@/components/ui/chip";
+import { ChipSac, sacKenhBan, sacLoaiHang, type SacNguNghia } from "@/components/ui/chip";
+import { ChiSo, HangChiSo } from "@/components/ui/chi-so";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
@@ -86,7 +87,22 @@ export default async function PnlPage({ params, searchParams }: { params: Promis
     <div className="space-y-4">
       <PageHeader
         title="Lãi lỗ"
-        description={`${r.allStores ? "Tất cả cửa hàng" : store.name} - ${formatDateVN(r.period.from)} đến ${formatDateVN(r.period.to)}. So với kỳ trước ${formatDateVN(prev.from)} - ${formatDateVN(prev.to)}.`}
+        description={
+          <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <ChipSac sac="slate">{r.allStores ? "Tất cả cửa hàng" : store.name}</ChipSac>
+            <ChipSac sac="brand">
+              {formatDateVN(r.period.from)} - {formatDateVN(r.period.to)}
+            </ChipSac>
+            <ChipSac sac="slate">
+              Kỳ trước {formatDateVN(prev.from)} - {formatDateVN(prev.to)}
+            </ChipSac>
+            {r.channel && (
+              <ChipSac sac="amber" title="Chi phí và thu khác không chia theo kênh nên không tính khi lọc theo kênh">
+                Lọc kênh {CHANNEL_LABEL[r.channel as keyof typeof CHANNEL_LABEL] ?? r.channel}: không tính chi phí, thu khác
+              </ChipSac>
+            )}
+          </span>
+        }
       />
       <ReportTabs storeCode={store.code} />
       <ReportFilter
@@ -99,40 +115,43 @@ export default async function PnlPage({ params, searchParams }: { params: Promis
         allStores={r.allStores}
         canAllStores={r.canAll}
       />
-      {r.channel && (
-        <p className="rounded-lg bg-muted px-3 py-2 text-sm">Đang lọc theo kênh: chi phí và thu khác không chia theo kênh nên không tính.</p>
-      )}
       {error || !p ? (
         <p role="alert" className="text-sm text-destructive">
           Không tải được báo cáo.
         </p>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <HangChiSo>
             {[
-              { label: "Doanh thu thuần", v: p.net_revenue, pv: b?.net_revenue },
-              { label: "Lãi gộp", v: p.gross_profit, pv: b?.gross_profit, sub: p.gross_margin == null ? "Biên N/A" : `Biên ${p.gross_margin}%` },
-              { label: "Lãi ròng", v: p.net_profit, pv: b?.net_profit, sub: p.net_margin == null ? "Biên N/A" : `Biên ${p.net_margin}%` },
-              { label: "Số giao dịch", v: breakdown?.count ?? 0, pv: undefined, count: true },
+              { label: "Doanh thu thuần", v: p.net_revenue, pv: b?.net_revenue, profit: false },
+              { label: "Lãi gộp", v: p.gross_profit, pv: b?.gross_profit, sub: p.gross_margin == null ? "Biên N/A" : `Biên ${p.gross_margin}%`, profit: true },
+              { label: "Lãi ròng", v: p.net_profit, pv: b?.net_profit, sub: p.net_margin == null ? "Biên N/A" : `Biên ${p.net_margin}%`, profit: true },
+              { label: "Số giao dịch", v: breakdown?.count ?? 0, pv: undefined, count: true, profit: false },
             ].map((k) => {
               const c = k.pv == null ? null : change(k.v, k.pv);
+              // Lai: am la lo (do), duong la lai (xanh). Doanh thu va so giao dich la so chinh trung tinh
+              const sac: SacNguNghia = k.profit ? (k.v < 0 ? "red" : k.v > 0 ? "emerald" : "slate") : k.v < 0 ? "red" : "brand";
               return (
-                <div key={k.label} className="rounded-xl border bg-card p-4">
-                  <div className="text-sm text-muted-foreground">{k.label}</div>
-                  <div className={cn("text-xl font-semibold tabular-nums", k.v < 0 && "text-destructive")}>
-                    {k.count ? formatNumber(k.v) : formatMoney(k.v)}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {k.sub}
-                    {k.sub && c != null ? " - " : ""}
-                    {c != null && `${c > 0 ? "+" : ""}${c}% so với kỳ trước`}
-                  </div>
-                </div>
+                <ChiSo
+                  key={k.label}
+                  nhan={k.profit && k.v < 0 ? `${k.label}: lỗ` : k.label}
+                  sac={sac}
+                  giaTri={k.count ? formatNumber(k.v) : formatMoney(k.v)}
+                  phu={
+                    (k.sub || c != null) && (
+                      <>
+                        {k.sub}
+                        {k.sub && c != null ? " - " : ""}
+                        {c != null && `${c > 0 ? "+" : ""}${c}% so với kỳ trước`}
+                      </>
+                    )
+                  }
+                />
               );
             })}
-          </div>
+          </HangChiSo>
 
-          <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
+          <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
             <section className="rounded-xl border bg-card">
               {/* Dien thoai: bao cao doc tu tren xuong, moi khoan muc mot dong, ky truoc va thay doi o dong phu */}
               <ul className="divide-y md:hidden" aria-label="Bảng lãi lỗ">
@@ -212,9 +231,11 @@ export default async function PnlPage({ params, searchParams }: { params: Promis
                   </TableBody>
                 </Table>
               </div>
-              <p className="border-t p-3 text-xs text-muted-foreground md:border-t-0">
-                Thanh toán nhà cung cấp và trả khoản chi không vào lãi lỗ (đã tính qua giá vốn và chi phí ghi theo ngày phát sinh). Hoàn trả và hàng
-                hủy có ở giai đoạn 2.
+              <p
+                className="border-t p-3 text-xs text-muted-foreground md:border-t-0"
+                title="Thanh toán nhà cung cấp và trả khoản chi không vào lãi lỗ (đã tính qua giá vốn và chi phí ghi theo ngày phát sinh). Hoàn trả và hàng hủy có ở giai đoạn 2."
+              >
+                Trả nhà cung cấp và trả khoản chi không vào lãi lỗ.
               </p>
             </section>
 

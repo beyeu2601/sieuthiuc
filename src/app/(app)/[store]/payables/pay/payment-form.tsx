@@ -7,7 +7,8 @@ import { recordPayment } from "../actions";
 import { formatDateVN } from "@/lib/dates";
 import { formatMoney } from "@/lib/format";
 import { MoneyInput } from "@/components/money-input";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
+import { Khoi } from "@/components/khoi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -111,113 +112,137 @@ export function PaymentForm({
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <section className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2">
-        <div className="space-y-1.5 sm:col-span-2">
-          <Label htmlFor="sup">Nhà cung cấp *</Label>
-          <NativeSelect
-            id="sup"
-            value={supplier}
-            onChange={(e) => {
-              setSupplier(e.target.value);
-              setAmount(null);
-              setAlloc({});
-            }}
-          >
-            <option value="">Chọn nhà cung cấp</option>
-            {[...suppliers.entries()].map(([id, s]) => (
-              <option key={id} value={id}>
-                {s.name} - còn nợ {formatMoney(s.remaining)}
-              </option>
-            ))}
-          </NativeSelect>
-        </div>
-        {supplier && (
-          <>
-            <div className="space-y-1.5">
-              <Label htmlFor="amt">Số tiền trả *</Label>
-              <MoneyInput id="amt" value={amount} onChange={changeAmount} className="h-11 text-base" />
-              <Button type="button" size="sm" variant="outline" onClick={() => changeAmount(owed)}>
-                Trả hết {formatMoney(owed)}
-              </Button>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="pdate">Ngày trả</Label>
-              <Input id="pdate" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="pm">Phương thức</Label>
-              <NativeSelect
-                id="pm"
-                value={method}
-                onChange={(e) => {
-                  const m = e.target.value as typeof method;
-                  setMethod(m);
-                  setAccount((a) => a || pickAccount(m));
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
+        <section className="@container min-w-0 rounded-xl border bg-card p-4">
+          <div className="grid gap-x-4 gap-y-3 @md:grid-cols-2 @3xl:grid-cols-4">
+            <div className="space-y-1.5 @md:col-span-2">
+              <Label htmlFor="sup">Nhà cung cấp *</Label>
+              <LuaChon
+                id="sup"
+                aria-label="Nhà cung cấp"
+                value={supplier}
+                onChange={(x) => {
+                  setSupplier(x);
+                  setAmount(null);
+                  setAlloc({});
                 }}
-              >
-                <option value="transfer">Chuyển khoản</option>
-                <option value="cash">Tiền mặt</option>
-                <option value="other">Khác</option>
-              </NativeSelect>
-              {method === "cash" && (
-                <label className="flex items-center gap-2 pt-1 text-sm">
-                  <input type="checkbox" className="size-4" checked={inShift} onChange={(e) => setInShift(e.target.checked)} />
-                  Lấy tiền từ két ca đang mở của tôi
-                </label>
-              )}
+                options={
+                  // It nha cung cap thi hien nut bam ten ngan; so con no hien o khoi Phan bo
+                  suppliers.size > 3
+                    ? [
+                        { value: "", label: "Chọn nhà cung cấp" },
+                        ...[...suppliers.entries()].map(([id, s]) => ({ value: id, label: `${s.name} - còn nợ ${formatMoney(s.remaining)}` })),
+                      ]
+                    : [...suppliers.entries()].map(([id, s]) => ({ value: id, label: s.name }))
+                }
+              />
             </div>
-            {accounts.length > 0 && (
-              <div className="space-y-1.5">
-                <Label htmlFor="pacc">Tài khoản giữ tiền *</Label>
-                <NativeSelect id="pacc" value={account} onChange={(e) => setAccount(e.target.value)}>
-                  <option value="">Chọn tài khoản</option>
-                  {accounts.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name}
-                    </option>
-                  ))}
-                </NativeSelect>
-              </div>
+            {supplier && (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="amt">Số tiền trả *</Label>
+                  <MoneyInput id="amt" value={amount} onChange={changeAmount} className="h-11 text-base" />
+                  <Button type="button" size="sm" variant="outline" onClick={() => changeAmount(owed)}>
+                    Trả hết {formatMoney(owed)}
+                  </Button>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="pdate">Ngày trả</Label>
+                  <Input id="pdate" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                </div>
+                <div className="space-y-1.5 @md:col-span-2">
+                  <Label htmlFor="pm">Phương thức</Label>
+                  <LuaChon
+                    id="pm"
+                    aria-label="Phương thức"
+                    value={method}
+                    onChange={(x) => {
+                      const m = x as typeof method;
+                      setMethod(m);
+                      setAccount((a) => a || pickAccount(m));
+                    }}
+                    options={[
+                      { value: "transfer", label: "Chuyển khoản" },
+                      { value: "cash", label: "Tiền mặt" },
+                      { value: "other", label: "Khác" },
+                    ]}
+                  />
+                  {method === "cash" && (
+                    <label className="flex min-h-10 items-center gap-2 text-sm">
+                      <input type="checkbox" className="size-4" checked={inShift} onChange={(e) => setInShift(e.target.checked)} />
+                      Lấy tiền từ két ca đang mở của tôi
+                    </label>
+                  )}
+                </div>
+                {accounts.length > 0 && (
+                  <div className="space-y-1.5 @md:col-span-2">
+                    <Label htmlFor="pacc">Tài khoản giữ tiền *</Label>
+                    <LuaChon
+                      id="pacc"
+                      aria-label="Tài khoản giữ tiền"
+                      value={account}
+                      onChange={setAccount}
+                      options={[
+                        ...(accounts.length > 3 ? [{ value: "", label: "Chọn tài khoản" }] : []),
+                        ...accounts.map((a) => ({ value: a.id, label: a.name })),
+                      ]}
+                    />
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  <Label htmlFor="ref">Mã giao dịch</Label>
+                  <Input id="ref" value={reference} onChange={(e) => setReference(e.target.value)} />
+                </div>
+                <div className="space-y-1.5 @md:col-span-1 @3xl:col-span-3">
+                  <Label htmlFor="pnote">Ghi chú</Label>
+                  <Input id="pnote" value={note} onChange={(e) => setNote(e.target.value)} />
+                </div>
+              </>
             )}
-            <div className="space-y-1.5">
-              <Label htmlFor="ref">Số tham chiếu / mã giao dịch</Label>
-              <Input id="ref" value={reference} onChange={(e) => setReference(e.target.value)} />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="pnote">Ghi chú</Label>
-              <Input id="pnote" value={note} onChange={(e) => setNote(e.target.value)} />
-            </div>
-          </>
-        )}
-      </section>
-
-      {supplier && (
-        <section className="rounded-xl border bg-card p-4">
-          <h2 className="mb-2 font-medium">Phân bổ vào các khoản nợ</h2>
-          <ul className="divide-y">
-            {list.map((d) => (
-              <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
-                <span>
-                  {d.code} - phát sinh {formatDateVN(d.issued_date)} - hạn {formatDateVN(d.due_date)}
-                  <span className="block text-xs text-muted-foreground">Còn nợ {formatMoney(d.remaining)}</span>
-                </span>
-                <MoneyInput
-                  aria-label={`Phân bổ cho ${d.code}`}
-                  value={alloc[d.id] ?? null}
-                  onChange={(n) => setAlloc({ ...alloc, [d.id]: Math.min(n ?? 0, d.remaining) })}
-                  className="w-40"
-                />
-              </li>
-            ))}
-          </ul>
-          <p className={`mt-2 text-sm ${amount && allocSum !== amount ? "text-destructive" : "text-muted-foreground"}`}>
-            Đã phân bổ {formatMoney(allocSum)} / {formatMoney(amount ?? 0)}
-          </p>
+          </div>
         </section>
-      )}
-      <Button type="submit" className="h-11 px-6" disabled={pending || !supplier}>
-        {pending ? "Đang ghi..." : "Ghi thanh toán"}
-      </Button>
+
+        {supplier && (
+          <Khoi
+            title="Phân bổ vào các khoản nợ"
+            aside={<span className="text-xs text-muted-foreground tabular-nums">Còn nợ {formatMoney(owed)}</span>}
+            className="min-w-0"
+          >
+            <ul className="divide-y">
+              {list.map((d) => (
+                <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+                  <span className="min-w-0">
+                    {d.code}
+                    <span className="block text-xs text-muted-foreground">
+                      Phát sinh {formatDateVN(d.issued_date)} - hạn {formatDateVN(d.due_date)} - còn nợ {formatMoney(d.remaining)}
+                    </span>
+                  </span>
+                  <MoneyInput
+                    aria-label={`Phân bổ cho ${d.code}`}
+                    value={alloc[d.id] ?? null}
+                    onChange={(n) => setAlloc({ ...alloc, [d.id]: Math.min(n ?? 0, d.remaining) })}
+                    className="w-36"
+                  />
+                </li>
+              ))}
+            </ul>
+          </Khoi>
+        )}
+      </div>
+      <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 flex flex-wrap items-center gap-3 rounded-xl border bg-card/95 px-4 py-3 shadow-sm backdrop-blur lg:bottom-0">
+        <Button type="submit" className="h-10 px-5" disabled={pending || !supplier}>
+          {pending ? "Đang ghi..." : "Ghi thanh toán"}
+        </Button>
+        {supplier && (
+          <span
+            aria-live="polite"
+            title="Nhập số tiền thì tự phân bổ khoản cũ trước, sửa được từng khoản"
+            className={amount && allocSum !== amount ? "text-sm font-medium text-chu-red" : "text-sm text-muted-foreground"}
+          >
+            Đã phân bổ {formatMoney(allocSum)} / {formatMoney(amount ?? 0)}
+          </span>
+        )}
+      </div>
     </form>
   );
 }

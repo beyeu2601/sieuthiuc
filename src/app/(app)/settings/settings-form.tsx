@@ -22,6 +22,8 @@ export function SettingsForm({
   const router = useRouter();
   const [v, setV] = useState<Record<string, unknown>>(values);
   const [pending, start] = useTransition();
+  // So theo chuoi vi o so tra ve chuoi con gia tri doc tu server la so
+  const dirty = defs.some((d) => String(v[d.key] ?? "") !== String(values[d.key] ?? ""));
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -50,8 +52,8 @@ export function SettingsForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4">
-      <fieldset disabled={pending} className="grid gap-4 sm:grid-cols-2">
+    <form onSubmit={submit} className="@container space-y-4">
+      <fieldset disabled={pending} className="grid items-start gap-x-4 gap-y-3 @md:grid-cols-2 @3xl:grid-cols-4">
         {defs.map((d) => (
           <div key={d.key} className="space-y-1.5">
             <Label htmlFor={d.key}>{d.label}</Label>
@@ -72,13 +74,22 @@ export function SettingsForm({
                 onChange={(e) => setV({ ...v, [d.key]: e.target.value })}
               />
             )}
-            {d.help && <p className="text-xs text-muted-foreground">{d.help}</p>}
+            {d.help && (
+              <p className="truncate text-xs text-muted-foreground" title={d.help}>
+                {d.help}
+              </p>
+            )}
           </div>
         ))}
       </fieldset>
-      <Button type="submit" className="h-10" disabled={pending}>
-        {pending ? "Đang lưu..." : "Lưu cấu hình"}
-      </Button>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button type="submit" className="h-10 px-5" disabled={pending || !dirty}>
+          {pending ? "Đang lưu..." : "Lưu cấu hình"}
+        </Button>
+        <span aria-live="polite" className={dirty ? "text-sm font-medium text-chu-amber" : "text-sm text-muted-foreground"}>
+          {dirty ? "Có thay đổi chưa lưu" : "Đã lưu"}
+        </span>
+      </div>
     </form>
   );
 }

@@ -2,6 +2,7 @@ import { requireStore } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { ChipSac } from "@/components/ui/chip";
 import { TransferEditor } from "./transfer-editor";
 
 export const metadata = { title: "Tạo phiếu chuyển" };
@@ -16,7 +17,14 @@ export default async function NewTransferPage({ params }: { params: Promise<{ st
 
   return (
     <div className="max-w-4xl">
-      <PageHeader title="Tạo phiếu chuyển" description={`Gửi từ ${store.name}`} />
+      <PageHeader
+        title="Tạo phiếu chuyển"
+        description={
+          <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <ChipSac sac="slate">Gửi từ {store.name}</ChipSac>
+          </span>
+        }
+      />
       {others.length === 0 ? (
         <EmptyState title="Chưa có cửa hàng khác để chuyển hàng">
           Hệ thống đang có một cửa hàng. Chức năng này dùng khi mở thêm cửa hàng.

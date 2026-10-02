@@ -1,5 +1,6 @@
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { Khoi } from "@/components/khoi";
 import { CategoryEditor, BrandEditor } from "./editors";
 
 export const metadata = { title: "Nhóm hàng & thương hiệu" };
@@ -12,15 +13,13 @@ export default async function CatalogSettingsPage() {
     supabase.from("brands").select("id, name").order("name"),
   ]);
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <section className="rounded-xl border bg-card p-4">
-        <h2 className="mb-3 font-medium">Nhóm hàng</h2>
+    <div className="grid items-start gap-4 lg:grid-cols-2">
+      <Khoi title="Nhóm hàng" aside={<span className="text-xs text-muted-foreground tabular-nums">{(categories ?? []).length}</span>}>
         <CategoryEditor rows={categories ?? []} />
-      </section>
-      <section className="rounded-xl border bg-card p-4">
-        <h2 className="mb-3 font-medium">Thương hiệu</h2>
+      </Khoi>
+      <Khoi title="Thương hiệu" aside={<span className="text-xs text-muted-foreground tabular-nums">{(brands ?? []).length}</span>}>
         <BrandEditor rows={brands ?? []} />
-      </section>
+      </Khoi>
     </div>
   );
 }

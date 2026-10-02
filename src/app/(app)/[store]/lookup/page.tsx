@@ -2,6 +2,7 @@ import { requireStore } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatNumber } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
+import { ChipSac } from "@/components/ui/chip";
 import { ThanhTienDo } from "@/components/ui/thanh-tien-do";
 import { LookupClient } from "./lookup-client";
 
@@ -28,10 +29,10 @@ export default async function LookupPage({ params }: { params: Promise<{ store: 
 
   return (
     <div className="mx-auto max-w-xl">
-      <PageHeader title="Tra cứu sản phẩm" description="Quét mã hoặc gõ tên để xem giá, tồn và hạn sử dụng." />
+      <PageHeader title="Tra cứu sản phẩm" description={<ChipSac sac="slate" className="mt-1.5">{store.name}</ChipSac>} />
       {progress && progress.withCode < progress.total && (
-        <div className="mb-4 rounded-xl border bg-card p-3">
-          <p className="mb-2 text-sm">Quét mã của hàng chưa có mã vạch để gán ngay cho sản phẩm.</p>
+        <div className="mb-4 rounded-xl border bg-card p-3" title="Quét mã của hàng chưa có mã vạch để gán ngay cho sản phẩm.">
+          <p className="mb-2 text-xs text-muted-foreground">Gán mã vạch khi quét</p>
           <ThanhTienDo
             giaTri={progress.withCode}
             tong={progress.total}

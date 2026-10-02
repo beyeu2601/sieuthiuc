@@ -14,6 +14,8 @@ export function StoreForm({ storeId, initial }: { storeId: string; initial: Stor
   const [v, setV] = useState(initial);
   const [pending, start] = useTransition();
   const set = (k: keyof StoreInput, val: string) => setV((s) => ({ ...s, [k]: val === "" ? null : val }));
+  // Sau khi luu, router.refresh() dua gia tri moi vao initial nen het "chua luu"
+  const dirty = JSON.stringify(v) !== JSON.stringify(initial);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,13 +29,13 @@ export function StoreForm({ storeId, initial }: { storeId: string; initial: Stor
 
   const id = (k: string) => `${storeId}-${k}`;
   return (
-    <form onSubmit={submit}>
-      <fieldset disabled={pending} className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5 sm:col-span-2">
+    <form onSubmit={submit} className="@container space-y-4">
+      <fieldset disabled={pending} className="grid gap-x-4 gap-y-3 @md:grid-cols-2 @3xl:grid-cols-4">
+        <div className="space-y-1.5 @md:col-span-2">
           <Label htmlFor={id("name")}>Tên cửa hàng *</Label>
           <Input id={id("name")} value={v.name ?? ""} onChange={(e) => set("name", e.target.value)} required />
         </div>
-        <div className="space-y-1.5 sm:col-span-2">
+        <div className="space-y-1.5 @md:col-span-2">
           <Label htmlFor={id("address")}>Địa chỉ</Label>
           <Input id={id("address")} value={v.address ?? ""} onChange={(e) => set("address", e.target.value)} />
         </div>
@@ -45,11 +47,11 @@ export function StoreForm({ storeId, initial }: { storeId: string; initial: Stor
           <Label htmlFor={id("tax")}>Mã số thuế</Label>
           <Input id={id("tax")} value={v.tax_code ?? ""} onChange={(e) => set("tax_code", e.target.value)} />
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 @md:col-span-2">
           <Label htmlFor={id("header")}>Dòng đầu hóa đơn</Label>
           <Textarea id={id("header")} rows={2} value={v.invoice_header ?? ""} onChange={(e) => set("invoice_header", e.target.value)} />
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 @md:col-span-2">
           <Label htmlFor={id("footer")}>Dòng cuối hóa đơn</Label>
           <Textarea
             id={id("footer")}
@@ -60,9 +62,14 @@ export function StoreForm({ storeId, initial }: { storeId: string; initial: Stor
           />
         </div>
       </fieldset>
-      <Button type="submit" className="mt-4 h-10" disabled={pending}>
-        {pending ? "Đang lưu..." : "Lưu"}
-      </Button>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button type="submit" className="h-10 px-5" disabled={pending || !dirty}>
+          {pending ? "Đang lưu..." : "Lưu"}
+        </Button>
+        <span aria-live="polite" className={dirty ? "text-sm font-medium text-chu-amber" : "text-sm text-muted-foreground"}>
+          {dirty ? "Có thay đổi chưa lưu" : "Đã lưu"}
+        </span>
+      </div>
     </form>
   );
 }

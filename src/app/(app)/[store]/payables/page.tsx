@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Button } from "@/components/ui/button";
+import { ChiSo, HangChiSo } from "@/components/ui/chi-so";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { PAYMENT_METHOD_LABEL } from "../receipts/labels";
@@ -109,19 +110,28 @@ export default async function PayablesPage({
     <div className="space-y-4">
       <PageHeader
         title="Công nợ nhà cung cấp"
-        description="Công nợ tự sinh khi xác nhận phiếu nhập chưa trả đủ."
         actions={<Button render={<Link href={`/${store.code}/payables/pay${sp.supplier ? `?supplier=${sp.supplier}` : ""}`} />}>Ghi thanh toán</Button>}
       />
       {o && (
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <Kpi label="Còn nợ" value={formatMoney(o.remaining)} sub={`${o.count_unpaid + o.count_partial} khoản`} />
-          <Kpi label="Quá hạn" value={formatMoney(o.overdue_amount)} sub={`${o.overdue_count} khoản`} tone={o.overdue_count > 0 ? "bad" : undefined} />
-          <Kpi label={`Đến hạn trong ${dueSoonDays} ngày`} value={formatMoney(o.due_soon_amount)} sub={`${o.due_soon_count} khoản`} tone={o.due_soon_count > 0 ? "warn" : undefined} />
-          <Kpi label="Đã trả / tổng phát sinh" value={formatMoney(o.paid_amount)} sub={`trên ${formatMoney(o.total_amount)}`} />
-        </div>
+        <HangChiSo>
+          <ChiSo nhan="Còn nợ" sac="brand" giaTri={formatMoney(o.remaining)} phu={`${o.count_unpaid + o.count_partial} khoản`} />
+          <ChiSo
+            nhan={o.overdue_count > 0 ? "Quá hạn" : "Quá hạn: không có"}
+            sac={o.overdue_count > 0 ? "red" : "emerald"}
+            giaTri={formatMoney(o.overdue_amount)}
+            phu={`${o.overdue_count} khoản`}
+          />
+          <ChiSo
+            nhan={`Đến hạn trong ${dueSoonDays} ngày`}
+            sac={o.due_soon_count > 0 ? "amber" : "emerald"}
+            giaTri={formatMoney(o.due_soon_amount)}
+            phu={`${o.due_soon_count} khoản`}
+          />
+          <ChiSo nhan="Đã trả" sac="emerald" giaTri={formatMoney(o.paid_amount)} phu={`trên tổng phát sinh ${formatMoney(o.total_amount)}`} />
+        </HangChiSo>
       )}
       {o && o.top_suppliers.length > 0 && (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Nợ nhiều nhất:{" "}
           {o.top_suppliers.map((s, i) => (
             <span key={s.id}>
@@ -179,7 +189,7 @@ export default async function PayablesPage({
                     }
                     stats={[
                       { label: "Còn nợ", value: formatMoney(g.remaining), strong: true },
-                      { label: "Quá hạn", value: <span className={cn(g.overdue > 0 && "text-destructive")}>{formatMoney(g.overdue)}</span> },
+                      { label: "Quá hạn", value: <span className={cn(g.overdue > 0 && "font-medium text-chu-red")}>{formatMoney(g.overdue)}</span> },
                       { label: "Đã trả", value: formatMoney(g.paid) },
                     ]}
                   />
@@ -212,7 +222,7 @@ export default async function PayablesPage({
                         <TableCell className="text-right tabular-nums">{formatMoney(g.total)}</TableCell>
                         <TableCell className="text-right tabular-nums">{formatMoney(g.paid)}</TableCell>
                         <TableCell className="text-right font-medium tabular-nums">{formatMoney(g.remaining)}</TableCell>
-                        <TableCell className={cn("text-right tabular-nums", g.overdue > 0 && "text-destructive")}>{formatMoney(g.overdue)}</TableCell>
+                        <TableCell className={cn("text-right tabular-nums", g.overdue > 0 && "font-medium text-chu-red")}>{formatMoney(g.overdue)}</TableCell>
                         <TableCell className="text-right">
                           {g.remaining > 0 && (
                             <Button size="sm" variant="outline" render={<Link href={`/${store.code}/payables/pay?supplier=${id}`} />}>
@@ -328,16 +338,6 @@ export default async function PayablesPage({
           );
         })()
       )}
-    </div>
-  );
-}
-
-function Kpi({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: "bad" | "warn" }) {
-  return (
-    <div className={cn("rounded-xl border bg-card p-4", tone === "bad" && "border-destructive/30", tone === "warn" && "border-warning/30")}>
-      <div className="text-sm text-muted-foreground">{label}</div>
-      <div className={cn("text-xl font-semibold tabular-nums", tone === "bad" && "text-destructive")}>{value}</div>
-      {sub && <div className="text-xs text-muted-foreground">{sub}</div>}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { ChipSac } from "@/components/ui/chip";
+import { ChiSo, HangChiSo } from "@/components/ui/chi-so";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -37,20 +38,37 @@ export default async function PayoutsPage({ params }: { params: Promise<{ store:
   ]);
   const owed = (unpaid ?? []).reduce((s, o) => s + o.subtotal - o.discount_amount, 0);
   const rows = payouts ?? [];
+  const unpaidCount = (unpaid ?? []).length;
+  const latest = rows.find((r) => r.status !== "cancelled");
 
   return (
     <div>
       <PageHeader
         title="Đối soát Shopee"
         back={{ href: `/${store.code}/orders`, label: "Đơn online" }}
-        description="Shopee trả tiền theo đợt, gộp nhiều đơn và đã trừ phí sàn. Mỗi lần tiền về ngân hàng, tick các đơn trong đợt để ghi nhận."
-        actions={<Button render={<Link href={`/${store.code}/orders/payouts/new`} />}>Ghi đợt tiền về</Button>}
+        actions={
+          <Button
+            render={<Link href={`/${store.code}/orders/payouts/new`} />}
+            title="Shopee trả tiền theo đợt, gộp nhiều đơn và đã trừ phí sàn. Mỗi lần tiền về ngân hàng, tick các đơn trong đợt để ghi nhận."
+          >
+            Ghi đợt tiền về
+          </Button>
+        }
       />
-      <div className="mb-4 rounded-xl border bg-card p-4">
-        <div className="text-sm text-muted-foreground">Shopee còn nợ (tiền hàng đơn đã giao, chưa nhận)</div>
-        <div className="mt-1 text-2xl font-semibold tabular-nums">{formatMoney(owed)}</div>
-        <div className="text-sm text-muted-foreground">{(unpaid ?? []).length} đơn, chưa trừ phí sàn</div>
-      </div>
+      <HangChiSo className="mb-4">
+        <ChiSo
+          nhan={unpaidCount > 0 ? "Shopee còn nợ" : "Shopee không còn nợ"}
+          sac={unpaidCount > 0 ? "amber" : "emerald"}
+          giaTri={formatMoney(owed)}
+          phu={`${unpaidCount} đơn đã giao chưa nhận tiền, chưa trừ phí sàn`}
+        />
+        <ChiSo
+          nhan="Đợt tiền về gần nhất"
+          sac={latest ? "brand" : "slate"}
+          giaTri={latest ? formatMoney(latest.amount_received) : "-"}
+          phu={latest ? `${formatDateVN(latest.received_on)} - ${latest.order_count} đơn` : "Chưa có đợt nào"}
+        />
+      </HangChiSo>
       {rows.length === 0 ? (
         <EmptyState title="Chưa có đợt đối soát nào" />
       ) : (

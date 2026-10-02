@@ -10,13 +10,14 @@ import { formatMoney } from "@/lib/format";
 import { GOODS_TYPE_LABEL } from "@/lib/text";
 import { ProductPicker } from "@/components/product-picker";
 import { MoneyInput } from "@/components/money-input";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FormWizard } from "@/components/ui/form-wizard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { COST_TYPE_LABEL } from "./labels";
 
 export type EditorLine = {
   key: string;
@@ -36,7 +37,6 @@ export type EditorCost = { key: string; cost_type: string; amount: number | null
 export type Supplier = { id: string; name: string; code: string; payment_terms_days: number };
 export type Account = { id: string; name: string; kind: string };
 
-const COST_TYPES: Record<string, string> = { shipping: "Vận chuyển", tax: "Thuế", customs: "Hải quan", other: "Khác" };
 const newKey = () => Math.random().toString(36).slice(2);
 
 export function ReceiptEditor({
@@ -210,36 +210,43 @@ export function ReceiptEditor({
   const missingExpiry = lines.filter((l) => l.expiry_level === "lot" && !l.expiry_date);
 
   const headerStep = (
-    <section className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="space-y-1.5 sm:col-span-2">
-        <Label htmlFor="supplier">Nhà cung cấp *</Label>
-        <div className="flex gap-2">
-          <NativeSelect id="supplier" value={h.supplier_id} onChange={(e) => setH({ ...h, supplier_id: e.target.value })}>
-            <option value="">Chọn nhà cung cấp</option>
-            {suppliers.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name} ({s.code})
-              </option>
-            ))}
-          </NativeSelect>
-          {canCreateSupplier && (
-            <Button type="button" variant="outline" className="shrink-0" onClick={() => setSupplierOpen(true)}>
-              <PlusIcon /> Thêm NCC
-            </Button>
-          )}
+    <section className="@container rounded-xl border bg-card p-4">
+      <div className="grid gap-3 @md:grid-cols-2 @3xl:grid-cols-4">
+        <div className="space-y-1.5 @md:col-span-2">
+          <Label htmlFor="supplier">Nhà cung cấp *</Label>
+          <div className="flex gap-2">
+            <LuaChon
+              id="supplier"
+              aria-label="Nhà cung cấp"
+              className="min-w-0 flex-1"
+              value={h.supplier_id}
+              onChange={(v) => setH({ ...h, supplier_id: v })}
+              options={
+                // Tren 3 NCC la danh sach tha xuong: can dong "Chon" de o chon khop trang thai chua chon
+                suppliers.length > 3
+                  ? [{ value: "", label: "Chọn nhà cung cấp" }, ...suppliers.map((s) => ({ value: s.id, label: `${s.name} (${s.code})` }))]
+                  : suppliers.map((s) => ({ value: s.id, label: s.name }))
+              }
+            />
+            {canCreateSupplier && (
+              <Button type="button" variant="outline" className="shrink-0" onClick={() => setSupplierOpen(true)}>
+                <PlusIcon /> Thêm NCC
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="rdate">Ngày nhập *</Label>
-        <Input id="rdate" type="date" value={h.receipt_date} onChange={(e) => setH({ ...h, receipt_date: e.target.value })} />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="inv">Số hóa đơn NCC</Label>
-        <Input id="inv" value={h.invoice_no} onChange={(e) => setH({ ...h, invoice_no: e.target.value })} />
-      </div>
-      <div className="space-y-1.5 sm:col-span-2 lg:col-span-4">
-        <Label htmlFor="note">Ghi chú</Label>
-        <Textarea id="note" rows={1} value={h.note} onChange={(e) => setH({ ...h, note: e.target.value })} />
+        <div className="space-y-1.5">
+          <Label htmlFor="rdate">Ngày nhập *</Label>
+          <Input id="rdate" type="date" value={h.receipt_date} onChange={(e) => setH({ ...h, receipt_date: e.target.value })} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="inv">Số hóa đơn NCC</Label>
+          <Input id="inv" value={h.invoice_no} onChange={(e) => setH({ ...h, invoice_no: e.target.value })} />
+        </div>
+        <div className="space-y-1.5 @md:col-span-2 @3xl:col-span-4">
+          <Label htmlFor="note">Ghi chú</Label>
+          <Textarea id="note" rows={1} value={h.note} onChange={(e) => setH({ ...h, note: e.target.value })} />
+        </div>
       </div>
     </section>
   );
@@ -282,7 +289,7 @@ export function ReceiptEditor({
               .map((c) => (
                 <li key={c.key} className="flex justify-between gap-3">
                   <span>
-                    {COST_TYPES[c.cost_type]}
+                    {COST_TYPE_LABEL[c.cost_type]}
                     {c.note ? ` - ${c.note}` : ""}
                   </span>
                   <span className="tabular-nums">{formatMoney(c.amount)}</span>
@@ -305,7 +312,7 @@ export function ReceiptEditor({
   );
 
   const linesStep = (
-    <section className="space-y-3 rounded-xl border bg-card p-4">
+    <section className="@container space-y-3 rounded-xl border bg-card p-4">
       <h2 className="font-medium">Hàng nhập</h2>
       <ProductPicker storeId={storeId} onPick={addProduct} showStock={false} />
       {canCreateProduct && (
@@ -316,7 +323,7 @@ export function ReceiptEditor({
         </div>
       )}
       {lines.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Quét mã vạch hoặc tìm tên để thêm hàng. Quét lại cùng mã sẽ tăng số lượng. Cùng một mặt hàng nhiều hạn dùng thì bấm &quot;+ Thêm lô/date khác&quot; trên dòng.</p>
+        <p className="text-xs text-muted-foreground">Quét mã vạch hoặc tìm tên. Quét lại cùng mã sẽ tăng số lượng.</p>
       ) : (
         <div className="space-y-2">
           {groups.map((g, gi) => {
@@ -334,7 +341,7 @@ export function ReceiptEditor({
                   </div>
                 </div>
                 {g.map((l, li) => (
-                <div key={l.key} className={`grid grid-cols-2 gap-2 md:grid-cols-[90px_1fr_1fr_1fr_150px_auto] md:items-end ${li > 0 ? "border-t pt-2" : ""}`}>
+                <div key={l.key} className={`grid grid-cols-2 gap-2 @md:grid-cols-3 @md:items-end @2xl:grid-cols-[90px_1fr_1fr_1fr_150px_auto] ${li > 0 ? "border-t pt-2" : ""}`}>
                   <label className="space-y-1 text-xs text-muted-foreground">
                     SL ({l.unit})
                     <Input
@@ -376,6 +383,7 @@ export function ReceiptEditor({
                 <button
                   type="button"
                   onClick={() => addLot(last)}
+                  title="Cùng mặt hàng nhưng khác số lô hoặc hạn sử dụng thì thêm một dòng nữa"
                   className="min-h-11 text-sm font-medium text-primary underline underline-offset-2"
                 >
                   + Thêm lô/date khác
@@ -389,9 +397,11 @@ export function ReceiptEditor({
   );
 
   const costsStep = (
-    <section className="space-y-3 rounded-xl border bg-card p-4">
+    <section className="@container space-y-3 rounded-xl border bg-card p-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-medium">Chi phí kèm theo</h2>
+        <h2 className="font-medium" title="Vận chuyển, thuế, phí được cộng vào giá vốn từng dòng hàng khi xác nhận (theo giá trị hoặc theo số lượng)">
+          Chi phí kèm theo
+        </h2>
         <Button
           type="button"
           variant="outline"
@@ -401,37 +411,28 @@ export function ReceiptEditor({
           Thêm chi phí
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Vận chuyển, thuế, phí được cộng vào giá vốn từng dòng hàng khi xác nhận (theo giá trị hoặc theo số lượng).
-      </p>
       {costs.map((c) => (
-        <div key={c.key} className="grid grid-cols-2 gap-2 md:grid-cols-[150px_160px_170px_1fr_auto] md:items-end">
-          <NativeSelect
+        <div key={c.key} className="grid grid-cols-2 gap-2 @2xl:grid-cols-[150px_160px_220px_1fr_auto] @2xl:items-end">
+          <LuaChon
             aria-label="Loại chi phí"
             value={c.cost_type}
-            onChange={(e) => setCosts((cs) => cs.map((x) => (x.key === c.key ? { ...x, cost_type: e.target.value } : x)))}
-          >
-            {Object.entries(COST_TYPES).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
-          </NativeSelect>
+            onChange={(v) => setCosts((cs) => cs.map((x) => (x.key === c.key ? { ...x, cost_type: v } : x)))}
+            options={Object.entries(COST_TYPE_LABEL).map(([k, v]) => ({ value: k, label: v }))}
+          />
           <MoneyInput
             aria-label="Số tiền"
             value={c.amount}
             onChange={(n) => setCosts((cs) => cs.map((x) => (x.key === c.key ? { ...x, amount: n } : x)))}
           />
-          <NativeSelect
+          <LuaChon
             aria-label="Cách phân bổ"
             value={c.allocation}
-            onChange={(e) =>
-              setCosts((cs) => cs.map((x) => (x.key === c.key ? { ...x, allocation: e.target.value as "by_value" | "by_qty" } : x)))
-            }
-          >
-            <option value="by_value">Phân bổ theo giá trị</option>
-            <option value="by_qty">Phân bổ theo số lượng</option>
-          </NativeSelect>
+            onChange={(v) => setCosts((cs) => cs.map((x) => (x.key === c.key ? { ...x, allocation: v as "by_value" | "by_qty" } : x)))}
+            options={[
+              { value: "by_value", label: "Theo giá trị" },
+              { value: "by_qty", label: "Theo SL" },
+            ]}
+          />
           <Input
             aria-label="Ghi chú chi phí"
             placeholder="Ghi chú"
@@ -454,7 +455,7 @@ export function ReceiptEditor({
         </p>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
         <FormWizard
           buocDau={receiptId ? 3 : 0}
           buoc={[
@@ -605,7 +606,7 @@ function QuickSupplierDialog({
         <form onSubmit={submit} className="flex min-h-0 flex-col gap-3">
           <DialogHeader>
             <DialogTitle>Thêm nhà cung cấp</DialogTitle>
-            <DialogDescription>Tạo nhanh nhà cung cấp chưa có trong danh sách. Mã NCC tự sinh. Sửa thêm thông tin ở màn Nhà cung cấp.</DialogDescription>
+            <DialogDescription>Mã NCC tự sinh. Sửa thêm ở màn Nhà cung cấp.</DialogDescription>
           </DialogHeader>
           <DialogBody className="space-y-3">
             {error && (
@@ -696,7 +697,7 @@ function QuickProductDialog({
         <form onSubmit={submit} className="flex min-h-0 flex-col gap-3">
           <DialogHeader>
             <DialogTitle>Thêm sản phẩm mới</DialogTitle>
-            <DialogDescription>Tạo nhanh sản phẩm chưa từng bán để đưa vào phiếu nhập. SKU tự sinh.</DialogDescription>
+            <DialogDescription>Sản phẩm chưa có trong danh mục. SKU tự sinh.</DialogDescription>
           </DialogHeader>
           <DialogBody className="space-y-3">
             {error && (
@@ -711,10 +712,16 @@ function QuickProductDialog({
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1.5">
                 <Label htmlFor="qp-type">Loại hàng</Label>
-                <NativeSelect id="qp-type" value={goodsType} onChange={(e) => setGoodsType(e.target.value as "cont" | "air")}>
-                  <option value="air">Air</option>
-                  <option value="cont">Cont</option>
-                </NativeSelect>
+                <LuaChon
+                  id="qp-type"
+                  aria-label="Loại hàng"
+                  value={goodsType}
+                  onChange={(v) => setGoodsType(v as "cont" | "air")}
+                  options={[
+                    { value: "air", label: "Air" },
+                    { value: "cont", label: "Cont" },
+                  ]}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="qp-unit">Đơn vị tính *</Label>
@@ -726,11 +733,19 @@ function QuickProductDialog({
               <MoneyInput id="qp-price" value={sellPrice} onChange={setSellPrice} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="qp-date">Loại date (cận date)</Label>
-              <NativeSelect id="qp-date" value={dateType} onChange={(e) => setDateType(e.target.value as "short" | "long")}>
-                <option value="long">Date dài (giảm giá khi tới ngưỡng dài)</option>
-                <option value="short">Date ngắn (giảm giá khi tới ngưỡng ngắn)</option>
-              </NativeSelect>
+              <Label htmlFor="qp-date" title="Date dài giảm giá khi tới ngưỡng dài, date ngắn giảm giá khi tới ngưỡng ngắn">
+                Loại date (cận date)
+              </Label>
+              <LuaChon
+                id="qp-date"
+                aria-label="Loại date"
+                value={dateType}
+                onChange={(v) => setDateType(v as "short" | "long")}
+                options={[
+                  { value: "long", label: "Date dài" },
+                  { value: "short", label: "Date ngắn" },
+                ]}
+              />
             </div>
           </DialogBody>
           <DialogFooter>
@@ -853,30 +868,35 @@ export function ConfirmDialog({
             {(paid ?? 0) > 0 && (
               <div className="space-y-1.5">
                 <Label htmlFor="method">Phương thức</Label>
-                <NativeSelect
+                <LuaChon
                   id="method"
+                  aria-label="Phương thức"
                   value={method}
-                  onChange={(e) => {
-                    const m = e.target.value as typeof method;
+                  onChange={(v) => {
+                    const m = v as typeof method;
                     setMethod(m);
                     setAccount((a) => a || pickAccount(m));
                   }}
-                >
-                  <option value="transfer">Chuyển khoản</option>
-                  <option value="cash">Tiền mặt</option>
-                  <option value="other">Khác</option>
-                </NativeSelect>
+                  options={[
+                    { value: "transfer", label: "Chuyển khoản" },
+                    { value: "cash", label: "Tiền mặt" },
+                    { value: "other", label: "Khác" },
+                  ]}
+                />
                 {accounts.length > 0 && (
                   <div className="pt-1">
                     <Label htmlFor="acc">Tài khoản giữ tiền</Label>
-                    <NativeSelect id="acc" value={account} onChange={(e) => setAccount(e.target.value)}>
-                      <option value="">Chọn tài khoản</option>
-                      {accounts.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.name}
-                        </option>
-                      ))}
-                    </NativeSelect>
+                    <LuaChon
+                      id="acc"
+                      aria-label="Tài khoản giữ tiền"
+                      value={account}
+                      onChange={setAccount}
+                      options={[
+                        // Tren 3 tai khoan la danh sach tha xuong, giu dong "Chon" cho trang thai chua chon
+                        ...(accounts.length > 3 ? [{ value: "", label: "Chọn tài khoản" }] : []),
+                        ...accounts.map((a) => ({ value: a.id, label: a.name })),
+                      ]}
+                    />
                   </div>
                 )}
                 {method === "cash" && (

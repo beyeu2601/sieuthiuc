@@ -19,15 +19,15 @@ export default async function AccountsSettingsPage() {
   }));
   const isSadmin = ctx.profile.role === "sadmin";
   return (
-    <section className="max-w-3xl space-y-3">
+    <section className="max-w-5xl space-y-3">
       <div>
-        <h2 className="font-medium">Tài khoản giữ tiền</h2>
-        <p className="text-sm text-muted-foreground">
-          Nơi giữ tiền của cửa hàng (két tiền mặt, ngân hàng, ví). Người giữ quỹ duyệt mọi khoản thu chi của tài khoản mình; tài khoản chưa có người giữ thì quản lý cửa
-          hàng duyệt.
-        </p>
-        <p className="text-sm text-muted-foreground">Số dư hiện tại = số dư đầu kỳ + thu bán hàng + thu khác đã duyệt - chi đã duyệt - trả nhà cung cấp.</p>
-        {!isSadmin && <p className="text-sm text-muted-foreground">Bạn chọn được người giữ quỹ. Thêm hoặc sửa tài khoản do quản trị hệ thống làm.</p>}
+        <h2
+          className="font-medium"
+          title="Người giữ quỹ duyệt mọi khoản thu chi của tài khoản mình; tài khoản chưa có người giữ thì quản lý cửa hàng duyệt. Số dư hiện tại = số dư đầu kỳ + thu bán hàng + thu khác đã duyệt - chi đã duyệt - trả nhà cung cấp."
+        >
+          Tài khoản giữ tiền
+        </h2>
+        {!isSadmin && <p className="text-xs text-muted-foreground">Bạn chọn được người giữ quỹ. Thêm hoặc sửa tài khoản do quản trị hệ thống làm.</p>}
       </div>
       <AccountEditor rows={rows} users={users ?? []} isSadmin={isSadmin} storeCode={ctx.stores[0]?.code ?? null} />
     </section>

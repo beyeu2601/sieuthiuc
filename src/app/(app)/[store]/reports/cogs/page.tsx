@@ -6,7 +6,9 @@ import { formatMoney, formatNumber } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
+import { ChipSac } from "@/components/ui/chip";
+import { ChiSo, HangChiSo } from "@/components/ui/chi-so";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ReportFilter } from "../report-filter";
@@ -50,7 +52,14 @@ export default async function CogsPage({
     <div className="space-y-4">
       <PageHeader
         title="Giá vốn và lãi gộp"
-        description={`${formatDateVN(r.period.from)} - ${formatDateVN(r.period.to)}`}
+        description={
+          <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            {r.allStores && <ChipSac sac="slate">Tất cả cửa hàng</ChipSac>}
+            <ChipSac sac="brand">
+              {formatDateVN(r.period.from)} - {formatDateVN(r.period.to)}
+            </ChipSac>
+          </span>
+        }
       />
       <ReportTabs storeCode={store.code} />
       <ReportFilter
@@ -62,16 +71,10 @@ export default async function CogsPage({
         canAllStores={r.canAll}
         keep={{ group }}
         extra={
-          <label className="block space-y-1 text-sm">
-            Nhóm theo
-            <NativeSelect name="group" defaultValue={group}>
-              {Object.entries(GROUPS).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </NativeSelect>
-          </label>
+          <div className="space-y-1 text-sm">
+            <span className="block">Nhóm theo</span>
+            <LuaChon name="group" defaultValue={group} aria-label="Nhóm theo" options={Object.entries(GROUPS).map(([k, v]) => ({ value: k, label: v }))} />
+          </div>
         }
       />
       {error ? (
@@ -92,26 +95,36 @@ export default async function CogsPage({
         </EmptyState>
       ) : (
         <>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {[
-            { label: "Doanh thu", v: formatMoney(sum("revenue")) },
-            { label: "Giá vốn", v: formatMoney(sum("cogs")) },
-            { label: "Lãi gộp", v: formatMoney(sum("gross_profit")), neg: sum("gross_profit") < 0 },
-            { label: "Biên lãi gộp", v: totalMargin },
-          ].map((k) => (
-            <div key={k.label} className="rounded-xl border bg-card p-4">
-              <div className="text-sm text-muted-foreground">{k.label}</div>
-              <div className={`text-xl font-semibold tabular-nums ${k.neg ? "text-destructive" : ""}`}>{k.v}</div>
-            </div>
-          ))}
-        </div>
+        <HangChiSo>
+          <ChiSo
+            nhan="Doanh thu"
+            sac="brand"
+            giaTri={formatMoney(sum("revenue"))}
+            phu={
+              <span title="Doanh thu ở đây là tiền hàng sau giảm giá từng món, chưa trừ giảm giá cả đơn, nên có thể cao hơn doanh thu thuần ở trang Lãi lỗ.">
+                Chưa trừ giảm giá cả đơn
+              </span>
+            }
+          />
+          <ChiSo nhan="Giá vốn" sac="brand" giaTri={formatMoney(sum("cogs"))} />
+          <ChiSo
+            nhan={sum("gross_profit") < 0 ? "Lãi gộp: lỗ" : "Lãi gộp"}
+            sac={sum("gross_profit") < 0 ? "red" : sum("gross_profit") > 0 ? "emerald" : "slate"}
+            giaTri={formatMoney(sum("gross_profit"))}
+          />
+          <ChiSo
+            nhan="Biên lãi gộp"
+            sac={!sum("revenue") ? "slate" : sum("gross_profit") < 0 ? "red" : sum("gross_profit") > 0 ? "emerald" : "slate"}
+            giaTri={totalMargin}
+          />
+        </HangChiSo>
         <MobileCardList label={`Lãi gộp theo ${groupLabel.toLowerCase()}`}>
           {rows.map((x) => (
             <MobileCard
               key={x.group_key}
               title={LABELS[x.group_label] ?? x.group_label}
               stats={[
-                { label: "Lãi gộp", value: <span className={x.gross_profit < 0 ? "text-destructive" : ""}>{formatMoney(x.gross_profit)}</span>, strong: true },
+                { label: "Lãi gộp", value: <span className={x.gross_profit < 0 ? "text-chu-red" : ""}>{formatMoney(x.gross_profit)}</span>, strong: true },
                 { label: "Biên", value: margin(x), strong: true },
                 { label: "Số lượng", value: formatNumber(x.qty) },
                 { label: "Doanh thu", value: formatMoney(x.revenue) },
@@ -139,7 +152,7 @@ export default async function CogsPage({
                   <TableCell className="text-right tabular-nums">{formatNumber(x.qty)}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatMoney(x.revenue)}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatMoney(x.cogs)}</TableCell>
-                  <TableCell className={`text-right tabular-nums ${x.gross_profit < 0 ? "text-destructive" : ""}`}>{formatMoney(x.gross_profit)}</TableCell>
+                  <TableCell className={`text-right tabular-nums ${x.gross_profit < 0 ? "text-chu-red" : ""}`}>{formatMoney(x.gross_profit)}</TableCell>
                   <TableCell className="text-right tabular-nums">{margin(x)}</TableCell>
                 </TableRow>
               ))}
@@ -155,9 +168,6 @@ export default async function CogsPage({
             </TableFooter>
           </Table>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Doanh thu ở đây là tiền hàng sau giảm giá từng món, chưa trừ giảm giá cả đơn, nên có thể cao hơn doanh thu thuần ở trang Lãi lỗ.
-        </p>
         </>
       )}
     </div>

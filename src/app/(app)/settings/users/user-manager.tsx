@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createUser, resetUserPassword, updateUser, type UserInput } from "../actions";
 import { ROLE_LABEL, type AppRole, type StoreLite } from "@/lib/roles";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
 import { ChipSac } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -45,10 +45,7 @@ export function UserManager({
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-between gap-2">
-        <p className="text-sm text-muted-foreground">
-          Người dùng đăng nhập bằng tên đăng nhập và mật khẩu. Khóa tài khoản sẽ đăng xuất người đó ngay.
-        </p>
+      <div className="flex justify-end">
         <Button onClick={() => setMode({ kind: "create" })}>Thêm người dùng</Button>
       </div>
       <div className="overflow-x-auto rounded-xl border bg-card">
@@ -193,18 +190,14 @@ function UserForm({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="u-role">Vai trò *</Label>
-          <NativeSelect
+          <LuaChon
             id="u-role"
+            aria-label="Vai trò"
             value={v.role}
             disabled={isSelf}
-            onChange={(e) => setV({ ...v, role: e.target.value as AppRole })}
-          >
-            {roles.map((r) => (
-              <option key={r} value={r}>
-                {ROLE_LABEL[r]}
-              </option>
-            ))}
-          </NativeSelect>
+            onChange={(x) => setV({ ...v, role: x as AppRole })}
+            options={roles.map((r) => ({ value: r, label: ROLE_LABEL[r] }))}
+          />
         </div>
         {!user && (
           <div className="space-y-1.5 sm:col-span-2">
@@ -254,15 +247,21 @@ function UserForm({
           </label>
         )}
         {user && !isSelf && (
-          <label className="flex items-center gap-2 text-sm sm:col-span-2">
-            <input
-              type="checkbox"
-              className="size-4"
-              checked={v.is_active}
-              onChange={(e) => setV({ ...v, is_active: e.target.checked })}
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label htmlFor="u-active" title="Khóa tài khoản sẽ đăng xuất người đó ngay">
+              Trạng thái tài khoản
+            </Label>
+            <LuaChon
+              id="u-active"
+              aria-label="Trạng thái tài khoản"
+              value={v.is_active ? "1" : "0"}
+              onChange={(x) => setV({ ...v, is_active: x === "1" })}
+              options={[
+                { value: "1", label: "Hoạt động" },
+                { value: "0", label: "Khóa" },
+              ]}
             />
-            Tài khoản đang hoạt động (bỏ chọn để khóa)
-          </label>
+          </div>
         )}
       </fieldset>
       <div className="flex justify-end gap-2">

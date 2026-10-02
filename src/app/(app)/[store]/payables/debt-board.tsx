@@ -9,7 +9,7 @@ import { DUE } from "./labels";
 import { formatDateVN } from "@/lib/dates";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { MoneyInput } from "@/components/money-input";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
 import { ChipSac } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -134,10 +134,9 @@ export function DebtBoard({
 
       {selDebts.length > 0 && (
         <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-3 shadow-sm lg:bottom-0">
-          <div className="text-sm" aria-live="polite">
+          <div className="text-sm" aria-live="polite" title="Mỗi lần trả chỉ gộp các khoản cùng nhà cung cấp">
             Đã chọn <strong>{selDebts.length}</strong> khoản của {selDebts[0].supplier_name}:{" "}
             <strong className="tabular-nums">{formatMoney(selTotal)}</strong>
-            <span className="block text-xs text-muted-foreground">Mỗi lần trả chỉ gộp các khoản cùng nhà cung cấp.</span>
           </div>
           <div className="flex gap-2">
             <Button variant="ghost" onClick={() => setSelected([])}>
@@ -188,7 +187,7 @@ function DebtCard({
       className={cn(
         "grid gap-x-4 gap-y-2 rounded-xl border bg-card p-3 md:grid-cols-[auto_minmax(0,13rem)_minmax(0,1fr)_auto] md:items-start",
         checked && "border-primary ring-1 ring-primary",
-        d.due === "overdue" && !checked && "border-destructive/40"
+        d.due === "overdue" && !checked && "border-vien-red"
       )}
     >
       {/* Cot chon */}
@@ -214,7 +213,7 @@ function DebtCard({
             <span className="font-semibold tabular-nums">{formatDateVN(d.issued_date)}</span>
             <ChipSac sac={ds.sac}>{ds.label}</ChipSac>
           </div>
-          <div className={cn("text-sm", d.due === "overdue" ? "font-medium text-destructive" : "text-muted-foreground")}>
+          <div className={cn("text-sm", d.due === "overdue" ? "font-medium text-chu-red" : d.due === "due_soon" ? "text-chu-amber" : "text-muted-foreground")}>
             Hạn trả {formatDateVN(d.due_date)}
             {due && ` - ${due}`}
           </div>
@@ -274,7 +273,7 @@ function DebtCard({
       <div className="flex items-end justify-between gap-3 md:flex-col md:items-end md:text-right">
         <div>
           <div className="text-xs text-muted-foreground">{open ? "Còn nợ" : "Đã trả đủ"}</div>
-          <div className={cn("text-lg font-semibold tabular-nums", d.due === "overdue" && "text-destructive")}>{formatMoney(open ? d.remaining : d.total_amount)}</div>
+          <div className={cn("text-lg font-semibold tabular-nums", d.due === "overdue" && "text-chu-red")}>{formatMoney(open ? d.remaining : d.total_amount)}</div>
           {open && d.paid_amount > 0 && (
             <div className="text-xs text-muted-foreground tabular-nums">
               đã trả {formatMoney(d.paid_amount)} / {formatMoney(d.total_amount)}
@@ -370,7 +369,7 @@ function PayDialog({
           <DialogHeader>
             <DialogTitle>Thanh toán cho {debts[0].supplier_name}</DialogTitle>
             <DialogDescription>
-              {debts.length} khoản, còn nợ {formatMoney(owed)}. Mặc định trả hết; sửa số tiền từng khoản nếu trả một phần.
+              {debts.length} khoản, còn nợ {formatMoney(owed)}. Sửa số tiền từng khoản nếu trả một phần.
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="space-y-3">
@@ -403,37 +402,38 @@ function PayDialog({
               <span className="text-lg font-semibold tabular-nums">{formatMoney(amount)}</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
+              <div className="col-span-2 space-y-1.5">
                 <Label htmlFor="dp-method">Phương thức</Label>
-                <NativeSelect
+                <LuaChon
                   id="dp-method"
+                  aria-label="Phương thức"
                   value={method}
-                  onChange={(e) => {
-                    const m = e.target.value as Method;
+                  onChange={(x) => {
+                    const m = x as Method;
                     setMethod(m);
                     setAccount(pickAccount(m));
                   }}
-                >
-                  <option value="transfer">Chuyển khoản</option>
-                  <option value="cash">Tiền mặt</option>
-                  <option value="other">Khác</option>
-                </NativeSelect>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="dp-date">Ngày trả</Label>
-                <Input id="dp-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                  options={[
+                    { value: "transfer", label: "Chuyển khoản" },
+                    { value: "cash", label: "Tiền mặt" },
+                    { value: "other", label: "Khác" },
+                  ]}
+                />
               </div>
               {accounts.length > 0 && (
                 <div className="col-span-2 space-y-1.5">
                   <Label htmlFor="dp-acc">Tài khoản giữ tiền *</Label>
-                  <NativeSelect id="dp-acc" value={account} onChange={(e) => setAccount(e.target.value)}>
-                    <option value="">Chọn tài khoản</option>
-                    {accounts.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </NativeSelect>
+                  <LuaChon
+                    id="dp-acc"
+                    aria-label="Tài khoản giữ tiền"
+                    value={account}
+                    onChange={setAccount}
+                    options={[
+                      // It tai khoan thi hien nut bam, khong can dong "Chon tai khoan"
+                      ...(accounts.length > 3 ? [{ value: "", label: "Chọn tài khoản" }] : []),
+                      ...accounts.map((a) => ({ value: a.id, label: a.name })),
+                    ]}
+                  />
                 </div>
               )}
               {method === "cash" && (
@@ -442,11 +442,15 @@ function PayDialog({
                   Lấy tiền từ két ca đang mở của tôi
                 </label>
               )}
-              <div className="space-y-1.5">
+              <div className="col-span-2 space-y-1.5 sm:col-span-1">
+                <Label htmlFor="dp-date">Ngày trả</Label>
+                <Input id="dp-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              </div>
+              <div className="col-span-2 space-y-1.5 sm:col-span-1">
                 <Label htmlFor="dp-ref">Mã giao dịch</Label>
                 <Input id="dp-ref" value={reference} onChange={(e) => setReference(e.target.value)} />
               </div>
-              <div className="space-y-1.5">
+              <div className="col-span-2 space-y-1.5">
                 <Label htmlFor="dp-note">Ghi chú</Label>
                 <Input id="dp-note" value={note} onChange={(e) => setNote(e.target.value)} />
               </div>

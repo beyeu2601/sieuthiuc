@@ -6,9 +6,9 @@ import { PageHeader } from "@/components/page-header";
 import { AutoSubmitForm } from "@/components/auto-submit-form";
 import { FilterBar } from "@/components/filter-bar";
 import { EmptyState } from "@/components/empty-state";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
 import { Pagination } from "@/components/pagination";
-import { ChipSac } from "@/components/ui/chip";
+import { ChipSac, sacKenhBan } from "@/components/ui/chip";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,7 +54,6 @@ export default async function OrdersPage({ params, searchParams }: { params: Pro
     <div>
       <PageHeader
         title="Đơn online"
-        description="Đơn Shopee, Facebook nhập tay. Hàng được giữ ngay khi tạo đơn, quầy không bán vượt."
         actions={
           <>
             {canPayout && (
@@ -62,12 +61,16 @@ export default async function OrdersPage({ params, searchParams }: { params: Pro
                 Đối soát Shopee
               </Button>
             )}
-            {canCreate && <Button render={<Link href={`/${store.code}/orders/new`} />}>Tạo đơn</Button>}
+            {canCreate && (
+              <Button render={<Link href={`/${store.code}/orders/new`} />} title="Hàng được giữ ngay khi tạo đơn, quầy không bán vượt">
+                Tạo đơn
+              </Button>
+            )}
           </>
         }
       />
       {!!returnCheck && status !== "return_check" && (
-        <p className="mb-3 rounded-lg border bg-card px-3 py-2 text-sm">
+        <p className="mb-3 rounded-lg border border-vien-amber bg-nen-amber px-3 py-2 text-sm">
           Có {returnCheck} đơn hoàn hàng chờ quản lý kiểm hàng.{" "}
           <Link href={`/${store.code}/orders?status=return_check`} className="font-medium underline underline-offset-4">
             Xem
@@ -77,24 +80,23 @@ export default async function OrdersPage({ params, searchParams }: { params: Pro
       <AutoSubmitForm action={`/${store.code}/orders`} debounceMs={400} className="mb-3" role="search">
         <FilterBar search={<Input type="search" enterKeyHint="search" name="q" defaultValue={sp.q} placeholder="Mã đơn, mã sàn, tên hoặc SĐT khách" aria-label="Tìm đơn" />}>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-[200px_160px]">
-            <NativeSelect name="status" defaultValue={status} aria-label="Trạng thái">
-              <option value="open">Đang xử lý</option>
-              {Object.entries(ORDER_STATUS).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v.label}
-                </option>
-              ))}
-              <option value="return_check">Hoàn hàng chờ kiểm</option>
-              <option value="all">Tất cả</option>
-            </NativeSelect>
-            <NativeSelect name="channel" defaultValue={sp.channel ?? ""} aria-label="Kênh">
-              <option value="">Mọi kênh</option>
-              {Object.entries(ONLINE_CHANNELS).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </NativeSelect>
+            <LuaChon
+              name="status"
+              defaultValue={status}
+              aria-label="Trạng thái"
+              options={[
+                { value: "open", label: "Đang xử lý" },
+                ...Object.entries(ORDER_STATUS).map(([k, v]) => ({ value: k, label: v.label })),
+                { value: "return_check", label: "Hoàn hàng chờ kiểm" },
+                { value: "all", label: "Tất cả" },
+              ]}
+            />
+            <LuaChon
+              name="channel"
+              defaultValue={sp.channel ?? ""}
+              aria-label="Kênh"
+              options={[{ value: "", label: "Mọi kênh" }, ...Object.entries(ONLINE_CHANNELS).map(([k, v]) => ({ value: k, label: v }))]}
+            />
           </div>
         </FilterBar>
       </AutoSubmitForm>
@@ -147,7 +149,9 @@ export default async function OrdersPage({ params, searchParams }: { params: Pro
                         </Link>
                         {o.external_order_id && <div className="text-xs text-muted-foreground">{o.external_order_id}</div>}
                       </TableCell>
-                      <TableCell>{ONLINE_CHANNELS[o.channel as keyof typeof ONLINE_CHANNELS]}</TableCell>
+                      <TableCell>
+                        <ChipSac sac={sacKenhBan(o.channel)}>{ONLINE_CHANNELS[o.channel as keyof typeof ONLINE_CHANNELS]}</ChipSac>
+                      </TableCell>
                       <TableCell>
                         {o.customer_name ?? "-"}
                         {o.customer_phone && <div className="text-xs text-muted-foreground">{o.customer_phone}</div>}

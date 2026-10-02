@@ -3,8 +3,10 @@ import { requireStore } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
+import { GoiY } from "@/components/goi-y";
 import { EmptyState } from "@/components/empty-state";
 import { ChipSac } from "@/components/ui/chip";
+import { ChiSo, HangChiSo } from "@/components/ui/chi-so";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -28,14 +30,35 @@ export default async function TransfersPage({ params }: { params: Promise<{ stor
   const rows = data ?? [];
   const storeCode = new Map(((storeOpts ?? []) as { id: string; code: string }[]).map((s) => [s.id, s.code]));
   const canCreate = ctx.profile.role !== "accountant";
+  // Dem tu chinh cac dong da tai (toi da 200 phieu moi nhat), khong them truy van
+  const waitingIn = rows.filter((t) => t.status === "sent" && t.to_store_id === store.id).length;
+  const sendingOut = rows.filter((t) => t.status === "sent" && t.from_store_id === store.id).length;
+  const drafts = rows.filter((t) => t.status === "draft" && t.from_store_id === store.id).length;
 
   return (
     <div>
       <PageHeader
         title="Chuyển kho"
-        description="Chuyển hàng giữa các cửa hàng. Hàng đang chuyển không thuộc tồn của cửa hàng nào cho tới khi bên nhận xác nhận."
+        description={<GoiY label="Chuyển kho">Hàng đang chuyển không thuộc tồn của cửa hàng nào cho tới khi bên nhận xác nhận.</GoiY>}
         actions={canCreate && <Button render={<Link href={`/${store.code}/transfers/new`} />}>Tạo phiếu chuyển</Button>}
       />
+      {rows.length > 0 && (
+        <HangChiSo className="mb-4">
+          <ChiSo
+            nhan={waitingIn > 0 ? "Chờ cửa hàng này nhận" : "Không có hàng chờ nhận"}
+            sac={waitingIn > 0 ? "amber" : "emerald"}
+            giaTri={waitingIn}
+            phu="Đang chuyển đến, cần xác nhận"
+          />
+          <ChiSo nhan="Đang chuyển đi" sac="slate" giaTri={sendingOut} phu="Chờ bên nhận xác nhận" />
+          <ChiSo
+            nhan={drafts > 0 ? "Nháp chưa gửi" : "Không có nháp"}
+            sac={drafts > 0 ? "amber" : "slate"}
+            giaTri={drafts}
+            phu="Tồn cửa hàng gửi chưa giảm"
+          />
+        </HangChiSo>
+      )}
       {rows.length === 0 ? (
         <EmptyState title="Chưa có phiếu chuyển kho" />
       ) : (

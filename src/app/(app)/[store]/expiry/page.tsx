@@ -5,7 +5,8 @@ import { getNumberSetting } from "@/lib/settings";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import { ChipHan } from "@/components/ui/chip";
+import { ChipHan, ChipSac } from "@/components/ui/chip";
+import { ChiSo, HangChiSo } from "@/components/ui/chi-so";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { InventoryTabs } from "../inventory/inventory-tabs";
@@ -39,7 +40,13 @@ export default async function ExpiryPage({
     <div>
       <PageHeader
         title="Hạn sử dụng"
-        description={`Lô cận date: date ngắn còn ${shortDays} ngày, date dài còn ${longDays} ngày. Gợi ý giá giảm = giá vốn lô + phụ thu. Hàng hết hạn bị chặn khi bán.`}
+        description={
+          <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <ChipSac sac="slate">{store.name}</ChipSac>
+            <ChipSac sac="slate">Date ngắn: cận date khi còn {shortDays} ngày</ChipSac>
+            <ChipSac sac="slate">Date dài: cận date khi còn {longDays} ngày</ChipSac>
+          </span>
+        }
       />
       <InventoryTabs storeCode={store.code} />
       <div className="my-3 flex gap-1" role="tablist">
@@ -65,11 +72,22 @@ export default async function ExpiryPage({
         <EmptyState title={status === "near" ? "Không có lô nào sắp hết hạn" : "Không có lô nào đã hết hạn"} />
       ) : (
         <>
-          {!isStaff && (
-            <p className="mb-2 text-sm">
-              {rows.length} lô, giá trị theo giá vốn <strong>{formatMoney(value)}</strong>. Hủy hàng hết hạn làm ở phiếu hủy hàng (giai đoạn 2).
-            </p>
-          )}
+          <HangChiSo className="mb-3">
+            <ChiSo
+              nhan={status === "near" ? "Lô gần hết hạn" : "Lô đã hết hạn"}
+              sac={status === "near" ? "amber" : "red"}
+              giaTri={formatNumber(rows.length)}
+              goiY={<p>Hàng hết hạn bị chặn khi bán.{!isStaff && " Gợi ý giá giảm = giá vốn lô + phụ thu."}</p>}
+            />
+            {!isStaff && (
+              <ChiSo
+                nhan="Giá trị theo giá vốn"
+                sac={status === "near" ? "amber" : "red"}
+                giaTri={formatMoney(value)}
+                goiY={status === "expired" ? <p>Hủy hàng hết hạn làm ở phiếu hủy hàng (giai đoạn 2).</p> : undefined}
+              />
+            )}
+          </HangChiSo>
           <MobileCardList label="Lô sắp hết hạn">
             {rows.map((r) => (
               <MobileCard
@@ -78,7 +96,7 @@ export default async function ExpiryPage({
                 subtitle={`${r.sku} - Lô ${r.lot_no} - ${r.date_type === "short" ? "Date ngắn" : "Date dài"}`}
                 badge={
                   <ChipHan ma={r.expiry_status === "expired" ? "hetHan" : "canDate"}>
-                    {r.days_left != null && r.days_left < 0 ? `Quá ${-r.days_left}` : r.days_left}
+                    {r.days_left == null ? "-" : r.days_left < 0 ? `Quá ${-r.days_left} ngày` : `Còn ${r.days_left} ngày`}
                   </ChipHan>
                 }
                 stats={[

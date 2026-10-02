@@ -6,7 +6,8 @@ import { PageHeader } from "@/components/page-header";
 import { AutoSubmitForm } from "@/components/auto-submit-form";
 import { FilterBar } from "@/components/filter-bar";
 import { EmptyState } from "@/components/empty-state";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
+import { ChipSac } from "@/components/ui/chip";
 import { Pagination } from "@/components/pagination";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Input } from "@/components/ui/input";
@@ -68,7 +69,7 @@ export default async function MovementsPage({ params, searchParams }: { params: 
 
   return (
     <div>
-      <PageHeader title="Lịch sử biến động kho" description="Mỗi lần tồn thay đổi đều có một dòng, kèm chứng từ nguồn." />
+      <PageHeader title="Lịch sử biến động kho" description={<ChipSac sac="slate" className="mt-1.5">{store.name}</ChipSac>} />
       <InventoryTabs storeCode={store.code} />
       <AutoSubmitForm action={`/${store.code}/inventory/movements`} className="my-3">
         {sp.product && <input type="hidden" name="product" value={sp.product} />}
@@ -76,14 +77,13 @@ export default async function MovementsPage({ params, searchParams }: { params: 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-[150px_150px_200px]">
             <Input type="date" name="from" defaultValue={sp.from} aria-label="Từ ngày" />
             <Input type="date" name="to" defaultValue={sp.to} aria-label="Đến ngày" />
-            <NativeSelect name="type" defaultValue={sp.type ?? ""} aria-label="Loại biến động" className="col-span-2 sm:col-span-1">
-              <option value="">Mọi loại</option>
-              {Object.entries(MOVEMENT_LABEL).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </NativeSelect>
+            <LuaChon
+              name="type"
+              defaultValue={sp.type ?? ""}
+              aria-label="Loại biến động"
+              className="col-span-2 sm:col-span-1"
+              options={[{ value: "", label: "Mọi loại" }, ...Object.entries(MOVEMENT_LABEL).map(([value, label]) => ({ value, label }))]}
+            />
           </div>
         </FilterBar>
       </AutoSubmitForm>

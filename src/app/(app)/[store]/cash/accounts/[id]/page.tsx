@@ -2,12 +2,15 @@ import { notFound } from "next/navigation";
 import { requireStore } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateVN, presetPeriod } from "@/lib/dates";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatNumber } from "@/lib/format";
 import { errorMessage } from "@/lib/errors";
 import { PageHeader } from "@/components/page-header";
 import { AutoSubmitForm } from "@/components/auto-submit-form";
 import { FilterBar } from "@/components/filter-bar";
 import { EmptyState } from "@/components/empty-state";
+import { ChipSac } from "@/components/ui/chip";
+import { ChiSo, HangChiSo } from "@/components/ui/chi-so";
+import { Khoi } from "@/components/khoi";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { HolderSelect } from "./holder-select";
@@ -51,82 +54,109 @@ export default async function AccountLedgerPage({
   );
   if (!acc) notFound();
   const rows = (ledger.data ?? []) as Entry[];
+  // Tong vao/ra trong ky tinh tu chinh cac dong so dang hien
+  const moneyIn = rows.reduce((s, r) => s + (r.amount > 0 ? r.amount : 0), 0);
+  const moneyOut = rows.reduce((s, r) => s + (r.amount < 0 ? -r.amount : 0), 0);
+  const negative = acc.balance !== null && acc.balance < 0;
 
   return (
     <div className="space-y-4">
       <PageHeader
         title={acc.name}
         back={{ href: `/${store.code}/cash`, label: "Thu chi" }}
-        description={acc.holder_name ? `Người giữ: ${acc.holder_name}` : "Chưa có người giữ. Quản lý cửa hàng duyệt các khoản của tài khoản này."}
+        description={
+          <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            {acc.holder_name ? (
+              <ChipSac sac="slate">Người giữ: {acc.holder_name}</ChipSac>
+            ) : (
+              <ChipSac sac="amber" title="Quản lý cửa hàng duyệt các khoản của tài khoản này">
+                Chưa có người giữ
+              </ChipSac>
+            )}
+            {negative && <ChipSac sac="red" dam>Số dư âm</ChipSac>}
+            <ChipSac sac="slate">
+              {formatDateVN(from)} - {formatDateVN(to)}
+            </ChipSac>
+          </span>
+        }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <HangChiSo>
         {acc.balance !== null && (
-          <div className="rounded-xl border bg-card p-4">
-            <div className="text-sm text-muted-foreground">Số dư hiện tại</div>
-            <div className="text-xl font-semibold tabular-nums">{formatMoney(acc.balance)}</div>
-          </div>
+          <ChiSo nhan={negative ? "Số dư hiện tại: âm" : "Số dư hiện tại"} sac={negative ? "red" : "brand"} giaTri={formatMoney(acc.balance)} />
         )}
+        <ChiSo nhan="Tiền vào trong kỳ" sac={moneyIn > 0 ? "emerald" : "slate"} giaTri={formatMoney(moneyIn)} />
+        <ChiSo nhan="Tiền ra trong kỳ" sac={moneyOut > 0 ? "rose" : "slate"} giaTri={formatMoney(moneyOut)} />
+        <ChiSo nhan="Số giao dịch" sac="slate" giaTri={formatNumber(rows.length)} phu="Chỉ khoản đã duyệt và đã trả" />
+      </HangChiSo>
+
+      <div className={isManager ? "grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_420px]" : ""}>
+        <div className="min-w-0 space-y-4">
+          {ledger.error ? (
+            <p className="rounded-xl border bg-card p-4 text-sm">{errorMessage(ledger.error)}</p>
+          ) : (
+            <>
+              <AutoSubmitForm action={`/${store.code}/cash/accounts/${id}`}>
+                <FilterBar>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-[150px_150px] sm:justify-start">
+                    <Input type="date" name="from" defaultValue={from} aria-label="Từ ngày" />
+                    <Input type="date" name="to" defaultValue={to} aria-label="Đến ngày" />
+                  </div>
+                </FilterBar>
+              </AutoSubmitForm>
+              {rows.length === 0 ? (
+                <EmptyState title="Không có giao dịch trong khoảng đã chọn" />
+              ) : (
+                <div className="overflow-x-auto rounded-xl border bg-card">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Ngày</TableHead>
+                        <TableHead>Mã</TableHead>
+                        <TableHead className="min-w-48">Nội dung</TableHead>
+                        <TableHead className="text-right">Số tiền</TableHead>
+                        <TableHead className="text-right">Số dư sau</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rows.map((r, i) => (
+                        <TableRow key={`${r.code}-${i}`}>
+                          <TableCell className="whitespace-nowrap">{formatDateVN(r.occurred_on)}</TableCell>
+                          <TableCell>{r.code}</TableCell>
+                          <TableCell>
+                            {r.description}
+                            <div className="text-xs text-muted-foreground">{SOURCE[r.source] ?? r.source}</div>
+                          </TableCell>
+                          <TableCell className={`text-right tabular-nums ${r.amount > 0 ? "text-success" : ""}`}>
+                            {r.amount > 0 ? "+" : ""}
+                            {formatMoney(r.amount)}
+                          </TableCell>
+                          <TableCell className={`text-right tabular-nums ${r.balance_after < 0 ? "text-chu-red" : ""}`}>
+                            {formatMoney(r.balance_after)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
         {isManager && (
-          <div className="rounded-xl border bg-card p-4">
-            <HolderSelect
-              storeCode={store.code}
-              accountId={acc.id}
-              holderId={acc.holder_id}
-              users={(users ?? []).map((u) => ({ id: u.id, full_name: u.full_name }))}
-            />
+          <div className="min-w-0 space-y-4">
+            <Khoi title="Người giữ tài khoản">
+              <HolderSelect
+                storeCode={store.code}
+                accountId={acc.id}
+                holderId={acc.holder_id}
+                users={(users ?? []).map((u) => ({ id: u.id, full_name: u.full_name }))}
+              />
+            </Khoi>
           </div>
         )}
       </div>
-
-      {ledger.error ? (
-        <p className="rounded-xl border bg-card p-4 text-sm">{errorMessage(ledger.error)}</p>
-      ) : (
-        <>
-          <AutoSubmitForm action={`/${store.code}/cash/accounts/${id}`}>
-            <FilterBar>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-[150px_150px] sm:justify-start">
-                <Input type="date" name="from" defaultValue={from} aria-label="Từ ngày" />
-                <Input type="date" name="to" defaultValue={to} aria-label="Đến ngày" />
-              </div>
-            </FilterBar>
-          </AutoSubmitForm>
-          {rows.length === 0 ? (
-            <EmptyState title="Không có giao dịch trong khoảng đã chọn">Chỉ khoản đã duyệt và đã trả mới vào sổ.</EmptyState>
-          ) : (
-            <div className="overflow-x-auto rounded-xl border bg-card">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Ngày</TableHead>
-                    <TableHead>Mã</TableHead>
-                    <TableHead className="min-w-48">Nội dung</TableHead>
-                    <TableHead className="text-right">Số tiền</TableHead>
-                    <TableHead className="text-right">Số dư sau</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.map((r, i) => (
-                    <TableRow key={`${r.code}-${i}`}>
-                      <TableCell className="whitespace-nowrap">{formatDateVN(r.occurred_on)}</TableCell>
-                      <TableCell>{r.code}</TableCell>
-                      <TableCell>
-                        {r.description}
-                        <div className="text-xs text-muted-foreground">{SOURCE[r.source] ?? r.source}</div>
-                      </TableCell>
-                      <TableCell className={`text-right tabular-nums ${r.amount > 0 ? "text-success" : ""}`}>
-                        {r.amount > 0 ? "+" : ""}
-                        {formatMoney(r.amount)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">{formatMoney(r.balance_after)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </>
-      )}
     </div>
   );
 }

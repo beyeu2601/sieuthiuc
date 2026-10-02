@@ -7,7 +7,7 @@ import { recordPayout } from "../../actions";
 import { formatDateVN } from "@/lib/dates";
 import { formatMoney } from "@/lib/format";
 import { MoneyInput } from "@/components/money-input";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -112,8 +112,8 @@ export function PayoutForm({
     return <p className="rounded-xl border bg-card p-4 text-sm">Không có đơn Shopee nào đã giao mà chưa nhận tiền.</p>;
 
   return (
-    <form onSubmit={submit} className="space-y-4">
-      <section className="rounded-xl border bg-card">
+    <form onSubmit={submit} className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
+      <section className="min-w-0 rounded-xl border bg-card">
         <div className="flex flex-wrap items-center gap-2 border-b p-3">
           <Input
             value={q}
@@ -126,6 +126,7 @@ export function PayoutForm({
           <Button type="button" variant="outline" onClick={toggleShown}>
             {allShownPicked ? "Bỏ chọn" : "Chọn"} {term ? "kết quả tìm" : "tất cả"} ({shown.length})
           </Button>
+          <p className="w-full text-xs text-muted-foreground">Tick các đơn có trong đợt (Shopee: Tài chính &gt; Doanh thu).</p>
         </div>
         <ul className="max-h-[50vh] divide-y overflow-y-auto">
           {shown.map((o) => (
@@ -153,54 +154,59 @@ export function PayoutForm({
         </ul>
       </section>
 
-      <section className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="received">Số tiền thực nhận *</Label>
-          <MoneyInput id="received" value={received} onChange={setReceived} className="h-11 text-base" />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="ads">Shopee trừ nạp quảng cáo</Label>
-          <MoneyInput id="ads" value={ads} onChange={setAds} />
-          <p className="text-xs text-muted-foreground">Bỏ trống nếu không bật tự nạp quảng cáo từ doanh thu.</p>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="pdate">Ngày tiền về</Label>
-          <Input id="pdate" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="acc">Tài khoản nhận *</Label>
-          <NativeSelect id="acc" value={account} onChange={(e) => setAccount(e.target.value)}>
-            <option value="">Chọn tài khoản</option>
-            {accounts.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </NativeSelect>
-        </div>
-        <div className="space-y-1.5 sm:col-span-2">
-          <Label htmlFor="note">Ghi chú</Label>
-          <Textarea id="note" rows={1} value={note} onChange={(e) => setNote(e.target.value)} />
-        </div>
-      </section>
+      <div className="@container min-w-0 space-y-4">
+        <section className="grid gap-x-4 gap-y-3 rounded-xl border bg-card p-4 @md:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="received">Số tiền thực nhận *</Label>
+            <MoneyInput id="received" value={received} onChange={setReceived} className="h-11 text-base" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="ads">Shopee trừ nạp quảng cáo</Label>
+            <MoneyInput id="ads" value={ads} onChange={setAds} />
+            <p className="text-xs text-muted-foreground">Bỏ trống nếu không bật tự nạp quảng cáo từ doanh thu.</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="pdate">Ngày tiền về</Label>
+            <Input id="pdate" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="acc">Tài khoản nhận *</Label>
+            <LuaChon
+              id="acc"
+              aria-label="Tài khoản nhận"
+              value={account}
+              onChange={setAccount}
+              options={[
+                // Tu 3 tai khoan tro xuong la nut bam, khong can dong "Chon tai khoan"
+                ...(accounts.length > 3 ? [{ value: "", label: "Chọn tài khoản" }] : []),
+                ...accounts.map((a) => ({ value: a.id, label: a.name })),
+              ]}
+            />
+          </div>
+          <div className="space-y-1.5 @md:col-span-2">
+            <Label htmlFor="note">Ghi chú</Label>
+            <Textarea id="note" rows={1} value={note} onChange={(e) => setNote(e.target.value)} />
+          </div>
+        </section>
 
-      <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] rounded-xl border bg-card p-4 shadow-sm lg:bottom-0">
-        <dl className="grid grid-cols-2 gap-y-1 text-sm">
-          <dt>Tổng {picked.size} đơn đã chọn</dt>
-          <dd className="text-right tabular-nums">{formatMoney(total)}</dd>
-          <dt>Thực nhận</dt>
-          <dd className="text-right tabular-nums">-{formatMoney(received ?? 0)}</dd>
-          <dt>Quảng cáo</dt>
-          <dd className="text-right tabular-nums">-{formatMoney(ads ?? 0)}</dd>
-          <dt className="font-semibold">{fee >= 0 ? "Phí sàn" : "Shopee trả dư (ghi Thu khác)"}</dt>
-          <dd className="text-right font-semibold tabular-nums">
-            {formatMoney(Math.abs(fee))}
-            {total > 0 && fee >= 0 && <span className="ml-1 font-normal text-muted-foreground">({((fee / total) * 100).toFixed(1).replace(".", ",")}%)</span>}
-          </dd>
-        </dl>
-        <Button type="submit" disabled={pending} className="mt-3 h-11 w-full">
-          {pending ? "Đang ghi..." : "Ghi đợt tiền về"}
-        </Button>
+        <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] rounded-xl border bg-card p-4 shadow-sm lg:bottom-0">
+          <dl className="grid grid-cols-2 gap-y-1 text-sm">
+            <dt>Tổng {picked.size} đơn đã chọn</dt>
+            <dd className="text-right tabular-nums">{formatMoney(total)}</dd>
+            <dt>Thực nhận</dt>
+            <dd className="text-right tabular-nums">-{formatMoney(received ?? 0)}</dd>
+            <dt>Quảng cáo</dt>
+            <dd className="text-right tabular-nums">-{formatMoney(ads ?? 0)}</dd>
+            <dt className="font-semibold">{fee >= 0 ? "Phí sàn" : "Shopee trả dư (ghi Thu khác)"}</dt>
+            <dd className="text-right font-semibold tabular-nums">
+              {formatMoney(Math.abs(fee))}
+              {total > 0 && fee >= 0 && <span className="ml-1 font-normal text-muted-foreground">({((fee / total) * 100).toFixed(1).replace(".", ",")}%)</span>}
+            </dd>
+          </dl>
+          <Button type="submit" disabled={pending} className="mt-3 h-11 w-full">
+            {pending ? "Đang ghi..." : "Ghi đợt tiền về"}
+          </Button>
+        </div>
       </div>
     </form>
   );

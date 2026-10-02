@@ -5,6 +5,7 @@ import { formatNumber } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { ChipSac } from "@/components/ui/chip";
+import { ChiSo, HangChiSo } from "@/components/ui/chi-so";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -33,12 +34,13 @@ export default async function LowStockPage({ params }: { params: Promise<{ store
   const withSuggest = rows.filter((r) => Number(r.suggest_qty) > 0);
   const prefill = withSuggest.map((r) => `${r.product_id}:${Math.ceil(Number(r.suggest_qty))}`).join(",");
   const canCreate = ctx.profile.role !== "accountant";
+  const outCount = rows.filter((r) => r.stock_status === "out").length;
 
   return (
     <div>
       <PageHeader
         title="Cần nhập thêm"
-        description="Sản phẩm đang bán có tồn khả dụng dưới mức tối thiểu. Gợi ý nhập = 3 lần tồn tối thiểu - khả dụng."
+        description={<ChipSac sac="slate" className="mt-1.5">{store.name}</ChipSac>}
         actions={
           canCreate &&
           withSuggest.length > 0 && (
@@ -49,7 +51,14 @@ export default async function LowStockPage({ params }: { params: Promise<{ store
         }
       />
       <InventoryTabs storeCode={store.code} />
-      <div className="mt-3">
+      <div className="mt-3 space-y-3">
+        {rows.length > 0 && (
+          <HangChiSo>
+            <ChiSo nhan="Hết hàng" sac={outCount > 0 ? "red" : "slate"} giaTri={formatNumber(outCount)} />
+            <ChiSo nhan="Sắp hết" sac={rows.length - outCount > 0 ? "amber" : "slate"} giaTri={formatNumber(rows.length - outCount)} />
+            <ChiSo nhan="Có gợi ý nhập" sac="brand" giaTri={formatNumber(withSuggest.length)} phu="Gợi ý = 3 lần tối thiểu - khả dụng" />
+          </HangChiSo>
+        )}
         {rows.length === 0 ? (
           <EmptyState title="Không có sản phẩm nào dưới mức tối thiểu" />
         ) : (
@@ -81,7 +90,9 @@ export default async function LowStockPage({ params }: { params: Promise<{ store
                     <TableHead>ĐVT</TableHead>
                     <TableHead className="text-right">Khả dụng</TableHead>
                     <TableHead className="text-right">Tối thiểu</TableHead>
-                    <TableHead className="text-right">Gợi ý nhập</TableHead>
+                    <TableHead className="text-right" title="Gợi ý nhập = 3 lần tồn tối thiểu - khả dụng">
+                      Gợi ý nhập
+                    </TableHead>
                     <TableHead>Trạng thái</TableHead>
                   </TableRow>
                 </TableHeader>

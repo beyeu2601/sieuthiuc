@@ -10,7 +10,7 @@ import { formatMoney, formatNumber } from "@/lib/format";
 import { ProductPicker } from "@/components/product-picker";
 import { BackButton } from "@/components/back-button";
 import { MoneyInput } from "@/components/money-input";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -442,15 +442,17 @@ export function PosClient({
 }
 
 function AccountSelect({ value, accounts, onChange }: { value: string | null; accounts: Account[]; onChange: (id: string) => void }) {
+  // Tu 3 tai khoan tro xuong la nut bam (khong can dong "Chon tai khoan"); nhieu hon la danh sach co dong goi y
+  const many = accounts.length > 3;
+  const options = accounts.map((a) => ({ value: a.id, label: a.name }));
   return (
-    <NativeSelect aria-label="Tài khoản giữ tiền" className="h-9 text-sm" value={value ?? ""} onChange={(e) => onChange(e.target.value)}>
-      <option value="">Chọn tài khoản</option>
-      {accounts.map((a) => (
-        <option key={a.id} value={a.id}>
-          {a.name}
-        </option>
-      ))}
-    </NativeSelect>
+    <LuaChon
+      aria-label="Tài khoản giữ tiền"
+      className={many ? "h-9 text-sm" : undefined}
+      value={value ?? ""}
+      onChange={onChange}
+      options={many ? [{ value: "", label: "Chọn tài khoản" }, ...options] : options}
+    />
   );
 }
 

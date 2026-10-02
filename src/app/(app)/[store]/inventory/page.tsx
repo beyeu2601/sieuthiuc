@@ -10,7 +10,7 @@ import { AutoSubmitForm } from "@/components/auto-submit-form";
 import { FilterBar } from "@/components/filter-bar";
 import { FilterChip } from "@/components/filter-chip";
 import { Pagination } from "@/components/pagination";
-import { ChipSac } from "@/components/ui/chip";
+import { ChipSac, sacLoaiHang } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -80,7 +80,12 @@ export default async function InventoryPage({ params, searchParams }: { params: 
     <div>
       <PageHeader
         title="Tồn kho"
-        description={`${store.name}. Khả dụng = tồn thực tế - đang giữ cho đơn online.`}
+        description={
+          <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <ChipSac sac="slate">{store.name}</ChipSac>
+            {total > 0 && <ChipSac sac="brand">{formatNumber(Number(total))} sản phẩm</ChipSac>}
+          </span>
+        }
         actions={
           !isStaff && (
             <Button variant="outline" render={<Link href={`/${store.code}/inventory/low`} />}>
@@ -159,7 +164,9 @@ export default async function InventoryPage({ params, searchParams }: { params: 
                 <TableHead>ĐVT</TableHead>
                 {!isStaff && <TableHead className="text-right">Tồn thực tế</TableHead>}
                 {!isStaff && <TableHead className="text-right">Đang giữ</TableHead>}
-                <TableHead className="text-right">Khả dụng</TableHead>
+                <TableHead className="text-right" title="Khả dụng = tồn thực tế - đang giữ cho đơn online">
+                  Khả dụng
+                </TableHead>
                 <TableHead>HSD gần nhất</TableHead>
                 {!isStaff && <TableHead className="text-right">Giá vốn BQ</TableHead>}
                 {!isStaff && <TableHead className="text-right">Giá trị tồn</TableHead>}
@@ -178,7 +185,11 @@ export default async function InventoryPage({ params, searchParams }: { params: 
                         {r.barcode ? ` - ${r.barcode}` : ""}
                       </div>
                     </TableCell>
-                    {!isStaff && <TableCell>{GOODS_TYPE_LABEL[r.goods_type]}</TableCell>}
+                    {!isStaff && (
+                      <TableCell>
+                        <ChipSac sac={sacLoaiHang(r.goods_type)}>{GOODS_TYPE_LABEL[r.goods_type]}</ChipSac>
+                      </TableCell>
+                    )}
                     <TableCell>{r.unit}</TableCell>
                     {!isStaff && <TableCell className="text-right tabular-nums">{formatNumber(r.qty_on_hand)}</TableCell>}
                     {!isStaff && <TableCell className="text-right tabular-nums">{formatNumber(r.qty_reserved)}</TableCell>}

@@ -13,7 +13,7 @@ import { Pagination } from "@/components/pagination";
 import { EmptyState } from "@/components/empty-state";
 import { FilterChip } from "@/components/filter-chip";
 import { CategoryInfo } from "@/components/category-info";
-import { ChipSac } from "@/components/ui/chip";
+import { ChipSac, sacLoaiHang } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -103,7 +103,6 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
     <div>
       <PageHeader
         title="Sản phẩm"
-        description={<span className="hidden md:inline">Danh mục dùng chung cho mọi cửa hàng. Tồn là tổng các cửa hàng bạn được xem.</span>}
         actions={
           canEdit && (
             <>
@@ -238,7 +237,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                 <TableHead className="text-right">Giá bán</TableHead>
                 <TableHead className="text-right">Giá vốn TC</TableHead>
                 <TableHead className="text-right">% Benefit</TableHead>
-                <TableHead className="text-right">Tồn</TableHead>
+                <TableHead className="text-right" title="Tổng tồn các cửa hàng bạn được xem">
+                  Tồn
+                </TableHead>
                 <TableHead>Trạng thái</TableHead>
               </TableRow>
             </TableHeader>
@@ -275,14 +276,16 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                         p.categories && <div className="text-xs text-muted-foreground">{p.categories.name}</div>
                       )}
                     </TableCell>
-                    <TableCell>{GOODS_TYPE_LABEL[p.goods_type]}</TableCell>
+                    <TableCell>
+                      <ChipSac sac={sacLoaiHang(p.goods_type)}>{GOODS_TYPE_LABEL[p.goods_type]}</ChipSac>
+                    </TableCell>
                     <TableCell>{p.unit}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatMoney(p.sell_price)}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatMoney(p.cost_price_ref)}</TableCell>
                     <TableCell className="text-right tabular-nums">
                       {p.pricing_method === "benefit" && pct != null ? `${pct}%` : "-"}
                     </TableCell>
-                    <TableCell className="text-right tabular-nums">{formatNumber(stock)}</TableCell>
+                    <TableCell className={cn("text-right tabular-nums", stock <= 0 && "font-medium text-destructive")}>{formatNumber(stock)}</TableCell>
                     <TableCell>
                       <ChipSac sac={p.status === "active" ? "emerald" : "slate"}>
                         {p.status === "active" ? "Đang bán" : "Ngừng bán"}

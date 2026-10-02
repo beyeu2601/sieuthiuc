@@ -92,13 +92,8 @@ export function ImportForm() {
   return (
     <div className="space-y-4">
       <div className="rounded-xl border bg-card p-4 text-sm">
-        <ol className="list-decimal space-y-1 pl-5">
-          <li>Tải file mẫu, điền mỗi sản phẩm một dòng. Dòng 1 là tiêu đề, giữ nguyên thứ tự cột.</li>
-          <li>Bắt buộc: Tên, ĐVT, Loại hàng. Nhóm hàng và thương hiệu chưa có sẽ được tạo mới.</li>
-          <li>Chọn file để xem trước. Chỉ khi không còn lỗi mới lưu được; lưu là tất cả hoặc không dòng nào.</li>
-        </ol>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Button variant="outline" onClick={downloadTemplate}>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={downloadTemplate} title="Mỗi sản phẩm một dòng. Dòng 1 là tiêu đề, giữ nguyên thứ tự cột.">
             Tải file mẫu
           </Button>
           <label className="inline-flex h-8 cursor-pointer items-center rounded-lg border bg-card px-2.5 text-sm font-medium hover:bg-muted">
@@ -107,6 +102,9 @@ export function ImportForm() {
           </label>
           {fileName && <span className="text-muted-foreground">{fileName}</span>}
         </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Bắt buộc Tên, ĐVT, Loại hàng. Nhóm hàng, thương hiệu chưa có sẽ tạo mới. Lưu tất cả hoặc không dòng nào.
+        </p>
       </div>
 
       {parsed && (
@@ -153,7 +151,12 @@ export function ImportForm() {
               </TableBody>
             </Table>
           </div>
-          <Button onClick={submit} disabled={pending || parsed.errors.length > 0} className="h-10">
+          <Button
+            onClick={submit}
+            disabled={pending || parsed.errors.length > 0}
+            className="h-10"
+            title="Chỉ lưu được khi không còn lỗi; lưu là tất cả hoặc không dòng nào"
+          >
             {pending ? "Đang lưu..." : `Tạo ${parsed.rows.length} sản phẩm`}
           </Button>
         </div>

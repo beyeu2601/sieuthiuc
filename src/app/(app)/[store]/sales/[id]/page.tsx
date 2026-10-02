@@ -4,7 +4,9 @@ import { requireStore } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime, formatMoney, formatNumber } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
-import { ChipSac } from "@/components/ui/chip";
+import { ChipSac, sacKenhBan } from "@/components/ui/chip";
+import { ChiSo, HangChiSo } from "@/components/ui/chi-so";
+import { Khoi } from "@/components/khoi";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CHANNEL_LABEL, SALE_STATUS } from "../labels";
@@ -37,23 +39,25 @@ export default async function SalePage({ params }: { params: Promise<{ store: st
   const canCancel =
     s.status === "completed" &&
     (isManager || (ctx.profile.role === "staff" && shift?.user_id === ctx.profile.id && shift?.status === "open"));
+  const approverName = (s.approver as unknown as { full_name: string } | null)?.full_name;
+  const lineCount = (items ?? []).length;
 
   return (
-    <div className="max-w-4xl space-y-4">
+    <div className="space-y-4">
       <PageHeader
         title={`Hóa đơn ${s.code}`}
         description={
-          <span className="flex flex-wrap items-center gap-2">
+          <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <ChipSac sac={st.sac}>{st.label}</ChipSac>
-            {CHANNEL_LABEL[s.channel as keyof typeof CHANNEL_LABEL]} - {formatDateTime(s.completed_at)} -{" "}
-            {(s.creator as unknown as { full_name: string } | null)?.full_name}
+            <ChipSac sac={sacKenhBan(s.channel)}>{CHANNEL_LABEL[s.channel as keyof typeof CHANNEL_LABEL]}</ChipSac>
+            <ChipSac sac="slate">{formatDateTime(s.completed_at)}</ChipSac>
+            <ChipSac sac="slate">{(s.creator as unknown as { full_name: string } | null)?.full_name ?? "-"}</ChipSac>
             {shift && (
-              <>
-                {" "}- ca{" "}
-                <Link href={`/${store.code}/shifts/${s.shift_id}`} className="underline underline-offset-4">
-                  {shift.code}
-                </Link>
-              </>
+              <Link href={`/${store.code}/shifts/${s.shift_id}`} className="rounded-full underline-offset-4 hover:underline">
+                <ChipSac sac="slate" className="font-mono">
+                  Ca {shift.code}
+                </ChipSac>
+              </Link>
             )}
           </span>
         }
@@ -72,60 +76,81 @@ export default async function SalePage({ params }: { params: Promise<{ store: st
           {s.cancel_reason}
         </p>
       )}
-      <div className="overflow-x-auto rounded-xl border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>#</TableHead>
-              <TableHead className="min-w-56">Sản phẩm</TableHead>
-              <TableHead className="text-right">SL</TableHead>
-              <TableHead className="text-right">Đơn giá</TableHead>
-              <TableHead className="text-right">Giảm</TableHead>
-              <TableHead className="text-right">Thành tiền</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {(items ?? []).map((i) => {
-              const p = pmap.get(i.product_id);
-              return (
-                <TableRow key={i.id}>
-                  <TableCell>{i.line_no}</TableCell>
-                  <TableCell className="min-w-56 whitespace-normal">
-                    {p?.name}
-                    <div className="text-xs text-muted-foreground">{p?.sku}</div>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatNumber(i.qty)} {p?.unit}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">{formatMoney(i.unit_price)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{i.discount_amount ? formatMoney(i.discount_amount) : "-"}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatMoney(i.line_total)}</TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="ml-auto max-w-sm rounded-xl border bg-card p-4 text-sm">
-        <dl className="grid grid-cols-2 gap-y-1">
-          <dt>Tiền hàng</dt>
-          <dd className="text-right tabular-nums">{formatMoney(s.subtotal)}</dd>
-          <dt>Giảm giá</dt>
-          <dd className="text-right tabular-nums">-{formatMoney(s.discount_amount)}</dd>
-          <dt className="text-base font-semibold">Tổng</dt>
-          <dd className="text-right text-base font-semibold tabular-nums">{formatMoney(s.total)}</dd>
-          {(payments ?? []).map((p) => (
-            <div key={p.id} className="contents">
-              <dt className="text-muted-foreground">{PAYMENT_METHOD_LABEL[p.method as keyof typeof PAYMENT_METHOD_LABEL]}</dt>
-              <dd className="text-right tabular-nums text-muted-foreground">{formatMoney(p.amount)}</dd>
-            </div>
-          ))}
-        </dl>
-        {s.approver && (
-          <p className="mt-2 text-xs text-muted-foreground">
-            Giảm giá vượt hạn mức được duyệt bởi {(s.approver as unknown as { full_name: string }).full_name}
-          </p>
-        )}
+
+      <HangChiSo className="lg:grid-cols-3">
+        <ChiSo
+          nhan={s.status === "cancelled" ? "Tổng - đã hủy, không tính doanh thu" : "Tổng thanh toán"}
+          sac={s.status === "cancelled" ? "red" : "brand"}
+          giaTri={formatMoney(s.total)}
+          phu={`Tiền hàng ${formatMoney(s.subtotal)}`}
+        />
+        <ChiSo
+          nhan={s.discount_amount ? (approverName ? "Giảm giá vượt hạn mức" : "Giảm giá") : "Không giảm giá"}
+          sac={s.discount_amount ? "amber" : "slate"}
+          giaTri={s.discount_amount ? formatMoney(s.discount_amount) : "-"}
+          phu={
+            approverName
+              ? `Duyệt bởi ${approverName}`
+              : s.discount_amount && s.subtotal > 0
+                ? `${Math.round((s.discount_amount / s.subtotal) * 100)}% tiền hàng`
+                : undefined
+          }
+        />
+        <ChiSo nhan="Dòng hàng" sac="brand" giaTri={lineCount} />
+      </HangChiSo>
+
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="min-w-0 overflow-x-auto rounded-xl border bg-card">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>#</TableHead>
+                <TableHead className="min-w-56">Sản phẩm</TableHead>
+                <TableHead className="text-right">SL</TableHead>
+                <TableHead className="text-right">Đơn giá</TableHead>
+                <TableHead className="text-right">Giảm</TableHead>
+                <TableHead className="text-right">Thành tiền</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(items ?? []).map((i) => {
+                const p = pmap.get(i.product_id);
+                return (
+                  <TableRow key={i.id}>
+                    <TableCell>{i.line_no}</TableCell>
+                    <TableCell className="min-w-56 whitespace-normal">
+                      {p?.name}
+                      <div className="text-xs text-muted-foreground">{p?.sku}</div>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {formatNumber(i.qty)} {p?.unit}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{formatMoney(i.unit_price)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{i.discount_amount ? formatMoney(i.discount_amount) : "-"}</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatMoney(i.line_total)}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+
+        <Khoi title="Thanh toán" className="text-sm">
+          <dl className="grid grid-cols-2 gap-y-1">
+            <dt>Tiền hàng</dt>
+            <dd className="text-right tabular-nums">{formatMoney(s.subtotal)}</dd>
+            <dt>Giảm giá</dt>
+            <dd className="text-right tabular-nums">-{formatMoney(s.discount_amount)}</dd>
+            <dt className="text-base font-semibold">Tổng</dt>
+            <dd className="text-right text-base font-semibold tabular-nums">{formatMoney(s.total)}</dd>
+            {(payments ?? []).map((p) => (
+              <div key={p.id} className="contents">
+                <dt className="text-muted-foreground">{PAYMENT_METHOD_LABEL[p.method as keyof typeof PAYMENT_METHOD_LABEL]}</dt>
+                <dd className="text-right tabular-nums text-muted-foreground">{formatMoney(p.amount)}</dd>
+              </div>
+            ))}
+          </dl>
+        </Khoi>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { bulkUpdateProducts } from "./actions";
 import { baoTheoKetQua } from "@/lib/feedback";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
 
 // Doi nhom hang ngay tren danh sach (khach yeu cau 02/10/2026: nhieu san pham sai nhom).
 export function CategoryCell({
@@ -34,23 +34,16 @@ export function CategoryCell({
   }
 
   return (
-    <NativeSelect
+    <LuaChon
       value={value}
-      onChange={(e) => change(e.target.value)}
+      onChange={change}
       disabled={pending}
       aria-label={`Nhóm hàng của ${productName}`}
       className="mt-1 h-8 w-auto max-w-56 px-2 text-xs text-muted-foreground"
-    >
-      {!value && (
-        <option value="" disabled>
-          Chưa có nhóm hàng
-        </option>
-      )}
-      {categories.map((c) => (
-        <option key={c.id} value={c.id}>
-          {c.name}
-        </option>
-      ))}
-    </NativeSelect>
+      options={[
+        ...(!value ? [{ value: "", label: "Chưa có nhóm hàng", disabled: true }] : []),
+        ...categories.map((c) => ({ value: c.id, label: c.name })),
+      ]}
+    />
   );
 }

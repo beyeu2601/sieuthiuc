@@ -18,12 +18,8 @@ export default async function NewCashPage({ params }: { params: Promise<{ store:
   const isStaff = ctx.profile.role === "staff";
 
   return (
-    <div className="max-w-2xl">
-      <PageHeader
-        title="Xin chi / báo thu"
-        back={{ href: `/${store.code}/cash`, label: "Danh sách thu chi" }}
-        description="Khoản thu chi ngoài bán hàng và nhập hàng. Người giữ tài khoản duyệt xong mới vào số dư; nếu bạn là người giữ thì tự duyệt."
-      />
+    <div className="max-w-5xl">
+      <PageHeader title="Xin chi / báo thu" back={{ href: `/${store.code}/cash`, label: "Danh sách thu chi" }} />
       <CashForm
         storeId={store.id}
         storeCode={store.code}

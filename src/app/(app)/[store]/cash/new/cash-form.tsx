@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createCash, requestCashChange, type CashPayload } from "../actions";
 import { MoneyInput } from "@/components/money-input";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,7 +36,7 @@ export function CashForm({
 }) {
   const router = useRouter();
   const defaultAccount = accounts.find((a) => a.kind === "cash") ?? accounts[0];
-  const [v, setV] = useState<Omit<CashPayload, "store_id" | "amount"> & { amount: number | null }>({
+  const [initial] = useState<Omit<CashPayload, "store_id" | "amount"> & { amount: number | null }>(() => ({
     kind: "expense",
     category_id: "",
     occurred_on: today,
@@ -50,10 +50,13 @@ export function CashForm({
     record_in_shift: isStaff || openShiftCode !== null,
     account_id: defaultAccount?.id ?? null,
     ...edit?.initial,
-  });
+  }));
+  const [v, setV] = useState(initial);
   const [reason, setReason] = useState("");
   const [pending, start] = useTransition();
   const cats = categories.filter((c) => c.kind === v.kind);
+  // Man sua: chi gui khi co thay doi
+  const dirty = JSON.stringify(v) !== JSON.stringify(initial);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -86,27 +89,36 @@ export function CashForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4 rounded-xl border bg-card p-4">
-      <fieldset disabled={pending} className="grid gap-3 sm:grid-cols-2">
+    <form onSubmit={submit} className="@container space-y-4 rounded-xl border bg-card p-4">
+      <fieldset disabled={pending} className="grid gap-x-4 gap-y-3 @md:grid-cols-2 @3xl:grid-cols-4">
         {!edit && (
           <div className="space-y-1.5">
             <Label htmlFor="kind">Loại</Label>
-            <NativeSelect id="kind" value={v.kind} onChange={(e) => setV({ ...v, kind: e.target.value as "income" | "expense", category_id: "" })}>
-              <option value="expense">Xin chi</option>
-              <option value="income">Báo thu</option>
-            </NativeSelect>
+            <LuaChon
+              id="kind"
+              aria-label="Loại"
+              value={v.kind}
+              onChange={(x) => setV({ ...v, kind: x as "income" | "expense", category_id: "" })}
+              options={[
+                { value: "expense", label: "Xin chi" },
+                { value: "income", label: "Báo thu" },
+              ]}
+            />
           </div>
         )}
         <div className="space-y-1.5">
           <Label htmlFor="cat">Nhóm *</Label>
-          <NativeSelect id="cat" value={v.category_id} onChange={(e) => setV({ ...v, category_id: e.target.value })}>
-            <option value="">Chọn nhóm</option>
-            {cats.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </NativeSelect>
+          <LuaChon
+            id="cat"
+            aria-label="Nhóm"
+            value={v.category_id}
+            onChange={(x) => setV({ ...v, category_id: x })}
+            options={[
+              // It nhom thi hien nut bam, khong can dong "Chon nhom"
+              ...(cats.length > 3 ? [{ value: "", label: "Chọn nhóm" }] : []),
+              ...cats.map((c) => ({ value: c.id, label: c.name })),
+            ]}
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="amount">Số tiền *</Label>
@@ -116,48 +128,54 @@ export function CashForm({
           <Label htmlFor="date">Ngày phát sinh *</Label>
           <Input id="date" type="date" value={v.occurred_on} onChange={(e) => setV({ ...v, occurred_on: e.target.value })} />
         </div>
-        <div className="space-y-1.5 sm:col-span-2">
+        <div className="space-y-1.5 @md:col-span-2">
           <Label htmlFor="desc">Nội dung *</Label>
           <Input id="desc" value={v.description} onChange={(e) => setV({ ...v, description: e.target.value })} placeholder="Ví dụ: Tiền điện tháng 9" />
         </div>
-        <fieldset className="space-y-1.5 sm:col-span-2">
-          <legend className="mb-1.5 text-sm font-medium">{accounts.length > 0 ? "Tài khoản giữ tiền *" : "Phương thức"}</legend>
-          <div className="flex flex-wrap gap-2">
-            {(accounts.length > 0
-              ? accounts.map((a) => ({ key: a.id, label: a.name, account_id: a.id as string | null, method: methodForKind(a.kind) }))
-              : (
-                  [
-                    ["cash", "Tiền mặt"],
-                    ["transfer", "Chuyển khoản"],
-                    ["other", "Khác"],
-                  ] as const
-                ).map(([m, label]) => ({ key: m, label, account_id: null, method: m as CashPayload["method"] }))
-            ).map((o) => (
-              <label
-                key={o.key}
-                className="inline-flex min-h-11 cursor-pointer select-none items-center rounded-full border px-4 text-sm transition-colors hover:bg-accent has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring"
-              >
-                <input
-                  type="radio"
-                  name="acc"
-                  className="sr-only"
-                  checked={accounts.length > 0 ? v.account_id === o.account_id : v.method === o.method}
-                  onChange={() => setV((s) => ({ ...s, method: o.method, account_id: o.account_id }))}
-                />
-                {o.label}
-              </label>
-            ))}
-          </div>
-        </fieldset>
+        <div className="space-y-1.5 @md:col-span-2">
+          <Label htmlFor="acc">{accounts.length > 0 ? "Tài khoản giữ tiền *" : "Phương thức"}</Label>
+          {accounts.length > 0 ? (
+            <LuaChon
+              id="acc"
+              aria-label="Tài khoản giữ tiền"
+              value={v.account_id ?? ""}
+              onChange={(x) => {
+                const a = accounts.find((acc) => acc.id === x);
+                if (a) setV((s) => ({ ...s, method: methodForKind(a.kind), account_id: a.id }));
+              }}
+              options={accounts.map((a) => ({ value: a.id, label: a.name }))}
+            />
+          ) : (
+            <LuaChon
+              id="acc"
+              aria-label="Phương thức"
+              value={v.method}
+              onChange={(x) => setV((s) => ({ ...s, method: x as CashPayload["method"], account_id: null }))}
+              options={[
+                { value: "cash", label: "Tiền mặt" },
+                { value: "transfer", label: "Chuyển khoản" },
+                { value: "other", label: "Khác" },
+              ]}
+            />
+          )}
+        </div>
         {!isStaff && (
           <>
             {!edit && (
               <div className="space-y-1.5">
-                <Label htmlFor="ps">Tình trạng thanh toán</Label>
-                <NativeSelect id="ps" value={v.payment_status} onChange={(e) => setV({ ...v, payment_status: e.target.value as "paid" | "unpaid" })}>
-                  <option value="paid">Đã trả / đã thu</option>
-                  <option value="unpaid">Chưa trả (phải trả khác)</option>
-                </NativeSelect>
+                <Label htmlFor="ps" title="Chưa trả: vẫn tính vào lãi lỗ, theo dõi ở mục Phải trả khác">
+                  Thanh toán
+                </Label>
+                <LuaChon
+                  id="ps"
+                  aria-label="Tình trạng thanh toán"
+                  value={v.payment_status}
+                  onChange={(x) => setV({ ...v, payment_status: x as "paid" | "unpaid" })}
+                  options={[
+                    { value: "paid", label: "Đã trả/thu" },
+                    { value: "unpaid", label: "Chưa trả" },
+                  ]}
+                />
               </div>
             )}
             <div className="space-y-1.5">
@@ -169,7 +187,7 @@ export function CashForm({
               <Input id="doc" value={v.doc_no ?? ""} onChange={(e) => setV({ ...v, doc_no: e.target.value || null })} />
             </div>
             {!edit && v.method === "cash" && openShiftCode && (
-              <label className="flex items-center gap-2 text-sm sm:col-span-2">
+              <label className="flex min-h-10 items-center gap-2 text-sm @md:col-span-2">
                 <input
                   type="checkbox"
                   className="size-4"
@@ -182,22 +200,31 @@ export function CashForm({
           </>
         )}
         {isStaff && !edit && v.method === "cash" && openShiftCode && (
-          <p className="text-sm text-muted-foreground sm:col-span-2">Tiền mặt tính vào két của ca {openShiftCode} sau khi được duyệt.</p>
+          <p className="text-xs text-muted-foreground @md:col-span-2">Tiền mặt tính vào két của ca {openShiftCode} sau khi được duyệt.</p>
         )}
-        <div className="space-y-1.5 sm:col-span-2">
+        <div className="space-y-1.5 @md:col-span-2 @3xl:col-span-4">
           <Label htmlFor="cnote">Ghi chú</Label>
-          <Textarea id="cnote" rows={2} value={v.note ?? ""} onChange={(e) => setV({ ...v, note: e.target.value || null })} />
+          <Textarea id="cnote" rows={1} value={v.note ?? ""} onChange={(e) => setV({ ...v, note: e.target.value || null })} className="min-h-9" />
         </div>
         {edit && (
-          <div className="space-y-1.5 sm:col-span-2">
+          <div className="space-y-1.5 @md:col-span-2 @3xl:col-span-4">
             <Label htmlFor="reason">Lý do sửa *</Label>
             <Input id="reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ví dụ: ghi nhầm số tiền" />
           </div>
         )}
       </fieldset>
-      <Button type="submit" className="h-11 px-6" disabled={pending}>
-        {pending ? "Đang gửi..." : edit ? "Gửi yêu cầu sửa" : "Gửi"}
-      </Button>
+      <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 -mx-4 -mb-4 flex flex-wrap items-center gap-3 rounded-b-xl border-t bg-card/95 px-4 py-3 backdrop-blur lg:bottom-0">
+        <Button type="submit" className="h-10 px-5" disabled={pending || (!!edit && !dirty)}>
+          {pending ? "Đang gửi..." : edit ? "Gửi yêu cầu sửa" : "Gửi"}
+        </Button>
+        {edit ? (
+          <span aria-live="polite" className={dirty ? "text-sm font-medium text-chu-amber" : "text-sm text-muted-foreground"}>
+            {dirty ? "Có thay đổi chưa lưu" : "Chưa thay đổi gì"}
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">Người giữ tài khoản duyệt xong mới vào số dư</span>
+        )}
+      </div>
     </form>
   );
 }

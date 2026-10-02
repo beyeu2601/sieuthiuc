@@ -3,11 +3,12 @@ import { requireStore } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
+import { GoiY } from "@/components/goi-y";
 import { AutoSubmitForm } from "@/components/auto-submit-form";
 import { FilterBar } from "@/components/filter-bar";
 import { EmptyState } from "@/components/empty-state";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
 import { Pagination } from "@/components/pagination";
 import { ChipSac } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
@@ -47,26 +48,29 @@ export default async function ReceiptsPage({ params, searchParams }: { params: P
     <div>
       <PageHeader
         title="Nhập hàng"
-        description="Phiếu nhập theo cửa hàng. Chỉ phiếu đã xác nhận mới cộng tồn và sinh công nợ."
+        description={<GoiY label="Phiếu nhập">Chỉ phiếu đã xác nhận mới cộng tồn và sinh công nợ.</GoiY>}
         actions={canCreate && <Button render={<Link href={`/${store.code}/receipts/new`} />}>Tạo phiếu nhập</Button>}
       />
       <AutoSubmitForm action={`/${store.code}/receipts`} className="mb-3">
         <FilterBar>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-[160px_220px_150px_150px]">
-            <NativeSelect name="status" defaultValue={sp.status ?? ""} aria-label="Trạng thái">
-              <option value="">Mọi trạng thái</option>
-              <option value="draft">Nháp</option>
-              <option value="confirmed">Đã nhập kho</option>
-              <option value="cancelled">Đã hủy</option>
-            </NativeSelect>
-            <NativeSelect name="supplier" defaultValue={sp.supplier ?? ""} aria-label="Nhà cung cấp">
-              <option value="">Mọi nhà cung cấp</option>
-              {(suppliers ?? []).map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </NativeSelect>
+            <LuaChon
+              name="status"
+              defaultValue={sp.status ?? ""}
+              aria-label="Trạng thái"
+              options={[
+                { value: "", label: "Mọi trạng thái" },
+                { value: "draft", label: "Nháp" },
+                { value: "confirmed", label: "Đã nhập kho" },
+                { value: "cancelled", label: "Đã hủy" },
+              ]}
+            />
+            <LuaChon
+              name="supplier"
+              defaultValue={sp.supplier ?? ""}
+              aria-label="Nhà cung cấp"
+              options={[{ value: "", label: "Mọi nhà cung cấp" }, ...(suppliers ?? []).map((s) => ({ value: s.id, label: s.name }))]}
+            />
             <Input type="date" name="from" defaultValue={sp.from} aria-label="Từ ngày" />
             <Input type="date" name="to" defaultValue={sp.to} aria-label="Đến ngày" />
           </div>

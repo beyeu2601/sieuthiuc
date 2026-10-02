@@ -78,7 +78,7 @@ export default async function StoreHome({ params }: { params: Promise<{ store: s
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h1 className="font-heading text-[32px] leading-tight font-bold tracking-wide">Xin chào, {ctx.profile.full_name}</h1>
         <p className="text-sm text-muted-foreground">
@@ -92,12 +92,12 @@ export default async function StoreHome({ params }: { params: Promise<{ store: s
             href={`/${store.code}/pos`}
             className="group flex min-h-28 items-center gap-4 rounded-2xl bg-primary p-5 text-primary-foreground shadow-md transition-colors hover:bg-primary-hover focus-visible:ring-4 focus-visible:ring-ring/40 focus-visible:outline-none"
           >
-            <span className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-white/15" aria-hidden>
+            <span className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-primary-foreground/15" aria-hidden>
               <ShoppingCartIcon className="size-7" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block font-heading text-3xl leading-none font-bold tracking-wide">Bán hàng</span>
-              <span className="mt-1 block text-sm text-white/85">{myShift ? `Ca ${myShift.code} đang mở` : "Mở ca và bắt đầu bán"}</span>
+              <span className="mt-1 block text-sm text-primary-foreground/85">{myShift ? `Ca ${myShift.code} đang mở` : "Mở ca và bắt đầu bán"}</span>
             </span>
             <ChevronRightIcon className="size-6 opacity-70 transition-transform group-hover:translate-x-0.5" aria-hidden />
           </Link>
@@ -150,7 +150,7 @@ export default async function StoreHome({ params }: { params: Promise<{ store: s
           Cần chú ý
         </h2>
         {alerts.length === 0 ? (
-          <p className="flex items-center gap-2 rounded-xl bg-success-soft px-4 py-3 text-sm font-medium text-success">
+          <p className="flex items-center gap-2 rounded-xl border border-vien-emerald bg-nen-emerald px-4 py-3 text-sm font-medium text-chu-emerald">
             <CheckCircle2Icon className="size-5" aria-hidden />
             Không có cảnh báo nào.
           </p>

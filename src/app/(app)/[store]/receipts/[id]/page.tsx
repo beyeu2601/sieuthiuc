@@ -3,14 +3,18 @@ import { notFound } from "next/navigation";
 import { hasPerm, requireStore } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime, formatMoney, formatNumber } from "@/lib/format";
+import { formatDateVN, todayVN } from "@/lib/dates";
 import { GOODS_TYPE_LABEL } from "@/lib/text";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { PageHeader } from "@/components/page-header";
-import { ChipSac } from "@/components/ui/chip";
+import { Khoi } from "@/components/khoi";
+import { ChipSac, type SacNguNghia } from "@/components/ui/chip";
+import { ChiSo, HangChiSo } from "@/components/ui/chi-so";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReceiptEditor, type EditorLine } from "../receipt-editor";
 import { ReopenButton } from "../reopen-button";
-import { RECEIPT_STATUS, PAYMENT_METHOD_LABEL } from "../labels";
+import { ALLOCATION_LABEL, COST_TYPE_LABEL, RECEIPT_STATUS, PAYMENT_METHOD_LABEL } from "../labels";
 
 type Item = {
   id: string;
@@ -127,126 +131,222 @@ export default async function ReceiptPage({
   const st = RECEIPT_STATUS[r.status as keyof typeof RECEIPT_STATUS];
   const remaining = r.total - r.paid_amount;
   const canReopen = r.status === "confirmed" && ["sadmin", "admin"].includes(ctx.profile.role);
+  const confirmed = r.status === "confirmed";
+  const overdue = confirmed && remaining > 0 && !!r.due_date && String(r.due_date).slice(0, 10) < todayVN();
+  const debtSac: SacNguNghia = !confirmed ? "slate" : remaining <= 0 ? "emerald" : overdue ? "red" : "amber";
+  const costRows = costs ?? [];
+  const productCount = ids.length;
+  const methodLabel = r.payment_method ? PAYMENT_METHOD_LABEL[r.payment_method as keyof typeof PAYMENT_METHOD_LABEL] : null;
+  const creator = (r.creator as unknown as { full_name: string } | null)?.full_name ?? "-";
+  const confirmer = (r.confirmer as unknown as { full_name: string } | null)?.full_name ?? "-";
+
   return (
     <div className="space-y-4">
       <PageHeader
         title={`Phiếu nhập ${r.code}`}
         description={
-          <span className="flex flex-wrap items-center gap-2">
+          <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <ChipSac sac={st.sac}>{st.label}</ChipSac>
-            {supplier?.name} - ngày {new Date(r.receipt_date).toLocaleDateString("vi-VN")}
-            {r.invoice_no ? ` - HĐ ${r.invoice_no}` : ""}
+            {supplier && <ChipSac sac="slate">{supplier.name}</ChipSac>}
+            <ChipSac sac="slate">Ngày {formatDateVN(r.receipt_date)}</ChipSac>
+            {r.invoice_no && <ChipSac sac="slate">HĐ {r.invoice_no}</ChipSac>}
+            {overdue && (
+              <ChipSac sac="red" dam>
+                Quá hạn trả
+              </ChipSac>
+            )}
           </span>
         }
         actions={canReopen ? <ReopenButton storeCode={store.code} receiptId={r.id} /> : undefined}
       />
       {r.status === "cancelled" && (
-        <p className="rounded-lg bg-muted px-3 py-2 text-sm">Đã hủy. Lý do: {r.cancel_reason}</p>
+        <p className="rounded-lg border border-vien-red bg-nen-red px-3 py-2 text-sm text-chu-red">Đã hủy. Lý do: {r.cancel_reason}</p>
       )}
-      <MobileCardList label="Dòng hàng">
-        {rows.map((i) => (
-          <MobileCard
-            key={i.id}
-            title={`${i.line_no}. ${i.products?.name ?? ""}`}
-            subtitle={`${i.products?.sku} - ${GOODS_TYPE_LABEL[i.goods_type]} - Lô ${i.lot_no ?? r.code}`}
-            stats={[
-              { label: "SL", value: `${formatNumber(i.qty)} ${i.unit}`, strong: true },
-              { label: "Đơn giá", value: formatMoney(i.unit_cost) },
-              { label: "Thành tiền", value: formatMoney(i.line_total) },
-              { label: "CP phân bổ", value: formatMoney(i.allocated_cost) },
-              { label: "Giá vốn nhập", value: formatMoney(i.landed_unit_cost) },
-              { label: "HSD", value: i.expiry_date ? new Date(i.expiry_date).toLocaleDateString("vi-VN") : "-" },
-            ]}
-          />
-        ))}
-      </MobileCardList>
-      <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>#</TableHead>
-              <TableHead className="min-w-56">Sản phẩm</TableHead>
-              <TableHead className="text-right">SL</TableHead>
-              <TableHead className="text-right">Đơn giá</TableHead>
-              <TableHead className="text-right">Thành tiền</TableHead>
-              <TableHead className="text-right">CP phân bổ</TableHead>
-              <TableHead className="text-right">Giá vốn nhập</TableHead>
-              <TableHead>Lô</TableHead>
-              <TableHead>HSD</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((i) => (
-              <TableRow key={i.id}>
-                <TableCell>{i.line_no}</TableCell>
-                <TableCell className="min-w-56 whitespace-normal">
-                  {i.products?.name}
-                  <div className="text-xs text-muted-foreground">
-                    {i.products?.sku} - {GOODS_TYPE_LABEL[i.goods_type]}
-                  </div>
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {formatNumber(i.qty)} {i.unit}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">{formatMoney(i.unit_cost)}</TableCell>
-                <TableCell className="text-right tabular-nums">{formatMoney(i.line_total)}</TableCell>
-                <TableCell className="text-right tabular-nums">{formatMoney(i.allocated_cost)}</TableCell>
-                <TableCell className="text-right tabular-nums">{formatMoney(i.landed_unit_cost)}</TableCell>
-                <TableCell>{i.lot_no ?? r.code}</TableCell>
-                <TableCell>{i.expiry_date ? new Date(i.expiry_date).toLocaleDateString("vi-VN") : "-"}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-xl border bg-card p-4 text-sm">
-          <dl className="grid grid-cols-2 gap-y-1">
-            <dt>Tiền hàng</dt>
-            <dd className="text-right tabular-nums">{formatMoney(r.subtotal)}</dd>
-            <dt>Chi phí kèm theo</dt>
-            <dd className="text-right tabular-nums">{formatMoney(r.extra_cost_total)}</dd>
-            <dt className="font-medium">Tổng phiếu</dt>
-            <dd className="text-right font-medium tabular-nums">{formatMoney(r.total)}</dd>
-            {r.status === "confirmed" && (
-              <>
-                <dt>Đã trả</dt>
-                <dd className="text-right tabular-nums">
-                  {formatMoney(r.paid_amount)}
-                  {r.payment_method ? ` (${PAYMENT_METHOD_LABEL[r.payment_method as keyof typeof PAYMENT_METHOD_LABEL]})` : ""}
-                </dd>
-                <dt>Còn nợ</dt>
-                <dd className="text-right tabular-nums">{formatMoney(remaining)}</dd>
-                {remaining > 0 && r.due_date && (
-                  <>
-                    <dt>Hạn thanh toán</dt>
-                    <dd className="text-right">{new Date(r.due_date).toLocaleDateString("vi-VN")}</dd>
-                  </>
-                )}
-              </>
+
+      <HangChiSo>
+        <ChiSo
+          nhan="Tổng phiếu"
+          sac="brand"
+          giaTri={formatMoney(r.total)}
+          phu={`Hàng ${formatMoney(r.subtotal)} + chi phí ${formatMoney(r.extra_cost_total)}`}
+        />
+        <ChiSo
+          nhan={!confirmed ? "Công nợ" : remaining <= 0 ? "Đã trả đủ" : overdue ? "Còn nợ: quá hạn" : "Còn nợ"}
+          sac={debtSac}
+          giaTri={confirmed ? formatMoney(remaining) : "-"}
+          phu={
+            !confirmed
+              ? r.status === "cancelled"
+                ? "Phiếu đã hủy"
+                : "Chưa nhập kho"
+              : `Đã trả ${formatMoney(r.paid_amount)}${methodLabel ? ` (${methodLabel})` : ""}${remaining > 0 && r.due_date ? ` - hạn ${formatDateVN(r.due_date)}` : ""}`
+          }
+        />
+        <ChiSo nhan="Dòng hàng" sac="slate" giaTri={formatNumber(rows.length)} phu={`${formatNumber(productCount)} sản phẩm`} />
+      </HangChiSo>
+
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
+        <section className="min-w-0 rounded-xl border bg-card p-4">
+          <Tabs defaultValue="items">
+            <TabsList>
+              <TabsTrigger value="items" className="px-3">
+                Dòng hàng ({rows.length})
+              </TabsTrigger>
+              <TabsTrigger value="costs" className="px-3">
+                Chi phí kèm theo ({costRows.length})
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="items" className="pt-2">
+              <MobileCardList label="Dòng hàng">
+                {rows.map((i) => (
+                  <MobileCard
+                    key={i.id}
+                    title={`${i.line_no}. ${i.products?.name ?? ""}`}
+                    subtitle={`${i.products?.sku} - ${GOODS_TYPE_LABEL[i.goods_type]} - Lô ${i.lot_no ?? r.code}`}
+                    stats={[
+                      { label: "SL", value: `${formatNumber(i.qty)} ${i.unit}`, strong: true },
+                      { label: "Đơn giá", value: formatMoney(i.unit_cost) },
+                      { label: "Thành tiền", value: formatMoney(i.line_total) },
+                      { label: "CP phân bổ", value: formatMoney(i.allocated_cost) },
+                      { label: "Giá vốn nhập", value: formatMoney(i.landed_unit_cost) },
+                      { label: "HSD", value: i.expiry_date ? new Date(i.expiry_date).toLocaleDateString("vi-VN") : "-" },
+                    ]}
+                  />
+                ))}
+              </MobileCardList>
+              <div className="hidden overflow-x-auto md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>#</TableHead>
+                      <TableHead className="min-w-56">Sản phẩm</TableHead>
+                      <TableHead className="text-right">SL</TableHead>
+                      <TableHead className="text-right">Đơn giá</TableHead>
+                      <TableHead className="text-right">Thành tiền</TableHead>
+                      <TableHead className="text-right">CP phân bổ</TableHead>
+                      <TableHead className="text-right">Giá vốn nhập</TableHead>
+                      <TableHead>Lô</TableHead>
+                      <TableHead>HSD</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((i) => (
+                      <TableRow key={i.id}>
+                        <TableCell>{i.line_no}</TableCell>
+                        <TableCell className="min-w-56 whitespace-normal">
+                          {i.products?.name}
+                          <div className="text-xs text-muted-foreground">
+                            {i.products?.sku} - {GOODS_TYPE_LABEL[i.goods_type]}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {formatNumber(i.qty)} {i.unit}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{formatMoney(i.unit_cost)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatMoney(i.line_total)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatMoney(i.allocated_cost)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatMoney(i.landed_unit_cost)}</TableCell>
+                        <TableCell>{i.lot_no ?? r.code}</TableCell>
+                        <TableCell>{i.expiry_date ? new Date(i.expiry_date).toLocaleDateString("vi-VN") : "-"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+            <TabsContent value="costs" className="pt-2">
+              {costRows.length === 0 ? (
+                <p className="py-4 text-muted-foreground">Không có chi phí kèm theo.</p>
+              ) : (
+                <ul className="divide-y">
+                  {costRows.map((c) => (
+                    <li key={c.id} className="flex items-baseline justify-between gap-3 py-2">
+                      <span className="min-w-0">
+                        {COST_TYPE_LABEL[c.cost_type] ?? c.cost_type}
+                        <span className="block text-xs text-muted-foreground">
+                          Phân bổ {(ALLOCATION_LABEL[c.allocation] ?? c.allocation).toLowerCase()}
+                          {c.note ? ` - ${c.note}` : ""}
+                        </span>
+                      </span>
+                      <span className="shrink-0 tabular-nums">{formatMoney(c.amount)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </TabsContent>
+          </Tabs>
+        </section>
+
+        <div className="min-w-0 space-y-4">
+          <Khoi title="Thanh toán">
+            <dl className="grid grid-cols-2 gap-y-1 text-sm">
+              <dt>Tiền hàng</dt>
+              <dd className="text-right tabular-nums">{formatMoney(r.subtotal)}</dd>
+              <dt>Chi phí kèm theo</dt>
+              <dd className="text-right tabular-nums">{formatMoney(r.extra_cost_total)}</dd>
+              <dt className="font-medium">Tổng phiếu</dt>
+              <dd className="text-right font-medium tabular-nums">{formatMoney(r.total)}</dd>
+              {confirmed && (
+                <>
+                  <dt>Đã trả</dt>
+                  <dd className="text-right tabular-nums">
+                    {formatMoney(r.paid_amount)}
+                    {methodLabel ? ` (${methodLabel})` : ""}
+                  </dd>
+                  <dt>Còn nợ</dt>
+                  <dd className="text-right tabular-nums">{formatMoney(remaining)}</dd>
+                  {remaining > 0 && r.due_date && (
+                    <>
+                      <dt>Hạn thanh toán</dt>
+                      <dd className={overdue ? "text-right font-medium text-chu-red" : "text-right"}>{formatDateVN(r.due_date)}</dd>
+                    </>
+                  )}
+                </>
+              )}
+            </dl>
+            {confirmed && remaining > 0 && ctx.profile.role !== "staff" && (
+              <Link href={`/${store.code}/payables`} className="mt-2 inline-block text-sm underline underline-offset-4">
+                Xem công nợ
+              </Link>
             )}
-          </dl>
-          {r.status === "confirmed" && remaining > 0 && ctx.profile.role !== "staff" && (
-            <Link href={`/${store.code}/payables`} className="mt-2 inline-block text-sm underline underline-offset-4">
-              Xem công nợ
-            </Link>
-          )}
-        </div>
-        <div className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">
-          <p>Người tạo: {(r.creator as unknown as { full_name: string } | null)?.full_name ?? "-"} - {formatDateTime(r.created_at)}</p>
-          {r.confirmed_at && (
-            <p>
-              Xác nhận: {(r.confirmer as unknown as { full_name: string } | null)?.full_name ?? "-"} - {formatDateTime(r.confirmed_at)}
-            </p>
-          )}
-          {r.note && <p className="mt-2 text-foreground">Ghi chú: {r.note}</p>}
-          {r.status === "confirmed" && (
-            <p className="mt-2">
-              {canReopen
-                ? 'Cần sửa số lượng/giá/HSD thì bấm "Sửa phiếu" ở trên để mở lại phiếu (đảo tồn và công nợ, đưa về nháp). Chỉ làm được khi hàng chưa bán/chuyển và phiếu chưa thanh toán; nếu không, dùng phiếu điều chỉnh tồn kho.'
-                : "Phiếu đã xác nhận không sửa được. Sai số lượng thì dùng phiếu điều chỉnh tồn kho."}
-            </p>
-          )}
+          </Khoi>
+
+          <Khoi title="Thông tin">
+            <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+              <dt className="text-muted-foreground">Người tạo</dt>
+              <dd className="text-right">
+                {creator}
+                <span className="block text-xs text-muted-foreground">{formatDateTime(r.created_at)}</span>
+              </dd>
+              {r.confirmed_at && (
+                <>
+                  <dt className="text-muted-foreground">Xác nhận</dt>
+                  <dd className="text-right">
+                    {confirmer}
+                    <span className="block text-xs text-muted-foreground">{formatDateTime(r.confirmed_at)}</span>
+                  </dd>
+                </>
+              )}
+              {r.note && (
+                <>
+                  <dt className="text-muted-foreground">Ghi chú</dt>
+                  <dd className="text-right whitespace-pre-line">{r.note}</dd>
+                </>
+              )}
+            </dl>
+            {confirmed && (
+              <p
+                className="mt-3 border-t pt-2 text-xs text-muted-foreground"
+                title={
+                  canReopen
+                    ? 'Bấm "Sửa phiếu" ở đầu trang để mở lại phiếu về nháp (đảo tồn và công nợ). Chỉ làm được khi hàng chưa bán/chuyển và phiếu chưa thanh toán.'
+                    : undefined
+                }
+              >
+                {canReopen ? "Không mở lại được thì dùng phiếu điều chỉnh tồn kho." : "Đã xác nhận, không sửa được. Sai số lượng thì dùng điều chỉnh tồn kho."}
+              </p>
+            )}
+          </Khoi>
         </div>
       </div>
     </div>

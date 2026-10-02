@@ -3,6 +3,7 @@ import { requireStore } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { todayVN } from "@/lib/dates";
 import { PageHeader } from "@/components/page-header";
+import { ChipSac } from "@/components/ui/chip";
 import { CashForm } from "../../new/cash-form";
 import type { CashPayload } from "../../actions";
 
@@ -25,11 +26,18 @@ export default async function EditCashPage({ params }: { params: Promise<{ store
   if (!t) notFound();
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-5xl">
       <PageHeader
         title={`Sửa ${t.code}`}
         back={{ href: `/${store.code}/cash`, label: "Danh sách thu chi" }}
-        description="Thay đổi chỉ áp dụng khi người giữ tài khoản duyệt. Trong lúc chờ, khoản này giữ nguyên số cũ."
+        description={
+          <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <ChipSac sac={t.kind === "income" ? "emerald" : "rose"}>{t.kind === "income" ? "Khoản thu" : "Khoản chi"}</ChipSac>
+            <ChipSac sac="amber" title="Thay đổi chỉ áp dụng khi người giữ tài khoản duyệt. Trong lúc chờ, khoản này giữ nguyên số cũ.">
+              Chờ người giữ duyệt mới áp dụng
+            </ChipSac>
+          </span>
+        }
       />
       <CashForm
         storeId={store.id}

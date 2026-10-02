@@ -23,12 +23,8 @@ export function PinForm({ hasPin }: { hasPin: boolean }) {
       }}
       className="space-y-3"
     >
-      <p className="text-sm text-muted-foreground">
-        Dùng khi nhân viên giảm giá vượt hạn mức tại quầy: bạn nhập tên đăng nhập và PIN trên máy bán hàng.
-        {hasPin ? " Bạn đã có PIN, nhập PIN mới để đổi." : " Bạn chưa đặt PIN."}
-      </p>
       <div className="space-y-1.5">
-        <Label htmlFor="pin">Mã PIN (4-8 chữ số)</Label>
+        <Label htmlFor="pin">{hasPin ? "Mã PIN mới (4-8 chữ số)" : "Mã PIN (4-8 chữ số)"}</Label>
         <Input
           id="pin"
           type="password"
@@ -38,6 +34,12 @@ export function PinForm({ hasPin }: { hasPin: boolean }) {
           onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 8))}
           className="w-40"
         />
+        <p
+          className="text-xs text-muted-foreground"
+          title="Khi nhân viên giảm giá vượt hạn mức tại quầy, bạn nhập tên đăng nhập và PIN trên máy bán hàng."
+        >
+          Nhập trên máy bán hàng khi giảm giá vượt hạn mức.
+        </p>
       </div>
       <Button type="submit" disabled={pending || pin.length < 4}>
         Lưu PIN
