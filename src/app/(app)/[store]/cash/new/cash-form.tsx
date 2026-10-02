@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-const kindForMethod: Record<CashPayload["method"], string> = { cash: "cash", transfer: "bank", other: "ewallet" };
+// Phuong thuc suy ra tu loai tai khoan nguoi dung bam chon
+const methodForKind = (kind: string): CashPayload["method"] => (kind === "cash" ? "cash" : kind === "bank" ? "transfer" : "other");
 
 export function CashForm({
   storeId,
@@ -34,21 +35,20 @@ export function CashForm({
   edit?: { id: string; initial: Omit<CashPayload, "store_id" | "payment_status" | "record_in_shift"> };
 }) {
   const router = useRouter();
-  const pickAccount = (method: CashPayload["method"]) =>
-    accounts.find((a) => a.kind === kindForMethod[method])?.id ?? accounts[0]?.id ?? "";
+  const defaultAccount = accounts.find((a) => a.kind === "cash") ?? accounts[0];
   const [v, setV] = useState<Omit<CashPayload, "store_id" | "amount"> & { amount: number | null }>({
     kind: "expense",
     category_id: "",
     occurred_on: today,
     description: "",
     amount: null,
-    method: "cash",
+    method: defaultAccount ? methodForKind(defaultAccount.kind) : "cash",
     counterparty: null,
     doc_no: null,
     note: null,
     payment_status: "paid",
     record_in_shift: isStaff || openShiftCode !== null,
-    account_id: pickAccount("cash") || null,
+    account_id: defaultAccount?.id ?? null,
     ...edit?.initial,
   });
   const [reason, setReason] = useState("");
@@ -120,21 +120,35 @@ export function CashForm({
           <Label htmlFor="desc">Nội dung *</Label>
           <Input id="desc" value={v.description} onChange={(e) => setV({ ...v, description: e.target.value })} placeholder="Ví dụ: Tiền điện tháng 9" />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="method">Phương thức</Label>
-          <NativeSelect
-            id="method"
-            value={v.method}
-            onChange={(e) => {
-              const method = e.target.value as CashPayload["method"];
-              setV((s) => ({ ...s, method, account_id: pickAccount(method) || s.account_id }));
-            }}
-          >
-            <option value="cash">Tiền mặt</option>
-            <option value="transfer">Chuyển khoản</option>
-            <option value="other">Khác</option>
-          </NativeSelect>
-        </div>
+        <fieldset className="space-y-1.5 sm:col-span-2">
+          <legend className="mb-1.5 text-sm font-medium">{accounts.length > 0 ? "Tài khoản giữ tiền *" : "Phương thức"}</legend>
+          <div className="flex flex-wrap gap-2">
+            {(accounts.length > 0
+              ? accounts.map((a) => ({ key: a.id, label: a.name, account_id: a.id as string | null, method: methodForKind(a.kind) }))
+              : (
+                  [
+                    ["cash", "Tiền mặt"],
+                    ["transfer", "Chuyển khoản"],
+                    ["other", "Khác"],
+                  ] as const
+                ).map(([m, label]) => ({ key: m, label, account_id: null, method: m as CashPayload["method"] }))
+            ).map((o) => (
+              <label
+                key={o.key}
+                className="inline-flex min-h-11 cursor-pointer select-none items-center rounded-full border px-4 text-sm transition-colors hover:bg-accent has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring"
+              >
+                <input
+                  type="radio"
+                  name="acc"
+                  className="sr-only"
+                  checked={accounts.length > 0 ? v.account_id === o.account_id : v.method === o.method}
+                  onChange={() => setV((s) => ({ ...s, method: o.method, account_id: o.account_id }))}
+                />
+                {o.label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
         {!isStaff && (
           <>
             {!edit && (
@@ -169,19 +183,6 @@ export function CashForm({
         )}
         {isStaff && !edit && v.method === "cash" && openShiftCode && (
           <p className="text-sm text-muted-foreground sm:col-span-2">Tiền mặt tính vào két của ca {openShiftCode} sau khi được duyệt.</p>
-        )}
-        {accounts.length > 0 && (
-          <div className="space-y-1.5">
-            <Label htmlFor="acc">Tài khoản giữ tiền *</Label>
-            <NativeSelect id="acc" value={v.account_id ?? ""} onChange={(e) => setV({ ...v, account_id: e.target.value || null })}>
-              <option value="">Chọn tài khoản</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </NativeSelect>
-          </div>
         )}
         <div className="space-y-1.5 sm:col-span-2">
           <Label htmlFor="cnote">Ghi chú</Label>
