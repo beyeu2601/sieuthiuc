@@ -40,3 +40,49 @@ export async function changeOrderStatus(
   revalidatePath(`/${storeCode}/orders/${id}`);
   return { ok: true };
 }
+
+// Hoan hang don da giao: bo doanh thu, hang cho quan ly kiem moi vao lai kho
+export async function returnOrder(storeCode: string, id: string, reason: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("return_order", { p_order_id: id, p_reason: reason });
+  if (error) return { ok: false, error: errorMessage(error) };
+  revalidatePath(`/${storeCode}/orders`);
+  revalidatePath(`/${storeCode}/orders/${id}`);
+  return { ok: true };
+}
+
+export async function reviewReturn(storeCode: string, id: string, restock: boolean, note: string | null): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("review_order_return", { p_order_id: id, p_restock: restock, p_note: note });
+  if (error) return { ok: false, error: errorMessage(error) };
+  revalidatePath(`/${storeCode}/orders`);
+  revalidatePath(`/${storeCode}/orders/${id}`);
+  return { ok: true };
+}
+
+export type PayoutPayload = {
+  store_id: string;
+  account_id: string;
+  received_on: string;
+  amount_received: number;
+  ads_amount: number;
+  note: string | null;
+  order_ids: string[];
+};
+
+export async function recordPayout(storeCode: string, p: PayoutPayload): Promise<ActionResult<{ id: string; code: string }>> {
+  if (p.order_ids.length === 0) return { ok: false, error: "Chọn ít nhất một đơn" };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("record_platform_payout", { p: { ...p, channel: "shopee" } });
+  if (error) return { ok: false, error: errorMessage(error) };
+  revalidatePath(`/${storeCode}/orders`, "layout");
+  return { ok: true, data: data as { id: string; code: string } };
+}
+
+export async function cancelPayout(storeCode: string, id: string, reason: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("cancel_platform_payout", { p_payout_id: id, p_reason: reason });
+  if (error) return { ok: false, error: errorMessage(error) };
+  revalidatePath(`/${storeCode}/orders`, "layout");
+  return { ok: true };
+}

@@ -98,13 +98,14 @@ Cơ chế:
 | `20261004000001` | Tìm sản phẩm linh hoạt: `catalog_search` tách câu tìm thành các từ, yêu cầu mọi từ đều có trong `search_key` (không cần đúng thứ tự); vẫn ưu tiên khớp mã vạch và SKU |
 | `20261005000001` | Nhập nhiều HSD cho một mặt hàng trong cùng phiếu: `confirm_purchase_receipt` tự đặt số lô `{mã phiếu}-1`, `{mã phiếu}-2`... cho các dòng cùng sản phẩm để trống số lô, mỗi HSD thành một lô riêng |
 | `20261007000001` | Chỉnh trực tiếp tồn kho và giá vốn: `adjust_product_stock` (sadmin/admin của cửa hàng) |
+| `20261008000001` | Đối soát tiền Shopee và hoàn hàng: bảng `platform_payouts`, cột `orders.payout_id`, `orders.return_*`, `cash_transactions.payout_id`; nhóm chi `Phí sàn Shopee`, `Quảng cáo Shopee`; `record_platform_payout`, `cancel_platform_payout`, `return_order`, `review_order_return` |
 
 Các RPC chính theo nghiệp vụ:
 
 - Bán hàng: `complete_sale` (idempotent theo khóa, giá lấy từ DB, FEFO, khóa tồn theo thứ tự sản phẩm), `cancel_sale`, `request_discount_approval`.
 - Ca: `open_shift`, `close_shift`, `approve_shift`, `adjust_shift_count`, `shift_expected_cash`, `shift_summary`.
 - Kho: `adjust_product_stock`, `save_purchase_receipt`, `confirm_purchase_receipt`, `cancel_purchase_receipt`, `save_transfer`, `send_transfer`, `receive_transfer`, `cancel_transfer`.
-- Đơn online: `create_order`, `update_order_status` (giao thành công tạo giao dịch bán theo kênh), `reconcile_reservations`.
+- Đơn online: `create_order`, `update_order_status` (giao thành công tạo giao dịch bán theo kênh), `reconcile_reservations`, `return_order`, `review_order_return`, `record_platform_payout`, `cancel_platform_payout`.
 - Tài chính: `record_supplier_payment`, `debt_overview`, `create_cash_transaction`, `review_cash_transaction`, `mark_cash_transaction_paid`, `reconcile_report`, `save_reconciliation_note`.
 - Báo cáo: `pnl_report`, `pnl_daily`, `revenue_breakdown`, `cogs_report`, `expense_report`, `best_sellers`, `inventory_status`, `inventory_period`, `lot_expiry`, `stock_movement_list`.
 
@@ -178,6 +179,8 @@ Khác biệt kỹ thuật so với SPEC:
 - Nhóm hàng bỏ cấu hình % Benefit ở giao diện; sản phẩm đặt giá theo % Benefit dùng % riêng. Hạng thành viên tạm ẩn khỏi Cài đặt (trang `/settings/loyalty` vẫn còn).
 - Thanh bên trên máy tính có thể ẩn/hiện, lưu lựa chọn trong localStorage.
 - Nhập một mặt hàng nhiều hạn dùng trong cùng một phiếu: trên màn phiếu nhập bấm "+ Thêm lô/date khác" để tạo thêm dòng cho cùng sản phẩm (SL/lô/HSD nhập riêng, chép sẵn đơn giá và giá bán). Khi xác nhận, các dòng cùng sản phẩm để trống số lô được tự đặt số lô `{mã phiếu}-1`, `{mã phiếu}-2`... nên mỗi HSD thành một lô riêng; dòng đơn lẻ vẫn dùng số lô mặc định là mã phiếu. Quét lại cùng mã vạch vẫn cộng dồn vào dòng đầu.
+- Tiền Shopee (khách yêu cầu 02/10/2026): Shopee trả theo đợt vào ngân hàng, gộp nhiều đơn, đã trừ phí sàn. Doanh thu vẫn ghi lúc giao thành công; đơn Shopee đã giao hiện "Chờ Shopee trả" và chưa vào số dư tài khoản nào. Màn Đơn online > Đối soát Shopee (sadmin/admin/kế toán): tick các đơn trong đợt, nhập số tiền thực nhận, tiền Shopee trừ nạp quảng cáo (nếu có), ngày và tài khoản. Tiền bán của các đơn gắn vào tài khoản; chênh lệch ghi khoản chi "Phí sàn Shopee", quảng cáo ghi "Quảng cáo Shopee"; nếu Shopee trả dư thì ghi "Thu khác". App không tự tính phí vì biểu phí Shopee thay đổi theo ngành hàng và chương trình. Cửa hàng là công ty TNHH nên không có dòng thuế sàn khấu trừ (chỉ áp cho hộ kinh doanh). sadmin/admin hủy được đợt nhập sai: đơn trở về chờ trả, khoản chi sinh từ đợt bị xóa.
+- Hoàn hàng đơn online: đơn đã giao, chưa đối soát nhận tiền mới hoàn được (có lý do). Giao dịch bán bị hủy (bỏ doanh thu và giá vốn) nhưng hàng chưa vào kho; sadmin/admin kiểm hàng rồi chọn nhập lại kho (trả về đúng lô đã xuất) hoặc không nhập (hàng hỏng, có lý do). Hàng không nhập kho chưa được ghi vào lãi lỗ như khoản hao hụt.
 - Giá cận date: mỗi sản phẩm gán loại date ngắn (ngưỡng 15 ngày) hoặc dài (ngưỡng 60 ngày), mặc định dài. Khi lô còn dưới ngưỡng, màn Hạn sử dụng đề xuất giá bán = giá vốn lô + phụ thu (mặc định 50.000₫); chỉ gợi ý, không tự ghi đè `products.sell_price`. Giá đề xuất ẩn với nhân viên (lộ giá vốn). sadmin sửa ngưỡng 15/60 và phụ thu ở Cài đặt > Cấu hình (nhóm "Cận date và giá giảm"); `inventory.near_expiry_days` không còn dùng cho màn này.
 
 ## 8. Phạm vi P0 đã làm

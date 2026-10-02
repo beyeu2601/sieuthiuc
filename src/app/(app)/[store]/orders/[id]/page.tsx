@@ -6,7 +6,7 @@ import { formatDateTime, formatMoney, formatNumber } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ONLINE_CHANNELS, ORDER_STATUS } from "../labels";
+import { ONLINE_CHANNELS, ORDER_STATUS, RETURN_STATUS } from "../labels";
 import { OrderActions } from "./order-actions";
 
 export default async function OrderPage({ params }: { params: Promise<{ store: string; id: string }> }) {
@@ -15,14 +15,18 @@ export default async function OrderPage({ params }: { params: Promise<{ store: s
   const supabase = await createClient();
   const { data: o } = await supabase
     .from("orders")
-    .select("id, code, channel, external_order_id, customer_name, customer_phone, shipping_address, status, subtotal, shipping_fee, discount_amount, total, payment_method, sale_id, note, cancel_reason, created_at")
+    .select("id, code, channel, external_order_id, customer_name, customer_phone, shipping_address, status, subtotal, shipping_fee, discount_amount, total, payment_method, sale_id, note, cancel_reason, created_at, payout_id, return_reason, return_status, return_checked_at, return_check_note")
     .eq("id", id)
     .eq("store_id", store.id)
     .maybeSingle();
   if (!o) notFound();
-  const [{ data: items }, { data: history }] = await Promise.all([
+  const [{ data: items }, { data: history }, { data: payout }] = await Promise.all([
     supabase.from("order_items").select("id, product_id, qty, unit_price").eq("order_id", id),
     supabase.from("order_status_history").select("id, to_status, changed_at, note, profiles:changed_by(full_name)").eq("order_id", id).order("changed_at"),
+    // Nhan vien khong doc duoc bang doi soat (RLS) -> chi hien "Đã nhận tiền"
+    o.payout_id
+      ? supabase.from("platform_payouts").select("id, code, received_on").eq("id", o.payout_id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
   const ids = [...new Set((items ?? []).map((i) => i.product_id))];
   const { data: prods } = ids.length ? await supabase.rpc("catalog_by_ids", { p_ids: ids }) : { data: [] };
@@ -48,6 +52,14 @@ export default async function OrderPage({ params }: { params: Promise<{ store: s
           <p className="text-muted-foreground">{o.shipping_address ?? ""}</p>
           {o.note && <p className="mt-2">Ghi chú: {o.note}</p>}
           {o.cancel_reason && <p className="mt-2 text-destructive">Lý do hủy: {o.cancel_reason}</p>}
+          {o.return_reason && <p className="mt-2 text-destructive">Lý do hoàn hàng: {o.return_reason}</p>}
+          {o.return_status && (
+            <p className="mt-1">
+              Hàng hoàn: {RETURN_STATUS[o.return_status as keyof typeof RETURN_STATUS]}
+              {o.return_checked_at ? ` (${formatDateTime(o.return_checked_at)})` : ""}
+              {o.return_check_note ? ` - ${o.return_check_note}` : ""}
+            </p>
+          )}
         </div>
         <div className="rounded-xl border bg-card p-4 text-sm">
           <dl className="grid grid-cols-2 gap-y-1">
@@ -60,6 +72,22 @@ export default async function OrderPage({ params }: { params: Promise<{ store: s
             <dt className="font-semibold">Tổng đơn</dt>
             <dd className="text-right font-semibold tabular-nums">{formatMoney(o.total)}</dd>
           </dl>
+          {o.channel === "shopee" && o.status === "delivered" && (
+            <p className="mt-2">
+              Tiền Shopee:{" "}
+              {o.payout_id ? (
+                payout ? (
+                  <Link href={`/${store.code}/orders/payouts/${payout.id}`} className="underline underline-offset-4">
+                    Đã nhận tiền đợt {payout.code}
+                  </Link>
+                ) : (
+                  "Đã nhận tiền"
+                )
+              ) : (
+                <span className="font-medium">Chờ Shopee trả</span>
+              )}
+            </p>
+          )}
           {o.sale_id && (
             <Link href={`/${store.code}/sales/${o.sale_id}`} className="mt-2 inline-block underline underline-offset-4">
               Xem giao dịch bán đã ghi nhận
@@ -94,7 +122,16 @@ export default async function OrderPage({ params }: { params: Promise<{ store: s
           </TableBody>
         </Table>
       </div>
-      {ctx.profile.role !== "accountant" && <OrderActions storeCode={store.code} id={o.id} status={o.status} />}
+      {ctx.profile.role !== "accountant" && (
+        <OrderActions
+          storeCode={store.code}
+          id={o.id}
+          status={o.status}
+          paidOut={!!o.payout_id}
+          returnStatus={o.return_status}
+          isManager={ctx.profile.role === "sadmin" || ctx.profile.role === "admin"}
+        />
+      )}
       <section className="rounded-xl border bg-card p-4 text-sm">
         <h2 className="mb-2 font-medium">Lịch sử trạng thái</h2>
         <ul className="space-y-1">
