@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { BulkBar, BulkSelectProvider, SelectAllBox, SelectBox } from "./bulk-select";
 
 export const metadata = { title: "Sản phẩm" };
 
@@ -52,7 +53,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const status = sp.status ?? "active";
   const supabase = await createClient();
 
-  const { data: categories } = await supabase.from("categories").select("id, name, description").order("name");
+  const [{ data: categories }, { data: brands }] = await Promise.all([
+    supabase.from("categories").select("id, name, description").order("name"),
+    canEdit ? supabase.from("brands").select("id, name").order("name") : Promise.resolve({ data: null }),
+  ]);
 
   let query = supabase
     .from("products")
@@ -173,14 +177,15 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       ) : rows.length === 0 ? (
         <EmptyState title="Không có sản phẩm phù hợp">Thử bỏ bớt bộ lọc hoặc tìm bằng từ khác.</EmptyState>
       ) : (
-        <>
+        <BulkSelectProvider key={JSON.stringify(sp)}>
         <p className="mb-2 text-sm text-muted-foreground">{formatNumber(count ?? rows.length)} sản phẩm</p>
         <ul className="space-y-2 md:hidden" aria-label="Danh sách sản phẩm">
           {rows.map((p) => {
             const stock = stockOf(p);
             return (
-              <li key={p.id}>
-                <Link href={`/products/${p.id}`} className="flex items-start gap-3 rounded-xl border bg-card p-3.5 active:bg-muted">
+              <li key={p.id} className="flex items-start gap-1">
+                {canEdit && <SelectBox id={p.id} label={p.name} />}
+                <Link href={`/products/${p.id}`} className="flex min-w-0 flex-1 items-start gap-3 rounded-xl border bg-card p-3.5 active:bg-muted">
                   <ProductThumb fileId={p.product_images[0]?.drive_thumb_id} size={56} />
                   <div className="min-w-0 flex-1">
                     <div className="line-clamp-2 font-medium">{p.name}</div>
@@ -208,6 +213,11 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
           <Table>
             <TableHeader>
               <TableRow>
+                {canEdit && (
+                  <TableHead className="w-12">
+                    <SelectAllBox ids={rows.map((r) => r.id)} />
+                  </TableHead>
+                )}
                 <TableHead className="w-14">
                   <span className="sr-only">Ảnh</span>
                 </TableHead>
@@ -230,6 +240,11 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                 const pct = p.benefit_pct ?? p.categories?.benefit_pct ?? null;
                 return (
                   <TableRow key={p.id}>
+                    {canEdit && (
+                      <TableCell className="py-0">
+                        <SelectBox id={p.id} label={p.name} />
+                      </TableCell>
+                    )}
                     <TableCell className="py-1.5">
                       <ProductThumb fileId={p.product_images[0]?.drive_thumb_id} size={44} />
                     </TableCell>
@@ -264,7 +279,8 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
             </TableBody>
           </Table>
         </div>
-        </>
+        {canEdit && <BulkBar categories={categories ?? []} brands={brands ?? []} />}
+        </BulkSelectProvider>
       )}
       <Pagination
         page={page}

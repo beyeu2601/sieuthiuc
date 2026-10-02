@@ -3,7 +3,7 @@ import { requireStore } from "@/lib/auth";
 import { ROLE_LABEL } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 import { todayVN } from "@/lib/dates";
-import { formatMoney, formatNumber } from "@/lib/format";
+import { formatDateTime, formatMoney, formatNumber } from "@/lib/format";
 import { ChipHan, ChipSac, ChipTonKho, ChipTrangThaiDon } from "@/components/ui/chip";
 import { HangKpi, KpiCard } from "@/components/ui/kpi-card";
 import { ThanhTienDo } from "@/components/ui/thanh-tien-do";
@@ -18,8 +18,10 @@ export default async function StoreHome({ params }: { params: Promise<{ store: s
   const isFinance = ctx.profile.role !== "staff";
   const today = todayVN();
   const supabase = await createClient();
+  // Ca mo qua 12 gio coi nhu bi bo quen (log 10/2026: 1 ca treo nhieu ngay, 1 ca chot sau 45 gio)
+  const staleBefore = new Date(Date.now() - 12 * 3600 * 1000).toISOString();
 
-  const [{ data: ov }, { data: myShift }, pnlRes, lowRes, nearRes, debtRes, pendingOrders] = await Promise.all([
+  const [{ data: ov }, { data: myShift }, pnlRes, lowRes, nearRes, debtRes, pendingOrders, staleShifts] = await Promise.all([
     supabase.rpc("store_overview", { p_store_id: store.id }),
     supabase.from("shifts").select("id, code").eq("store_id", store.id).eq("user_id", ctx.profile.id).eq("status", "open").maybeSingle(),
     isFinance ? supabase.rpc("pnl_report", { p_store_ids: [store.id], p_from: today, p_to: today }) : Promise.resolve({ data: null }),
@@ -27,6 +29,14 @@ export default async function StoreHome({ params }: { params: Promise<{ store: s
     supabase.rpc("lot_expiry", { p_store_id: store.id, p_status: "near" }),
     isFinance ? supabase.rpc("debt_overview", { p_store_ids: [store.id] }) : Promise.resolve({ data: null }),
     supabase.from("orders").select("id", { count: "exact", head: true }).eq("store_id", store.id).in("status", ["pending", "shipped"]),
+    supabase
+      .from("shifts")
+      .select("id, code, opened_at, profiles:user_id(full_name)")
+      .eq("store_id", store.id)
+      .eq("status", "open")
+      .lt("opened_at", staleBefore)
+      .order("opened_at")
+      .returns<{ id: string; code: string; opened_at: string; profiles: { full_name: string } | null }[]>(),
   ]);
   const o = ov as Overview | null;
   const pnl = pnlRes.data as Pnl | null;
@@ -37,6 +47,11 @@ export default async function StoreHome({ params }: { params: Promise<{ store: s
   // Moi canh bao mang mot chip ngu nghia: ton thap/can date amber, qua han do,
   // cho giao indigo (giu hang). Chu cua chip noi nghia, mau chi bo tro.
   const alerts = [
+    ...(staleShifts.data ?? []).map((s) => ({
+      href: `/${store.code}/shifts/${s.id}`,
+      text: `Ca ${s.code}${s.profiles ? ` của ${s.profiles.full_name}` : ""} mở từ ${formatDateTime(s.opened_at)} chưa chốt`,
+      chip: <ChipSac sac="amber">Ca chưa chốt</ChipSac>,
+    })),
     lowCount > 0 && { href: `/${store.code}/inventory/low`, text: `${lowCount} sản phẩm dưới mức tồn tối thiểu`, chip: <ChipTonKho ma="thap">Tồn thấp</ChipTonKho> },
     nearCount > 0 && { href: `/${store.code}/expiry`, text: `${nearCount} lô sắp hết hạn`, chip: <ChipHan ma="canDate">Cận date</ChipHan> },
     (pendingOrders.count ?? 0) > 0 && {

@@ -18,9 +18,12 @@ export function ProductPicker({
   showStock = true,
   camera,
   id,
+  onNotFound,
 }: {
   storeId: string;
   onPick: (item: CatalogItem) => void;
+  // Enter/quet ma khong ra ket qua nao. Tra ve true neu da xu ly (an thong bao "Khong tim thay").
+  onNotFound?: (term: string) => boolean;
   placeholder?: string;
   autoFocus?: boolean;
   showStock?: boolean;
@@ -57,6 +60,12 @@ export function ProductPicker({
       const exact = rows.find((r) => r.barcode?.toUpperCase() === t.toUpperCase() || r.sku.toUpperCase() === t.toUpperCase());
       if (pickExact && (exact || rows.length === 1)) {
         pick(exact ?? rows[0]);
+        return;
+      }
+      if (pickExact && rows.length === 0 && onNotFound?.(t)) {
+        setQ("");
+        setItems(null);
+        setActive(-1);
         return;
       }
       setItems(rows);

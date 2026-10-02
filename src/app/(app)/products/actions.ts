@@ -131,6 +131,23 @@ export async function applyPriceSuggestions(ids: string[]): Promise<ActionResult
   return { ok: true, data: { count: data as number } };
 }
 
+// Gan nhom hang / thuong hieu cho nhieu san pham mot lan (RLS products_update: sadmin/admin).
+// Truong undefined thi giu nguyen.
+export async function bulkUpdateProducts(
+  ids: string[],
+  patch: { category_id?: string; brand_id?: string }
+): Promise<ActionResult<{ count: number }>> {
+  if (ids.length === 0) return { ok: false, error: "Chọn ít nhất một sản phẩm" };
+  const row = Object.fromEntries(Object.entries(patch).filter(([, v]) => v));
+  if (Object.keys(row).length === 0) return { ok: false, error: "Chọn nhóm hàng hoặc thương hiệu cần gán" };
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("products").update(row).in("id", ids).select("id");
+  if (error) return { ok: false, error: errorMessage(error) };
+  if (!data || data.length === 0) return { ok: false, error: "Bạn không có quyền sửa các sản phẩm này." };
+  revalidatePath("/products");
+  return { ok: true, data: { count: data.length } };
+}
+
 export type ImportRow = {
   row: number;
   name: string;

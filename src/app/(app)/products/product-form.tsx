@@ -281,7 +281,7 @@ export function ProductForm({
   );
 }
 
-function QuickBrandDialog({
+export function QuickBrandDialog({
   open,
   onOpenChange,
   brands,
