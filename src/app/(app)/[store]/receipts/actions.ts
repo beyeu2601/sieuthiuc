@@ -56,6 +56,7 @@ export async function quickCreateProduct(input: {
   goods_type: "cont" | "air";
   unit: string;
   sell_price: number;
+  date_type: "short" | "long";
 }): Promise<ActionResult<{ product_id: string; sku: string; name: string; unit: string; goods_type: "cont" | "air"; expiry_level: "none" | "product" | "lot" }>> {
   const name = input.name.trim();
   const unit = input.unit.trim();
@@ -71,6 +72,7 @@ export async function quickCreateProduct(input: {
       sell_price: Math.max(0, Math.round(input.sell_price || 0)),
       pricing_method: "manual",
       expiry_level: "none",
+      date_type: input.date_type === "short" ? "short" : "long",
       status: "active",
     })
     .select("id, sku, name, unit, goods_type, expiry_level")

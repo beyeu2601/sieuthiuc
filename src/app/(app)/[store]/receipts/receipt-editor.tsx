@@ -90,6 +90,16 @@ export function ReceiptEditor({
   const subtotal = useMemo(() => lines.reduce((s, l) => s + Math.round(l.qty * (l.unit_cost ?? 0)), 0), [lines]);
   const extra = useMemo(() => costs.reduce((s, c) => s + (c.amount ?? 0), 0), [costs]);
   const supplier = suppliers.find((s) => s.id === h.supplier_id);
+  // Gop cac dong lien nhau cung san pham (tao boi "Them lo/date khac") vao mot the
+  const groups = useMemo(() => {
+    const gs: EditorLine[][] = [];
+    for (const l of lines) {
+      const g = gs[gs.length - 1];
+      if (g && g[0].product_id === l.product_id) g.push(l);
+      else gs.push([l]);
+    }
+    return gs;
+  }, [lines]);
 
   function addProduct(it: CatalogItem) {
     setLines((ls) => {
@@ -160,10 +170,10 @@ export function ReceiptEditor({
   function validate(forConfirm: boolean): string | null {
     if (!h.supplier_id) return "Chọn nhà cung cấp";
     if (lines.length === 0) return "Thêm ít nhất một dòng hàng";
-    for (const [i, l] of lines.entries()) {
-      if (!(l.qty > 0)) return `Dòng ${i + 1}: số lượng phải lớn hơn 0`;
-      if (l.unit_cost == null) return `Dòng ${i + 1}: nhập đơn giá nhập`;
-      if (forConfirm && l.expiry_level === "lot" && !l.expiry_date) return `Dòng ${i + 1} (${l.name}): nhập hạn sử dụng`;
+    for (const l of lines) {
+      if (!(l.qty > 0)) return `${l.name}: số lượng phải lớn hơn 0`;
+      if (l.unit_cost == null) return `${l.name}: nhập đơn giá nhập`;
+      if (forConfirm && l.expiry_level === "lot" && !l.expiry_date) return `${l.name}: nhập hạn sử dụng`;
     }
     return null;
   }
@@ -189,9 +199,9 @@ export function ReceiptEditor({
   // Ly do buoc "Hang nhap" chua di tiep duoc; cung dieu kien voi validate(false)
   const lineIssue = (() => {
     if (lines.length === 0) return "Thêm ít nhất một dòng hàng";
-    for (const [i, l] of lines.entries()) {
-      if (!(l.qty > 0)) return `Dòng ${i + 1}: số lượng phải lớn hơn 0`;
-      if (l.unit_cost == null) return `Dòng ${i + 1}: nhập đơn giá nhập`;
+    for (const l of lines) {
+      if (!(l.qty > 0)) return `${l.name}: số lượng phải lớn hơn 0`;
+      if (l.unit_cost == null) return `${l.name}: nhập đơn giá nhập`;
     }
     return null;
   })();
@@ -309,61 +319,70 @@ export function ReceiptEditor({
         <p className="text-sm text-muted-foreground">Quét mã vạch hoặc tìm tên để thêm hàng. Quét lại cùng mã sẽ tăng số lượng. Cùng một mặt hàng nhiều hạn dùng thì bấm &quot;+ Thêm lô/date khác&quot; trên dòng.</p>
       ) : (
         <div className="space-y-2">
-          {lines.map((l, i) => (
-            <div key={l.key} className="grid grid-cols-2 gap-2 rounded-lg border p-3 md:grid-cols-[2fr_80px_120px_120px_110px_120px_auto] md:items-end">
-              <div className="col-span-2 md:col-span-1">
-                <div className="text-sm font-medium">
-                  {i + 1}. {l.name}
+          {groups.map((g, gi) => {
+            const head = g[0];
+            const last = g[g.length - 1];
+            return (
+              <div key={head.key} className="space-y-2 rounded-lg border p-3">
+                <div>
+                  <div className="text-sm font-medium">
+                    {gi + 1}. {head.name}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {head.sku} - {GOODS_TYPE_LABEL[head.goods_type]} - Thành tiền{" "}
+                    {formatMoney(g.reduce((s, l) => s + Math.round(l.qty * (l.unit_cost ?? 0)), 0))}
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {l.sku} - {GOODS_TYPE_LABEL[l.goods_type]} - Thành tiền {formatMoney(Math.round(l.qty * (l.unit_cost ?? 0)))}
+                {g.map((l, li) => (
+                <div key={l.key} className={`grid grid-cols-2 gap-2 md:grid-cols-[90px_1fr_1fr_1fr_150px_auto] md:items-end ${li > 0 ? "border-t pt-2" : ""}`}>
+                  <label className="space-y-1 text-xs text-muted-foreground">
+                    SL ({l.unit})
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      step="any"
+                      value={l.qty}
+                      onChange={(e) => upd(l.key, { qty: Number(e.target.value) })}
+                    />
+                  </label>
+                  <label className="space-y-1 text-xs text-muted-foreground">
+                    Đơn giá nhập
+                    <MoneyInput value={l.unit_cost} onChange={(n) => upd(l.key, { unit_cost: n })} />
+                  </label>
+                  <label className="space-y-1 text-xs text-muted-foreground">
+                    Giá bán
+                    <MoneyInput value={l.sell_price} onChange={(n) => upd(l.key, { sell_price: n })} />
+                  </label>
+                  <label className="space-y-1 text-xs text-muted-foreground">
+                    Số lô
+                    <Input value={l.lot_no} placeholder="Theo mã phiếu" onChange={(e) => upd(l.key, { lot_no: e.target.value })} />
+                  </label>
+                  <label className="space-y-1 text-xs text-muted-foreground">
+                    Hạn sử dụng{l.expiry_level === "lot" ? " *" : ""}
+                    <Input type="date" value={l.expiry_date} onChange={(e) => upd(l.key, { expiry_date: e.target.value })} />
+                  </label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Xóa dòng ${l.name}${g.length > 1 ? ` lô ${li + 1}` : ""}`}
+                    onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}
+                  >
+                    <TrashIcon />
+                  </Button>
                 </div>
+                ))}
                 <button
                   type="button"
-                  onClick={() => addLot(l)}
-                  className="mt-1 text-xs font-medium text-primary underline underline-offset-2"
+                  onClick={() => addLot(last)}
+                  className="min-h-11 text-sm font-medium text-primary underline underline-offset-2"
                 >
                   + Thêm lô/date khác
                 </button>
               </div>
-              <label className="space-y-1 text-xs text-muted-foreground">
-                SL ({l.unit})
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  step="any"
-                  value={l.qty}
-                  onChange={(e) => upd(l.key, { qty: Number(e.target.value) })}
-                />
-              </label>
-              <label className="space-y-1 text-xs text-muted-foreground">
-                Đơn giá nhập
-                <MoneyInput value={l.unit_cost} onChange={(n) => upd(l.key, { unit_cost: n })} />
-              </label>
-              <label className="space-y-1 text-xs text-muted-foreground">
-                Giá bán
-                <MoneyInput value={l.sell_price} onChange={(n) => upd(l.key, { sell_price: n })} />
-              </label>
-              <label className="space-y-1 text-xs text-muted-foreground">
-                Số lô
-                <Input value={l.lot_no} placeholder="Theo mã phiếu" onChange={(e) => upd(l.key, { lot_no: e.target.value })} />
-              </label>
-              <label className="space-y-1 text-xs text-muted-foreground">
-                Hạn sử dụng{l.expiry_level === "lot" ? " *" : ""}
-                <Input type="date" value={l.expiry_date} onChange={(e) => upd(l.key, { expiry_date: e.target.value })} />
-              </label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label={`Xóa dòng ${l.name}`}
-                onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}
-              >
-                <TrashIcon />
-              </Button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>
@@ -651,6 +670,7 @@ function QuickProductDialog({
   const [goodsType, setGoodsType] = useState<"cont" | "air">("air");
   const [unit, setUnit] = useState("");
   const [sellPrice, setSellPrice] = useState<number | null>(null);
+  const [dateType, setDateType] = useState<"short" | "long">("long");
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -658,13 +678,14 @@ function QuickProductDialog({
     e.preventDefault();
     setError(null);
     start(async () => {
-      const res = await quickCreateProduct({ name, goods_type: goodsType, unit, sell_price: sellPrice ?? 0 });
+      const res = await quickCreateProduct({ name, goods_type: goodsType, unit, sell_price: sellPrice ?? 0, date_type: dateType });
       if (!res.ok) return setError(res.error);
       onCreated({ ...res.data!, sell_price: sellPrice ?? 0 });
       toast.success(`Đã thêm sản phẩm ${res.data!.sku}`);
       setName("");
       setUnit("");
       setSellPrice(null);
+      setDateType("long");
       onOpenChange(false);
     });
   }
@@ -703,6 +724,13 @@ function QuickProductDialog({
             <div className="space-y-1.5">
               <Label htmlFor="qp-price">Giá bán</Label>
               <MoneyInput id="qp-price" value={sellPrice} onChange={setSellPrice} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="qp-date">Loại date (cận date)</Label>
+              <NativeSelect id="qp-date" value={dateType} onChange={(e) => setDateType(e.target.value as "short" | "long")}>
+                <option value="long">Date dài (giảm giá khi tới ngưỡng dài)</option>
+                <option value="short">Date ngắn (giảm giá khi tới ngưỡng ngắn)</option>
+              </NativeSelect>
             </div>
           </DialogBody>
           <DialogFooter>
