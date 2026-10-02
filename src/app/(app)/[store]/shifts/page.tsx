@@ -3,6 +3,8 @@ import { requireStore } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
+import { AutoSubmitForm } from "@/components/auto-submit-form";
+import { FilterBar } from "@/components/filter-bar";
 import { EmptyState } from "@/components/empty-state";
 import { ChipSac } from "@/components/ui/chip";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
@@ -70,19 +72,20 @@ export default async function ShiftsPage({
         </section>
       )}
 
-      <form className="flex flex-wrap items-end gap-2">
-        <label className="space-y-1 text-sm">
-          Từ ngày
-          <Input type="date" name="from" defaultValue={sp.from} />
-        </label>
-        <label className="space-y-1 text-sm">
-          Đến ngày
-          <Input type="date" name="to" defaultValue={sp.to} />
-        </label>
-        <Button type="submit" variant="secondary">
-          Lọc
-        </Button>
-      </form>
+      <AutoSubmitForm action={`/${store.code}/shifts`}>
+        <FilterBar>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-end">
+            <label className="block min-w-0 space-y-1 text-sm">
+              Từ ngày
+              <Input type="date" name="from" defaultValue={sp.from} className="min-w-0" />
+            </label>
+            <label className="block min-w-0 space-y-1 text-sm">
+              Đến ngày
+              <Input type="date" name="to" defaultValue={sp.to} className="min-w-0" />
+            </label>
+          </div>
+        </FilterBar>
+      </AutoSubmitForm>
 
       {rows.length === 0 ? (
         <EmptyState title="Chưa có ca nào" />

@@ -5,8 +5,9 @@ import { formatDateVN, presetPeriod } from "@/lib/dates";
 import { formatMoney } from "@/lib/format";
 import { errorMessage } from "@/lib/errors";
 import { PageHeader } from "@/components/page-header";
+import { AutoSubmitForm } from "@/components/auto-submit-form";
+import { FilterBar } from "@/components/filter-bar";
 import { EmptyState } from "@/components/empty-state";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { HolderSelect } from "./holder-select";
@@ -82,13 +83,14 @@ export default async function AccountLedgerPage({
         <p className="rounded-xl border bg-card p-4 text-sm">{errorMessage(ledger.error)}</p>
       ) : (
         <>
-          <form className="grid gap-2 sm:grid-cols-[150px_150px_auto] sm:justify-start">
-            <Input type="date" name="from" defaultValue={from} aria-label="Từ ngày" />
-            <Input type="date" name="to" defaultValue={to} aria-label="Đến ngày" />
-            <Button type="submit" variant="secondary">
-              Lọc
-            </Button>
-          </form>
+          <AutoSubmitForm action={`/${store.code}/cash/accounts/${id}`}>
+            <FilterBar>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-[150px_150px] sm:justify-start">
+                <Input type="date" name="from" defaultValue={from} aria-label="Từ ngày" />
+                <Input type="date" name="to" defaultValue={to} aria-label="Đến ngày" />
+              </div>
+            </FilterBar>
+          </AutoSubmitForm>
           {rows.length === 0 ? (
             <EmptyState title="Không có giao dịch trong khoảng đã chọn">Chỉ khoản đã duyệt và đã trả mới vào sổ.</EmptyState>
           ) : (

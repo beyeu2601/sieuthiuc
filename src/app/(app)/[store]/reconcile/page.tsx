@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDateVN, presetPeriod } from "@/lib/dates";
 import { formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
-import { Button } from "@/components/ui/button";
+import { AutoSubmitForm } from "@/components/auto-submit-form";
+import { FilterBar } from "@/components/filter-bar";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
@@ -54,19 +55,20 @@ export default async function ReconcilePage({
         title="Đối soát doanh thu"
         description="Tiền mặt bán hàng so với tiền đếm khi chốt ca; chuyển khoản so với sao kê ngân hàng nhập tay theo ngày."
       />
-      <form className="flex flex-wrap items-end gap-2">
-        <label className="space-y-1 text-sm">
-          Từ ngày
-          <Input type="date" name="from" defaultValue={from} />
-        </label>
-        <label className="space-y-1 text-sm">
-          Đến ngày
-          <Input type="date" name="to" defaultValue={to} />
-        </label>
-        <Button type="submit" variant="secondary">
-          Xem
-        </Button>
-      </form>
+      <AutoSubmitForm action={`/${store.code}/reconcile`}>
+        <FilterBar>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-end">
+            <label className="block min-w-0 space-y-1 text-sm">
+              Từ ngày
+              <Input type="date" name="from" defaultValue={from} className="min-w-0" />
+            </label>
+            <label className="block min-w-0 space-y-1 text-sm">
+              Đến ngày
+              <Input type="date" name="to" defaultValue={to} className="min-w-0" />
+            </label>
+          </div>
+        </FilterBar>
+      </AutoSubmitForm>
       {error ? (
         <p role="alert" className="text-sm text-destructive">
           Không tải được số liệu.

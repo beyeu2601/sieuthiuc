@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDateVN, presetPeriod } from "@/lib/dates";
 import { formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
+import { AutoSubmitForm } from "@/components/auto-submit-form";
+import { FilterBar } from "@/components/filter-bar";
 import { EmptyState } from "@/components/empty-state";
 import { NativeSelect } from "@/components/native-select";
 import { ChipSac } from "@/components/ui/chip";
@@ -111,39 +113,40 @@ export default async function CashPage({ params, searchParams }: { params: Promi
           ))}
         </section>
       )}
-      <form className="grid gap-2 sm:grid-cols-[150px_150px_120px_180px_140px_140px_auto]">
-        <Input type="date" name="from" defaultValue={from} aria-label="Từ ngày" />
-        <Input type="date" name="to" defaultValue={to} aria-label="Đến ngày" />
-        <NativeSelect name="kind" defaultValue={sp.kind ?? ""} aria-label="Loại">
-          <option value="">Thu và chi</option>
-          <option value="expense">Chi</option>
-          <option value="income">Thu</option>
-        </NativeSelect>
-        <NativeSelect name="cat" defaultValue={sp.cat ?? ""} aria-label="Nhóm">
-          <option value="">Mọi nhóm</option>
-          {(cats ?? []).map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.kind === "income" ? "Thu: " : ""}
-              {c.name}
-            </option>
-          ))}
-        </NativeSelect>
-        <NativeSelect name="approval" defaultValue={sp.approval ?? ""} aria-label="Duyệt">
-          <option value="">Mọi trạng thái</option>
-          <option value="waiting">Chờ duyệt (mới, sửa, xóa)</option>
-          <option value="pending">Chờ duyệt khoản mới</option>
-          <option value="approved">Đã duyệt</option>
-          <option value="rejected">Từ chối</option>
-        </NativeSelect>
-        <NativeSelect name="pay" defaultValue={sp.pay ?? ""} aria-label="Thanh toán">
-          <option value="">Đã / chưa trả</option>
-          <option value="unpaid">Phải trả khác (chưa trả)</option>
-          <option value="paid">Đã trả</option>
-        </NativeSelect>
-        <Button type="submit" variant="secondary">
-          Lọc
-        </Button>
-      </form>
+      <AutoSubmitForm action={`/${store.code}/cash`}>
+        <FilterBar>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-[150px_150px_120px_180px_200px_200px]">
+            <Input type="date" name="from" defaultValue={from} aria-label="Từ ngày" />
+            <Input type="date" name="to" defaultValue={to} aria-label="Đến ngày" />
+            <NativeSelect name="kind" defaultValue={sp.kind ?? ""} aria-label="Loại">
+              <option value="">Thu và chi</option>
+              <option value="expense">Chi</option>
+              <option value="income">Thu</option>
+            </NativeSelect>
+            <NativeSelect name="cat" defaultValue={sp.cat ?? ""} aria-label="Nhóm">
+              <option value="">Mọi nhóm</option>
+              {(cats ?? []).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.kind === "income" ? "Thu: " : ""}
+                  {c.name}
+                </option>
+              ))}
+            </NativeSelect>
+            <NativeSelect name="approval" defaultValue={sp.approval ?? ""} aria-label="Duyệt">
+              <option value="">Mọi trạng thái</option>
+              <option value="waiting">Chờ duyệt (mới, sửa, xóa)</option>
+              <option value="pending">Chờ duyệt khoản mới</option>
+              <option value="approved">Đã duyệt</option>
+              <option value="rejected">Từ chối</option>
+            </NativeSelect>
+            <NativeSelect name="pay" defaultValue={sp.pay ?? ""} aria-label="Thanh toán">
+              <option value="">Đã / chưa trả</option>
+              <option value="unpaid">Phải trả khác (chưa trả)</option>
+              <option value="paid">Đã trả</option>
+            </NativeSelect>
+          </div>
+        </FilterBar>
+      </AutoSubmitForm>
 
       {canFinance && (
         <div className="grid gap-3 sm:grid-cols-3">

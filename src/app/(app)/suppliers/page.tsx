@@ -3,6 +3,8 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { ilikeTerm } from "@/lib/text";
 import { PageHeader } from "@/components/page-header";
+import { AutoSubmitForm } from "@/components/auto-submit-form";
+import { FilterBar } from "@/components/filter-bar";
 import { EmptyState } from "@/components/empty-state";
 import { NativeSelect } from "@/components/native-select";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
@@ -35,17 +37,15 @@ export default async function SuppliersPage({
   return (
     <div>
       <PageHeader title="Nhà cung cấp" actions={<Button render={<Link href="/suppliers/new" />}>Thêm nhà cung cấp</Button>} />
-      <form className="mb-3 grid gap-2 sm:grid-cols-[1fr_180px_auto]" role="search">
-        <Input name="q" defaultValue={sp.q} placeholder="Tìm tên, mã, số điện thoại" aria-label="Tìm nhà cung cấp" />
-        <NativeSelect name="status" defaultValue={status} aria-label="Trạng thái">
-          <option value="active">Đang giao dịch</option>
-          <option value="inactive">Ngừng giao dịch</option>
-          <option value="all">Tất cả</option>
-        </NativeSelect>
-        <Button type="submit" variant="secondary">
-          Lọc
-        </Button>
-      </form>
+      <AutoSubmitForm action="/suppliers" debounceMs={400} className="mb-3" role="search">
+        <FilterBar search={<Input type="search" enterKeyHint="search" name="q" defaultValue={sp.q} placeholder="Tìm tên, mã, số điện thoại" aria-label="Tìm nhà cung cấp" />}>
+          <NativeSelect name="status" defaultValue={status} aria-label="Trạng thái" className="sm:w-48">
+            <option value="active">Đang giao dịch</option>
+            <option value="inactive">Ngừng giao dịch</option>
+            <option value="all">Tất cả</option>
+          </NativeSelect>
+        </FilterBar>
+      </AutoSubmitForm>
       {error ? (
         <p role="alert" className="text-sm text-destructive">
           Không tải được danh sách.

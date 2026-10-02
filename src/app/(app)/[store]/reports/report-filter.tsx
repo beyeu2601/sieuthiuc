@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { AutoSubmitForm } from "@/components/auto-submit-form";
-import { Button } from "@/components/ui/button";
+import { FilterBar } from "@/components/filter-bar";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/native-select";
 import { cn } from "@/lib/utils";
@@ -55,64 +55,63 @@ function FilterBody({
     return `${basePath}?${sp.toString()}`;
   };
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Chọn kỳ nhanh">
-        {PRESETS.map((p) => (
-          <Link
-            key={p.k}
-            href={href({ preset: p.k })}
-            aria-current={preset === p.k ? "true" : undefined}
-            className={cn(
-              "inline-flex h-10 items-center rounded-lg border px-3.5 text-sm",
-              preset === p.k ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted"
-            )}
-          >
-            {p.label}
-          </Link>
-        ))}
+    <FilterBar ignore={["preset", "from", "to", "page"]}>
+      <div className="space-y-2">
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Chọn kỳ nhanh">
+          {PRESETS.map((p) => (
+            <Link
+              key={p.k}
+              href={href({ preset: p.k })}
+              aria-current={preset === p.k ? "true" : undefined}
+              className={cn(
+                "inline-flex h-10 items-center rounded-lg border px-3.5 text-sm",
+                preset === p.k ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted"
+              )}
+            >
+              {p.label}
+            </Link>
+          ))}
+        </div>
+        <AutoSubmitForm action={basePath} className="space-y-2">
+          {!custom && preset && <input type="hidden" name="preset" value={preset} />}
+          <details open={custom} onToggle={(e) => setCustom(e.currentTarget.open)} className="rounded-lg border bg-card">
+            <summary className="flex h-10 cursor-pointer items-center px-3 text-sm">Chọn ngày khác</summary>
+            <div className="grid grid-cols-2 gap-2 px-3 pb-3 sm:flex sm:items-end">
+              <label className="block min-w-0 space-y-1 text-sm">
+                Từ ngày
+                <Input type="date" name="from" defaultValue={from} disabled={!custom} className="min-w-0" />
+              </label>
+              <label className="block min-w-0 space-y-1 text-sm">
+                Đến ngày
+                <Input type="date" name="to" defaultValue={to} disabled={!custom} className="min-w-0" />
+              </label>
+            </div>
+          </details>
+          {(showChannel || canAllStores || extra) && (
+            <div className="grid grid-cols-2 items-end gap-2 sm:flex sm:flex-wrap">
+              {showChannel && (
+                <label className="block space-y-1 text-sm">
+                  Kênh
+                  <NativeSelect name="channel" defaultValue={channel ?? ""}>
+                    <option value="">Mọi kênh</option>
+                    <option value="pos">Tại quầy</option>
+                    <option value="shopee">Shopee</option>
+                    <option value="facebook">Facebook</option>
+                    <option value="other">Khác</option>
+                  </NativeSelect>
+                </label>
+              )}
+              {canAllStores && (
+                <label className="flex h-10 items-center gap-2 text-sm">
+                  <input type="checkbox" name="all" value="1" defaultChecked={allStores} className="size-5" />
+                  Tất cả cửa hàng
+                </label>
+              )}
+              {extra}
+            </div>
+          )}
+        </AutoSubmitForm>
       </div>
-      <AutoSubmitForm action={basePath} className="space-y-2">
-        {!custom && preset && <input type="hidden" name="preset" value={preset} />}
-        <details open={custom} onToggle={(e) => setCustom(e.currentTarget.open)} className="rounded-lg border bg-card">
-          <summary className="flex h-10 cursor-pointer items-center px-3 text-sm">Chọn ngày khác</summary>
-          <div className="grid grid-cols-2 gap-2 px-3 pb-3 sm:flex sm:items-end">
-            <label className="block min-w-0 space-y-1 text-sm">
-              Từ ngày
-              <Input type="date" name="from" defaultValue={from} disabled={!custom} className="min-w-0" />
-            </label>
-            <label className="block min-w-0 space-y-1 text-sm">
-              Đến ngày
-              <Input type="date" name="to" defaultValue={to} disabled={!custom} className="min-w-0" />
-            </label>
-            <Button type="submit" variant="secondary" className="col-span-2 h-10">
-              Xem
-            </Button>
-          </div>
-        </details>
-        {(showChannel || canAllStores || extra) && (
-          <div className="grid grid-cols-2 items-end gap-2 sm:flex sm:flex-wrap">
-            {showChannel && (
-              <label className="block space-y-1 text-sm">
-                Kênh
-                <NativeSelect name="channel" defaultValue={channel ?? ""}>
-                  <option value="">Mọi kênh</option>
-                  <option value="pos">Tại quầy</option>
-                  <option value="shopee">Shopee</option>
-                  <option value="facebook">Facebook</option>
-                  <option value="other">Khác</option>
-                </NativeSelect>
-              </label>
-            )}
-            {canAllStores && (
-              <label className="flex h-10 items-center gap-2 text-sm">
-                <input type="checkbox" name="all" value="1" defaultChecked={allStores} className="size-5" />
-                Tất cả cửa hàng
-              </label>
-            )}
-            {extra}
-          </div>
-        )}
-      </AutoSubmitForm>
-    </div>
+    </FilterBar>
   );
 }

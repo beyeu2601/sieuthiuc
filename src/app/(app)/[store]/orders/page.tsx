@@ -3,6 +3,8 @@ import { requireStore } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
+import { AutoSubmitForm } from "@/components/auto-submit-form";
+import { FilterBar } from "@/components/filter-bar";
 import { EmptyState } from "@/components/empty-state";
 import { NativeSelect } from "@/components/native-select";
 import { Pagination } from "@/components/pagination";
@@ -72,30 +74,30 @@ export default async function OrdersPage({ params, searchParams }: { params: Pro
           </Link>
         </p>
       )}
-      <form className="mb-3 grid gap-2 sm:grid-cols-[170px_150px_1fr_auto]">
-        <NativeSelect name="status" defaultValue={status} aria-label="Trạng thái">
-          <option value="open">Đang xử lý</option>
-          {Object.entries(ORDER_STATUS).map(([k, v]) => (
-            <option key={k} value={k}>
-              {v.label}
-            </option>
-          ))}
-          <option value="return_check">Hoàn hàng chờ kiểm</option>
-          <option value="all">Tất cả</option>
-        </NativeSelect>
-        <NativeSelect name="channel" defaultValue={sp.channel ?? ""} aria-label="Kênh">
-          <option value="">Mọi kênh</option>
-          {Object.entries(ONLINE_CHANNELS).map(([k, v]) => (
-            <option key={k} value={k}>
-              {v}
-            </option>
-          ))}
-        </NativeSelect>
-        <Input name="q" defaultValue={sp.q} placeholder="Mã đơn, mã sàn, tên hoặc SĐT khách" aria-label="Tìm đơn" />
-        <Button type="submit" variant="secondary">
-          Lọc
-        </Button>
-      </form>
+      <AutoSubmitForm action={`/${store.code}/orders`} debounceMs={400} className="mb-3" role="search">
+        <FilterBar search={<Input type="search" enterKeyHint="search" name="q" defaultValue={sp.q} placeholder="Mã đơn, mã sàn, tên hoặc SĐT khách" aria-label="Tìm đơn" />}>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-[200px_160px]">
+            <NativeSelect name="status" defaultValue={status} aria-label="Trạng thái">
+              <option value="open">Đang xử lý</option>
+              {Object.entries(ORDER_STATUS).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v.label}
+                </option>
+              ))}
+              <option value="return_check">Hoàn hàng chờ kiểm</option>
+              <option value="all">Tất cả</option>
+            </NativeSelect>
+            <NativeSelect name="channel" defaultValue={sp.channel ?? ""} aria-label="Kênh">
+              <option value="">Mọi kênh</option>
+              {Object.entries(ONLINE_CHANNELS).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </NativeSelect>
+          </div>
+        </FilterBar>
+      </AutoSubmitForm>
       {rows.length === 0 ? (
         <EmptyState title="Không có đơn phù hợp" />
       ) : (

@@ -3,6 +3,8 @@ import { requireStore } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
+import { AutoSubmitForm } from "@/components/auto-submit-form";
+import { FilterBar } from "@/components/filter-bar";
 import { EmptyState } from "@/components/empty-state";
 import { NativeSelect } from "@/components/native-select";
 import { Pagination } from "@/components/pagination";
@@ -55,27 +57,27 @@ export default async function SalesPage({ params, searchParams }: { params: Prom
         description="Giao dịch đã hủy vẫn hiện trong lịch sử nhưng không tính doanh thu."
         actions={<Button render={<Link href={`/${store.code}/pos`} />}>Bán hàng</Button>}
       />
-      <form className="mb-3 grid gap-2 sm:grid-cols-[150px_150px_150px_150px_1fr_auto]">
-        <Input type="date" name="from" defaultValue={from} aria-label="Từ ngày" />
-        <Input type="date" name="to" defaultValue={to} aria-label="Đến ngày" />
-        <NativeSelect name="status" defaultValue={sp.status ?? ""} aria-label="Trạng thái">
-          <option value="">Mọi trạng thái</option>
-          <option value="completed">Hoàn tất</option>
-          <option value="cancelled">Đã hủy</option>
-        </NativeSelect>
-        <NativeSelect name="channel" defaultValue={sp.channel ?? ""} aria-label="Kênh">
-          <option value="">Mọi kênh</option>
-          {Object.entries(CHANNEL_LABEL).map(([k, v]) => (
-            <option key={k} value={k}>
-              {v}
-            </option>
-          ))}
-        </NativeSelect>
-        <Input name="q" defaultValue={sp.q} placeholder="Mã hóa đơn" aria-label="Mã hóa đơn" />
-        <Button type="submit" variant="secondary">
-          Lọc
-        </Button>
-      </form>
+      <AutoSubmitForm action={`/${store.code}/sales`} debounceMs={400} className="mb-3" role="search">
+        <FilterBar search={<Input type="search" enterKeyHint="search" name="q" defaultValue={sp.q} placeholder="Mã hóa đơn" aria-label="Mã hóa đơn" />}>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-[150px_150px_150px_150px]">
+            <Input type="date" name="from" defaultValue={from} aria-label="Từ ngày" />
+            <Input type="date" name="to" defaultValue={to} aria-label="Đến ngày" />
+            <NativeSelect name="status" defaultValue={sp.status ?? ""} aria-label="Trạng thái">
+              <option value="">Mọi trạng thái</option>
+              <option value="completed">Hoàn tất</option>
+              <option value="cancelled">Đã hủy</option>
+            </NativeSelect>
+            <NativeSelect name="channel" defaultValue={sp.channel ?? ""} aria-label="Kênh">
+              <option value="">Mọi kênh</option>
+              {Object.entries(CHANNEL_LABEL).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </NativeSelect>
+          </div>
+        </FilterBar>
+      </AutoSubmitForm>
       {rows.length === 0 ? (
         <EmptyState title="Không có giao dịch trong khoảng đã chọn" />
       ) : (

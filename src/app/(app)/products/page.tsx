@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { ProductThumb } from "@/components/product-thumb";
 import { AutoSubmitForm } from "@/components/auto-submit-form";
+import { FilterBar } from "@/components/filter-bar";
 import { CameraScanButton } from "@/components/camera-scan-button";
 import { Pagination } from "@/components/pagination";
 import { EmptyState } from "@/components/empty-state";
@@ -114,51 +115,55 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         }
       />
 
-      <AutoSubmitForm action="/products" debounceMs={400} className="mb-3 grid grid-cols-2 gap-2 lg:grid-cols-[1fr_120px_130px_170px_160px_auto]" role="search">
-        <div className="col-span-2 flex gap-2 lg:col-span-1">
-          <Input
-            type="search"
-            enterKeyHint="search"
-            name="q"
-            defaultValue={sp.q}
-            placeholder="Tìm tên, SKU hoặc mã vạch"
-            aria-label="Tìm sản phẩm"
-          />
-          <span className="md:hidden">
-            <CameraScanButton />
-          </span>
-        </div>
-        <NativeSelect name="type" defaultValue={sp.type ?? ""} aria-label="Loại hàng">
-          <option value="">Mọi loại hàng</option>
-          <option value="cont">Cont</option>
-          <option value="air">Air</option>
-        </NativeSelect>
-        <NativeSelect name="status" defaultValue={status} aria-label="Trạng thái">
-          <option value="active">Đang bán</option>
-          <option value="inactive">Ngừng bán</option>
-          <option value="all">Tất cả</option>
-        </NativeSelect>
-        <div className="flex items-center gap-1">
-          <NativeSelect name="cat" defaultValue={sp.cat ?? ""} aria-label="Nhóm hàng" className="flex-1">
-            <option value="">Mọi nhóm hàng</option>
-            {(categories ?? []).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </NativeSelect>
-          <CategoryInfo categories={categories ?? []} />
-        </div>
-        <NativeSelect name="missing" defaultValue={sp.missing ?? ""} aria-label="Thiếu thông tin">
-          <option value="">Mọi dữ liệu</option>
-          <option value="any">Thiếu thông tin</option>
-          <option value="unit">Chưa rõ ĐVT</option>
-          <option value="cost">Thiếu giá vốn</option>
-          <option value="price">Thiếu giá bán</option>
-        </NativeSelect>
-        <Button type="submit" variant="secondary" className="hidden lg:inline-flex">
-          Lọc
-        </Button>
+      <AutoSubmitForm action="/products" debounceMs={400} className="mb-3" role="search">
+        <FilterBar
+          search={
+            <div className="flex gap-2">
+              <Input
+                type="search"
+                enterKeyHint="search"
+                name="q"
+                defaultValue={sp.q}
+                placeholder="Tìm tên, SKU hoặc mã vạch"
+                aria-label="Tìm sản phẩm"
+              />
+              <span className="md:hidden">
+                <CameraScanButton />
+              </span>
+            </div>
+          }
+        >
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-[120px_130px_170px_160px]">
+            <NativeSelect name="type" defaultValue={sp.type ?? ""} aria-label="Loại hàng">
+              <option value="">Mọi loại hàng</option>
+              <option value="cont">Cont</option>
+              <option value="air">Air</option>
+            </NativeSelect>
+            <NativeSelect name="status" defaultValue={status} aria-label="Trạng thái">
+              <option value="active">Đang bán</option>
+              <option value="inactive">Ngừng bán</option>
+              <option value="all">Tất cả</option>
+            </NativeSelect>
+            <div className="flex items-center gap-1">
+              <NativeSelect name="cat" defaultValue={sp.cat ?? ""} aria-label="Nhóm hàng" className="flex-1">
+                <option value="">Mọi nhóm hàng</option>
+                {(categories ?? []).map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </NativeSelect>
+              <CategoryInfo categories={categories ?? []} />
+            </div>
+            <NativeSelect name="missing" defaultValue={sp.missing ?? ""} aria-label="Thiếu thông tin">
+              <option value="">Mọi dữ liệu</option>
+              <option value="any">Thiếu thông tin</option>
+              <option value="unit">Chưa rõ ĐVT</option>
+              <option value="cost">Thiếu giá vốn</option>
+              <option value="price">Thiếu giá bán</option>
+            </NativeSelect>
+          </div>
+        </FilterBar>
       </AutoSubmitForm>
 
       {error ? (

@@ -3,11 +3,12 @@ import { requireStore } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime, formatMoney, formatNumber } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
+import { AutoSubmitForm } from "@/components/auto-submit-form";
+import { FilterBar } from "@/components/filter-bar";
 import { EmptyState } from "@/components/empty-state";
 import { NativeSelect } from "@/components/native-select";
 import { Pagination } from "@/components/pagination";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { InventoryTabs } from "../inventory-tabs";
@@ -69,22 +70,23 @@ export default async function MovementsPage({ params, searchParams }: { params: 
     <div>
       <PageHeader title="Lịch sử biến động kho" description="Mỗi lần tồn thay đổi đều có một dòng, kèm chứng từ nguồn." />
       <InventoryTabs storeCode={store.code} />
-      <form className="my-3 grid gap-2 sm:grid-cols-[150px_150px_200px_auto]">
-        <Input type="date" name="from" defaultValue={sp.from} aria-label="Từ ngày" />
-        <Input type="date" name="to" defaultValue={sp.to} aria-label="Đến ngày" />
-        <NativeSelect name="type" defaultValue={sp.type ?? ""} aria-label="Loại biến động">
-          <option value="">Mọi loại</option>
-          {Object.entries(MOVEMENT_LABEL).map(([k, v]) => (
-            <option key={k} value={k}>
-              {v}
-            </option>
-          ))}
-        </NativeSelect>
+      <AutoSubmitForm action={`/${store.code}/inventory/movements`} className="my-3">
         {sp.product && <input type="hidden" name="product" value={sp.product} />}
-        <Button type="submit" variant="secondary">
-          Lọc
-        </Button>
-      </form>
+        <FilterBar ignore={["q", "page", "f", "tab", "product"]}>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-[150px_150px_200px]">
+            <Input type="date" name="from" defaultValue={sp.from} aria-label="Từ ngày" />
+            <Input type="date" name="to" defaultValue={sp.to} aria-label="Đến ngày" />
+            <NativeSelect name="type" defaultValue={sp.type ?? ""} aria-label="Loại biến động" className="col-span-2 sm:col-span-1">
+              <option value="">Mọi loại</option>
+              {Object.entries(MOVEMENT_LABEL).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </NativeSelect>
+          </div>
+        </FilterBar>
+      </AutoSubmitForm>
       {error ? (
         <p role="alert" className="text-sm text-destructive">
           Không tải được lịch sử.

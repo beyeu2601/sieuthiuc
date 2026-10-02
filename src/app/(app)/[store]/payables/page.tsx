@@ -7,11 +7,12 @@ import { formatDateTime, formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
-import { ChipSac } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { PAYMENT_METHOD_LABEL } from "../receipts/labels";
+import { DUE } from "./labels";
+import { DebtBoard, type DebtCardData } from "./debt-board";
 
 export const metadata = { title: "Công nợ nhà cung cấp" };
 
@@ -41,15 +42,13 @@ type Debt = {
   remaining: number;
   status: string;
   suppliers: { name: string } | null;
-  purchase_receipts: { code: string } | null;
+  purchase_receipts: {
+    code: string;
+    extra_cost_total: number;
+    paid_amount: number;
+    purchase_receipt_items: { line_no: number; qty: number; unit: string; unit_cost: number; line_total: number; products: { name: string } | null }[];
+  } | null;
 };
-
-const DUE = {
-  overdue: { label: "Quá hạn", sac: "red" },
-  due_soon: { label: "Sắp đến hạn", sac: "amber" },
-  not_due: { label: "Chưa đến hạn", sac: "slate" },
-  paid: { label: "Đã trả", sac: "emerald" },
-} as const;
 
 export default async function PayablesPage({
   params,
@@ -63,11 +62,11 @@ export default async function PayablesPage({
   const tab = sp.tab ?? "due";
   const { store } = await requireStore(code, "sadmin", "admin", "accountant");
   const supabase = await createClient();
-  const [{ data: ov }, { data: debts }, { data: payments }, dueSoonDays] = await Promise.all([
+  const [{ data: ov }, { data: debts }, { data: payments }, dueSoonDays, { data: accounts }] = await Promise.all([
     supabase.rpc("debt_overview", { p_store_ids: [store.id] }),
     supabase
       .from("supplier_debts")
-      .select("id, code, supplier_id, receipt_id, issued_date, due_date, total_amount, paid_amount, remaining, status, suppliers(name), purchase_receipts(code)")
+      .select("id, code, supplier_id, receipt_id, issued_date, due_date, total_amount, paid_amount, remaining, status, suppliers(name), purchase_receipts(code, extra_cost_total, paid_amount, purchase_receipt_items(line_no, qty, unit, unit_cost, line_total, products(name)))")
       .eq("store_id", store.id)
       .order("due_date", { ascending: true, nullsFirst: false })
       .limit(1000),
@@ -80,6 +79,7 @@ export default async function PayablesPage({
           .limit(200)
       : Promise.resolve({ data: [] as never[] }),
     getNumberSetting("debt.due_soon_days", 3, store.id),
+    supabase.from("money_accounts").select("id, name, kind").eq("is_active", true).order("sort_order").order("name"),
   ]);
   const o = ov as Overview | null;
   const today = todayVN();
@@ -314,85 +314,17 @@ export default async function PayablesPage({
         )
       ) : (
         (() => {
-          const rows = tab === "due" ? open.sort((a, b) => (a.due_date ?? "9999") .localeCompare(b.due_date ?? "9999")) : all;
+          const rows = tab === "due" ? open.sort((a, b) => (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999")) : all;
           return rows.length === 0 ? (
             <EmptyState title={tab === "due" ? "Không có khoản nào cần thanh toán" : "Chưa có công nợ"} />
           ) : (
-            <>
-              <MobileCardList label="Khoản công nợ">
-                {rows.map((d) => {
-                  const ds = DUE[dueStatus(d)];
-                  return (
-                    <MobileCard
-                      key={d.id}
-                      title={d.suppliers?.name}
-                      subtitle={
-                        <>
-                          {d.code}
-                          {d.receipt_id && (
-                            <>
-                              {" - "}
-                              <Link href={`/${store.code}/receipts/${d.receipt_id}`} className="underline underline-offset-4">
-                                {d.purchase_receipts?.code}
-                              </Link>
-                            </>
-                          )}
-                        </>
-                      }
-                      badge={<ChipSac sac={ds.sac}>{ds.label}</ChipSac>}
-                      stats={[
-                        { label: "Còn nợ", value: formatMoney(d.remaining), strong: true },
-                        { label: "Tổng", value: formatMoney(d.total_amount) },
-                        { label: "Hạn trả", value: formatDateVN(d.due_date) },
-                      ]}
-                    />
-                  );
-                })}
-              </MobileCardList>
-              <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Mã nợ</TableHead>
-                      <TableHead>Nhà cung cấp</TableHead>
-                      <TableHead>Phiếu nhập</TableHead>
-                      <TableHead>Ngày phát sinh</TableHead>
-                      <TableHead>Hạn trả</TableHead>
-                      <TableHead className="text-right">Tổng</TableHead>
-                      <TableHead className="text-right">Còn nợ</TableHead>
-                      <TableHead>Tình trạng</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {rows.map((d) => {
-                      const ds = DUE[dueStatus(d)];
-                      return (
-                        <TableRow key={d.id}>
-                          <TableCell className="font-medium">{d.code}</TableCell>
-                          <TableCell>{d.suppliers?.name}</TableCell>
-                          <TableCell>
-                            {d.receipt_id ? (
-                              <Link href={`/${store.code}/receipts/${d.receipt_id}`} className="underline underline-offset-4">
-                                {d.purchase_receipts?.code}
-                              </Link>
-                            ) : (
-                              "-"
-                            )}
-                          </TableCell>
-                          <TableCell>{formatDateVN(d.issued_date)}</TableCell>
-                          <TableCell>{formatDateVN(d.due_date)}</TableCell>
-                          <TableCell className="text-right tabular-nums">{formatMoney(d.total_amount)}</TableCell>
-                          <TableCell className="text-right font-medium tabular-nums">{formatMoney(d.remaining)}</TableCell>
-                          <TableCell>
-                            <ChipSac sac={ds.sac}>{ds.label}</ChipSac>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </>
+            <DebtBoard
+              storeId={store.id}
+              storeCode={store.code}
+              today={today}
+              accounts={(accounts ?? []) as { id: string; name: string; kind: string }[]}
+              debts={rows.map((d) => toCard(d, dueStatus(d), today))}
+            />
           );
         })()
       )}
@@ -408,4 +340,28 @@ function Kpi({ label, value, sub, tone }: { label: string; value: string; sub?: 
       {sub && <div className="text-xs text-muted-foreground">{sub}</div>}
     </div>
   );
+}
+
+function toCard(d: Debt, due: keyof typeof DUE, today: string): DebtCardData {
+  const r = d.purchase_receipts;
+  return {
+    id: d.id,
+    code: d.code,
+    supplier_id: d.supplier_id,
+    supplier_name: d.suppliers?.name ?? "?",
+    receipt_id: d.receipt_id,
+    receipt_code: r?.code ?? null,
+    issued_date: d.issued_date,
+    due_date: d.due_date,
+    days_left: d.due_date ? diffDays(today, d.due_date) : null,
+    due,
+    total_amount: d.total_amount,
+    paid_amount: d.paid_amount,
+    remaining: d.remaining,
+    items: [...(r?.purchase_receipt_items ?? [])]
+      .sort((a, b) => a.line_no - b.line_no)
+      .map((i) => ({ name: i.products?.name ?? "?", qty: Number(i.qty), unit: i.unit, unit_cost: i.unit_cost, line_total: i.line_total })),
+    extra_cost: r?.extra_cost_total ?? 0,
+    paid_at_receipt: r?.paid_amount ?? 0,
+  };
 }

@@ -3,9 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { formatNumber } from "@/lib/format";
 import { GOODS_TYPE_LABEL } from "@/lib/text";
 import { PageHeader } from "@/components/page-header";
+import { AutoSubmitForm } from "@/components/auto-submit-form";
+import { FilterBar } from "@/components/filter-bar";
 import { EmptyState } from "@/components/empty-state";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { InventoryTabs } from "../inventory-tabs";
@@ -61,19 +62,20 @@ export default async function PeriodPage({
     <div>
       <PageHeader title="Nhập xuất tồn theo kỳ" description="Tồn cuối = tồn đầu + nhập - xuất + điều chỉnh, tính từ lịch sử biến động." />
       <InventoryTabs storeCode={store.code} />
-      <form className="my-3 flex flex-wrap items-end gap-2">
-        <label className="space-y-1 text-sm">
-          Từ ngày
-          <Input type="date" name="from" defaultValue={from} />
-        </label>
-        <label className="space-y-1 text-sm">
-          Đến ngày
-          <Input type="date" name="to" defaultValue={to} />
-        </label>
-        <Button type="submit" variant="secondary">
-          Xem
-        </Button>
-      </form>
+      <AutoSubmitForm action={`/${store.code}/inventory/period`} className="my-3">
+        <FilterBar>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-end">
+            <label className="block min-w-0 space-y-1 text-sm">
+              Từ ngày
+              <Input type="date" name="from" defaultValue={from} className="min-w-0" />
+            </label>
+            <label className="block min-w-0 space-y-1 text-sm">
+              Đến ngày
+              <Input type="date" name="to" defaultValue={to} className="min-w-0" />
+            </label>
+          </div>
+        </FilterBar>
+      </AutoSubmitForm>
       {error ? (
         <p role="alert" className="text-sm text-destructive">
           Không tải được số liệu.

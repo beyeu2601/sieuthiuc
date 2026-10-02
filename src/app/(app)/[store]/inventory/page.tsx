@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { AutoSubmitForm } from "@/components/auto-submit-form";
+import { FilterBar } from "@/components/filter-bar";
 import { FilterChip } from "@/components/filter-chip";
 import { Pagination } from "@/components/pagination";
 import { ChipSac } from "@/components/ui/chip";
@@ -91,26 +92,29 @@ export default async function InventoryPage({ params, searchParams }: { params: 
       <InventoryTabs storeCode={store.code} />
       <AutoSubmitForm action={`/${store.code}/inventory`} debounceMs={400} className="my-3 space-y-2.5" role="search">
         <input type="hidden" name="f" value="1" />
-        <Input type="search" enterKeyHint="search" name="q" defaultValue={sp.q} placeholder="Tìm tên, SKU hoặc quét mã" aria-label="Tìm sản phẩm" className="sm:max-w-md" />
-        <div className="flex flex-wrap gap-x-6 gap-y-2">
-          <div role="group" aria-label="Trạng thái tồn" className="flex flex-wrap items-center gap-1.5">
-            <span className="mr-1 text-xs font-medium text-muted-foreground">Trạng thái</span>
-            <FilterChip name="status" value="in_stock" label="Còn hàng" checked={statusSel.includes("in_stock")} />
-            <FilterChip name="status" value="low" label="Sắp hết" checked={statusSel.includes("low")} />
-            <FilterChip name="status" value="out" label="Hết hàng" checked={statusSel.includes("out")} />
+        <FilterBar
+          search={<Input type="search" enterKeyHint="search" name="q" defaultValue={sp.q} placeholder="Tìm tên, SKU hoặc quét mã" aria-label="Tìm sản phẩm" />}
+        >
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <div role="group" aria-label="Trạng thái tồn" className="flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 text-xs font-medium text-muted-foreground">Trạng thái</span>
+              <FilterChip name="status" value="in_stock" label="Còn hàng" checked={statusSel.includes("in_stock")} />
+              <FilterChip name="status" value="low" label="Sắp hết" checked={statusSel.includes("low")} />
+              <FilterChip name="status" value="out" label="Hết hàng" checked={statusSel.includes("out")} />
+            </div>
+            <div role="group" aria-label="Loại hàng" className="flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 text-xs font-medium text-muted-foreground">Loại</span>
+              <FilterChip name="type" value="cont" label="Cont" checked={typeSel.includes("cont")} />
+              <FilterChip name="type" value="air" label="Air" checked={typeSel.includes("air")} />
+            </div>
+            <div role="group" aria-label="Nhóm hàng" className="flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 text-xs font-medium text-muted-foreground">Nhóm hàng</span>
+              {(cats ?? []).map((c) => (
+                <FilterChip key={c.id} name="cat" value={c.id} label={c.name} checked={catSel.includes(c.id)} />
+              ))}
+            </div>
           </div>
-          <div role="group" aria-label="Loại hàng" className="flex flex-wrap items-center gap-1.5">
-            <span className="mr-1 text-xs font-medium text-muted-foreground">Loại</span>
-            <FilterChip name="type" value="cont" label="Cont" checked={typeSel.includes("cont")} />
-            <FilterChip name="type" value="air" label="Air" checked={typeSel.includes("air")} />
-          </div>
-          <div role="group" aria-label="Nhóm hàng" className="flex flex-wrap items-center gap-1.5">
-            <span className="mr-1 text-xs font-medium text-muted-foreground">Nhóm hàng</span>
-            {(cats ?? []).map((c) => (
-              <FilterChip key={c.id} name="cat" value={c.id} label={c.name} checked={catSel.includes(c.id)} />
-            ))}
-          </div>
-        </div>
+        </FilterBar>
       </AutoSubmitForm>
 
       {error ? (
