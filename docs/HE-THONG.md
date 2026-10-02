@@ -101,6 +101,7 @@ Cơ chế:
 | `20261008000001` | Đối soát tiền Shopee và hoàn hàng: bảng `platform_payouts`, cột `orders.payout_id`, `orders.return_*`, `cash_transactions.payout_id`; nhóm chi `Phí sàn Shopee`, `Quảng cáo Shopee`; `record_platform_payout`, `cancel_platform_payout`, `return_order`, `review_order_return` |
 | `20261009000001` | Xóa sản phẩm: `delete_product` (sadmin/admin); chặn khi sản phẩm đã có dòng bán, đơn online, phiếu nhập, chuyển kho hoặc còn tồn/đang giữ; xóa kèm tồn, lô, biến động, mã vạch, lịch sử giá, ảnh; trả mã file ảnh để app bỏ vào thùng rác Drive |
 | `20261009000002` | `inventory_status`: trong mỗi nhóm cảnh báo (hết, sắp hết, còn hàng) sản phẩm tạo mới nhất đứng trước |
+| `20261010000001` | Người giữ tài khoản duyệt thu chi: `money_accounts.holder_id`, cột `cash_transactions.pending_*`; `set_money_account_holder`, `request_cash_change`, `money_accounts_overview`, `money_account_ledger`; `create_cash_transaction` và `review_cash_transaction` viết lại theo người giữ |
 
 Các RPC chính theo nghiệp vụ:
 
@@ -108,7 +109,7 @@ Các RPC chính theo nghiệp vụ:
 - Ca: `open_shift`, `close_shift`, `approve_shift`, `adjust_shift_count`, `shift_expected_cash`, `shift_summary`.
 - Kho: `adjust_product_stock`, `save_purchase_receipt`, `confirm_purchase_receipt`, `cancel_purchase_receipt`, `save_transfer`, `send_transfer`, `receive_transfer`, `cancel_transfer`.
 - Đơn online: `create_order`, `update_order_status` (giao thành công tạo giao dịch bán theo kênh), `reconcile_reservations`, `return_order`, `review_order_return`, `record_platform_payout`, `cancel_platform_payout`.
-- Tài chính: `record_supplier_payment`, `debt_overview`, `create_cash_transaction`, `review_cash_transaction`, `mark_cash_transaction_paid`, `reconcile_report`, `save_reconciliation_note`.
+- Tài chính: `record_supplier_payment`, `debt_overview`, `create_cash_transaction`, `review_cash_transaction`, `request_cash_change`, `mark_cash_transaction_paid`, `set_money_account_holder`, `money_accounts_overview`, `money_account_ledger`, `reconcile_report`, `save_reconciliation_note`.
 - Báo cáo: `pnl_report`, `pnl_daily`, `revenue_breakdown`, `cogs_report`, `expense_report`, `best_sellers`, `inventory_status`, `inventory_period`, `lot_expiry`, `stock_movement_list`.
 
 ## 6. Quy ước
@@ -170,10 +171,15 @@ Khác biệt kỹ thuật so với SPEC:
 - Duyệt giảm giá vượt hạn mức: quản lý nhập PIN để nhận mã duyệt dùng một lần trong 5 phút; sai 3 lần trong 1 phút khóa 1 phút. Tách bước để số lần sai không bị rollback.
 - Phí ship của đơn online không vào doanh thu (sale ghi tiền hàng trừ giảm giá).
 - Công nợ, thu chi, đối soát, báo cáo đặt dưới đường dẫn cửa hàng `/[store]/...`; báo cáo có tùy chọn "Tất cả cửa hàng" khi người dùng có nhiều cửa hàng.
-- Duyệt khoản chi (P1) làm sớm ở dạng đơn giản: chỉ khoản chi tiền mặt của nhân viên vượt ngưỡng `expense.auto_approve_below` mới chờ duyệt.
+- Duyệt thu chi theo người giữ tài khoản (khách yêu cầu 02/10/2026), thay cho cách cũ chỉ duyệt khoản chi tiền mặt của nhân viên vượt ngưỡng `expense.auto_approve_below` (cấu hình này không còn dùng):
+  - Mọi nhân sự (kể cả nhân viên, không cần mở ca) "Xin chi" hoặc "Báo thu" (khoản thu khác) ở màn Thu chi, chọn tài khoản (mặc định Tiền mặt). Khoản chờ duyệt chưa vào số dư, lãi lỗ, tiền ca.
+  - Mỗi tài khoản có đúng một người giữ do sadmin/admin chọn ở trang sổ tài khoản (bấm thẻ tài khoản trên màn Thu chi). Chỉ người giữ duyệt hoặc từ chối; người giữ tự xin thì tự duyệt. Tài khoản chưa có người giữ thì quản lý cửa hàng duyệt. Quản lý không duyệt thay người giữ; người giữ vắng thì đổi người giữ.
+  - Sửa/xóa khoản đã duyệt: người tạo hoặc quản lý cửa hàng xin kèm lý do; khoản giữ nguyên số cũ đến khi người giữ duyệt. Không sửa/xóa khoản thuộc ca đã chốt và khoản sinh từ đối soát Shopee. Xóa là xóa hẳn, vết còn trong `audit_logs`.
+  - Khoản tiền mặt của người đang mở ca gắn vào ca, chỉ vào tiền mặt kỳ vọng của ca khi được duyệt lúc ca còn mở. Chốt ca còn khoản chờ duyệt: vẫn chốt được, màn chốt ca liệt kê các khoản đó.
+  - Trang sổ tài khoản: số dư hiện tại và các dòng thu bán hàng, thu chi đã duyệt và đã trả, trả NCC kèm số dư sau mỗi dòng. Xem được: sadmin, admin, kế toán và người giữ tài khoản đó.
 - Giỏ hàng POS lưu localStorage thay cho Dexie.
 - Thanh toán POS bắt buộc chọn phương thức (bỏ mặc định tiền mặt toàn bộ khi để trống).
-- Tài khoản giữ tiền (két, ngân hàng, ví) do sadmin quản lý ở Cài đặt > Tài khoản tiền. Thu chi, thu bán hàng (từng phương thức) và trả NCC đều chọn tài khoản để theo dõi số dư; `account_id` là tùy chọn ở RPC (validate khi có), bắt buộc chọn ở giao diện.
+- Tài khoản giữ tiền (két, ngân hàng, ví) do sadmin tạo và sửa ở Cài đặt > Tài khoản tiền; người giữ chọn ở màn Thu chi. Thu chi, thu bán hàng (từng phương thức) và trả NCC đều chọn tài khoản để theo dõi số dư; `account_id` là tùy chọn ở RPC (validate khi có), bắt buộc chọn ở giao diện.
 - Phiếu nhập có cột giá bán mỗi dòng và nút "Thêm sản phẩm" tạo nhanh (sadmin/admin); xác nhận nhập kho cập nhật giá bán sản phẩm (ghi lịch sử giá) khi dòng có nhập giá bán khác giá cũ.
 - Màn Thêm sản phẩm có ô Giá vốn (không bắt buộc, ghi vào `products.cost_price_ref`) để có giá vốn tham chiếu trước lần nhập hàng đầu; dùng luôn cho % Benefit. Giá vốn sửa sau ở khối "Tồn kho và giá vốn" của trang sản phẩm; phiếu nhập xác nhận sẽ ghi đè bằng giá vốn bình quân.
 - Chỉnh tồn kho và giá vốn không qua phiếu nhập (khách yêu cầu 01/10/2026): trang chi tiết sản phẩm có khối "Tồn kho và giá vốn" theo từng cửa hàng (sadmin/admin). Nhập số tồn thực tế: tăng thì tạo lô mới `DC-yymmddhhmmss` theo giá vốn hiện tại (HSD tùy chọn), giảm thì trừ lô theo FEFO; biến động loại `adjustment`, không phát sinh công nợ NCC. Không cho thấp hơn số đang giữ cho đơn online. Sửa giá vốn ghi đè `inventory.avg_cost`, giá vốn các lô còn hàng và `products.cost_price_ref`; giao dịch bán đã ghi giữ nguyên giá vốn cũ; sản phẩm đặt giá theo % Benefit không tự đổi giá bán (xem Gợi ý giá).

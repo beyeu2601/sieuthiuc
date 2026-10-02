@@ -22,7 +22,7 @@ export default async function ShiftPage({ params }: { params: Promise<{ store: s
     .maybeSingle();
   if (!s) notFound();
 
-  const [{ data: summary }, { data: sales }, { data: moves }] = await Promise.all([
+  const [{ data: summary }, { data: sales }, { data: moves }, { data: waitingCash }] = await Promise.all([
     supabase.rpc("shift_summary", { p_shift_id: id }),
     supabase
       .from("sales")
@@ -30,6 +30,15 @@ export default async function ShiftPage({ params }: { params: Promise<{ store: s
       .eq("shift_id", id)
       .order("completed_at", { ascending: false }),
     supabase.from("shift_cash_movements").select("id, kind, amount, reason, created_at").eq("shift_id", id).order("created_at"),
+    s.status === "open"
+      ? supabase
+          .from("cash_transactions")
+          .select("id, code, kind, description, amount, method")
+          .eq("store_id", store.id)
+          .eq("created_by", s.user_id)
+          .eq("approval_status", "pending")
+          .order("created_at")
+      : Promise.resolve({ data: [] as { id: string; code: string; kind: string; description: string; amount: number; method: string }[] }),
   ]);
   const sum = summary as ShiftSummary | null;
   const st = SHIFT_STATUS[s.status as keyof typeof SHIFT_STATUS];
@@ -94,7 +103,19 @@ export default async function ShiftPage({ params }: { params: Promise<{ store: s
       {canClose && (
         <section className="rounded-xl border bg-card p-4">
           <h2 className="mb-3 font-medium">Chốt ca</h2>
-          <CloseShiftForm storeCode={store.code} shiftId={s.id} expected={sum?.expected_cash ?? 0} />
+          {(waitingCash ?? []).length > 0 && (
+            <div role="alert" className="mb-3 rounded-lg border border-warning bg-warning-soft p-3 text-sm">
+              <p className="font-medium">Còn {(waitingCash ?? []).length} khoản thu chi chưa được duyệt. Vẫn chốt được ca, nhưng tiền mặt kỳ vọng chưa tính các khoản này:</p>
+              <ul className="mt-1 list-disc pl-5">
+                {(waitingCash ?? []).map((w) => (
+                  <li key={w.id}>
+                    {w.code} - {w.kind === "income" ? "Thu" : "Chi"} {formatMoney(w.amount)} ({PAYMENT_METHOD_LABEL[w.method as keyof typeof PAYMENT_METHOD_LABEL]}): {w.description}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <CloseShiftForm storeCode={store.code} shiftId={s.id} expected={sum?.expected_cash ?? 0} waitingCount={(waitingCash ?? []).length} />
         </section>
       )}
 

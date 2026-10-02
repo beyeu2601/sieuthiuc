@@ -42,7 +42,17 @@ export function OpenShiftForm({ storeCode, storeId, redirectTo }: { storeCode: s
 
 const DENOMS = [500000, 200000, 100000, 50000, 20000, 10000, 5000, 2000, 1000];
 
-export function CloseShiftForm({ storeCode, shiftId, expected }: { storeCode: string; shiftId: string; expected: number }) {
+export function CloseShiftForm({
+  storeCode,
+  shiftId,
+  expected,
+  waitingCount = 0,
+}: {
+  storeCode: string;
+  shiftId: string;
+  expected: number;
+  waitingCount?: number;
+}) {
   const router = useRouter();
   const [mode, setMode] = useState<"total" | "denom">("denom");
   const [total, setTotal] = useState<number | null>(null);
@@ -61,7 +71,7 @@ export function CloseShiftForm({ storeCode, shiftId, expected }: { storeCode: st
     if (
       !(await confirm({
         title: "Chốt ca?",
-        description: `Tiền mặt thực đếm ${formatMoney(counted)}. Ca đã chốt không mở lại được.`,
+        description: `Tiền mặt thực đếm ${formatMoney(counted)}. ${waitingCount > 0 ? `Còn ${waitingCount} khoản thu chi chờ duyệt. ` : ""}Ca đã chốt không mở lại được.`,
       }))
     )
       return;

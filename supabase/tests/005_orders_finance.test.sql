@@ -74,12 +74,12 @@ select is((debt_overview(array[tests.store('A')]) ->> 'remaining'), '100000', 't
 
 -- 5. Thu chi
 select tests.login(tests.uid('staff'));
-select throws_like($$ select create_cash_transaction(jsonb_build_object('store_id', tests.store('A'), 'kind', 'expense',
+select is((create_cash_transaction(jsonb_build_object('store_id', tests.store('A'), 'kind', 'expense',
   'category_id', (select id from expense_categories where name = 'Điện'), 'description', 'Tiền điện', 'amount', 100000,
-  'method', 'transfer')) $$, '%tiền mặt trong ca%', 'nhan vien khong ghi chi chuyen khoan');
+  'method', 'transfer')) ->> 'approval_status'), 'pending', 'nhan vien xin chi chuyen khoan: cho duyet');
 select is((create_cash_transaction(jsonb_build_object('store_id', tests.store('A'), 'kind', 'expense',
   'category_id', (select id from expense_categories where name = 'Bao bì'), 'description', 'Mua túi', 'amount', 600000,
-  'method', 'cash')) ->> 'approval_status'), 'pending', 'chi tien mat trong ca vuot 500.000: cho duyet');
+  'method', 'cash')) ->> 'approval_status'), 'pending', 'nhan vien xin chi tien mat: cho duyet');
 select tests.login(tests.uid('acc'));
 select lives_ok($$ select create_cash_transaction(jsonb_build_object('store_id', tests.store('A'), 'kind', 'expense',
   'category_id', (select id from expense_categories where name = 'Mặt bằng'), 'description', 'Thuê nhà', 'amount', 50000,
@@ -87,6 +87,7 @@ select lives_ok($$ select create_cash_transaction(jsonb_build_object('store_id',
 select tests.login(tests.uid('admin'));
 select lives_ok($$ select review_cash_transaction((select id from cash_transactions where description = 'Mua túi'), true) $$,
   'quan ly duyet khoan chi');
+select review_cash_transaction((select id from cash_transactions where description = 'Thuê nhà'), true);
 
 -- 6. PnL hom nay: doanh thu 190.000 - giam 10.000 = 180.000; COGS 120.000; chi 650.000
 select is((pnl_report(array[tests.store('A')], public._today(), public._today()) ->> 'net_revenue'), '180000', 'PnL doanh thu thuan');

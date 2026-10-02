@@ -21,6 +21,8 @@ const APPROVAL = {
   rejected: { label: "Từ chối", variant: "destructive" },
 } as const;
 
+type AccountOverview = { id: string; name: string; kind: string; holder_id: string | null; holder_name: string | null; balance: number | null };
+
 type SP = { from?: string; to?: string; kind?: string; cat?: string; approval?: string; pay?: string };
 
 export default async function CashPage({ params, searchParams }: { params: Promise<{ store: string }>; searchParams: Promise<SP> }) {
@@ -31,10 +33,28 @@ export default async function CashPage({ params, searchParams }: { params: Promi
   const from = sp.from || month.from;
   const to = sp.to || month.to;
   const supabase = await createClient();
-  const { data: cats } = await supabase.from("expense_categories").select("id, name, kind").eq("is_active", true).order("kind").order("name");
+  const [{ data: cats }, { data: accData }, { data: waiting }] = await Promise.all([
+    supabase.from("expense_categories").select("id, name, kind").eq("is_active", true).order("kind").order("name"),
+    supabase.rpc("money_accounts_overview"),
+    supabase
+      .from("cash_transactions")
+      .select("id, account_id")
+      .eq("store_id", store.id)
+      .or("approval_status.eq.pending,pending_action.not.is.null"),
+  ]);
+  const accounts = (accData ?? []) as AccountOverview[];
+  const accById = new Map(accounts.map((a) => [a.id, a]));
+  const isManager = ctx.profile.role === "sadmin" || ctx.profile.role === "admin";
+  const canFinance = ctx.profile.role !== "staff";
+  // Nguoi giu tai khoan duyet; tai khoan chua co nguoi giu thi quan ly cua hang duyet
+  const canApprove = (accountId: string | null) => {
+    const holder = accountId ? accById.get(accountId)?.holder_id : null;
+    return holder ? holder === ctx.profile.id : isManager;
+  };
+  const waitingMine = (waiting ?? []).filter((w) => canApprove(w.account_id)).length;
   let q = supabase
     .from("cash_transactions")
-    .select("id, code, kind, occurred_on, description, amount, method, counterparty, doc_no, payment_status, paid_on, approval_status, reject_reason, shift_id, expense_categories(name), creator:created_by(full_name)")
+    .select("id, code, kind, occurred_on, description, amount, method, counterparty, doc_no, payment_status, paid_on, approval_status, reject_reason, shift_id, account_id, created_by, payout_id, pending_action, pending_data, pending_reason, expense_categories(name), creator:created_by(full_name)")
     .eq("store_id", store.id)
     .gte("occurred_on", from)
     .lte("occurred_on", to)
@@ -43,7 +63,8 @@ export default async function CashPage({ params, searchParams }: { params: Promi
     .limit(500);
   if (sp.kind === "income" || sp.kind === "expense") q = q.eq("kind", sp.kind);
   if (sp.cat) q = q.eq("category_id", sp.cat);
-  if (sp.approval && sp.approval in APPROVAL) q = q.eq("approval_status", sp.approval);
+  if (sp.approval === "waiting") q = q.or("approval_status.eq.pending,pending_action.not.is.null");
+  else if (sp.approval && sp.approval in APPROVAL) q = q.eq("approval_status", sp.approval);
   if (sp.pay === "paid" || sp.pay === "unpaid") q = q.eq("payment_status", sp.pay);
   const { data } = await q;
   const rows = data ?? [];
@@ -55,16 +76,40 @@ export default async function CashPage({ params, searchParams }: { params: Promi
     const n = (r.expense_categories as unknown as { name: string } | null)?.name ?? "?";
     byCat.set(n, (byCat.get(n) ?? 0) + r.amount);
   }
-  const isManager = ctx.profile.role === "sadmin" || ctx.profile.role === "admin";
-  const canFinance = ctx.profile.role !== "staff";
 
   return (
     <div className="space-y-4">
       <PageHeader
         title="Thu chi"
-        description="Chi phí ghi theo ngày phát sinh. Khoản chưa trả vẫn tính vào lãi lỗ và theo dõi ở mục Phải trả khác."
-        actions={<Button render={<Link href={`/${store.code}/cash/new`} />}>Ghi thu chi</Button>}
+        description="Mọi khoản thu chi cần người giữ tài khoản duyệt mới vào số dư. Khoản chưa trả vẫn tính vào lãi lỗ và theo dõi ở mục Phải trả khác."
+        actions={<Button render={<Link href={`/${store.code}/cash/new`} />}>Xin chi / báo thu</Button>}
       />
+
+      {waitingMine > 0 && (
+        <Link
+          href={`/${store.code}/cash?approval=waiting&from=2000-01-01`}
+          className="flex min-h-11 items-center justify-between gap-2 rounded-xl border border-warning bg-warning-soft px-4 py-2 text-sm font-medium"
+        >
+          <span>{waitingMine} khoản đang chờ bạn duyệt</span>
+          <span aria-hidden>Xem -&gt;</span>
+        </Link>
+      )}
+
+      {accounts.length > 0 && (
+        <section aria-label="Tài khoản giữ tiền" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {accounts.map((a) => (
+            <Link
+              key={a.id}
+              href={`/${store.code}/cash/accounts/${a.id}`}
+              className="rounded-xl border bg-card p-4 transition-colors hover:bg-muted"
+            >
+              <div className="font-medium">{a.name}</div>
+              <div className="text-xs text-muted-foreground">{a.holder_name ? `Người giữ: ${a.holder_name}` : "Chưa có người giữ"}</div>
+              {a.balance !== null && <div className="mt-1 text-xl font-semibold tabular-nums">{formatMoney(a.balance)}</div>}
+            </Link>
+          ))}
+        </section>
+      )}
       <form className="grid gap-2 sm:grid-cols-[150px_150px_120px_180px_140px_140px_auto]">
         <Input type="date" name="from" defaultValue={from} aria-label="Từ ngày" />
         <Input type="date" name="to" defaultValue={to} aria-label="Đến ngày" />
@@ -84,7 +129,8 @@ export default async function CashPage({ params, searchParams }: { params: Promi
         </NativeSelect>
         <NativeSelect name="approval" defaultValue={sp.approval ?? ""} aria-label="Duyệt">
           <option value="">Mọi trạng thái</option>
-          <option value="pending">Chờ duyệt</option>
+          <option value="waiting">Chờ duyệt (mới, sửa, xóa)</option>
+          <option value="pending">Chờ duyệt khoản mới</option>
           <option value="approved">Đã duyệt</option>
           <option value="rejected">Từ chối</option>
         </NativeSelect>
@@ -134,7 +180,7 @@ export default async function CashPage({ params, searchParams }: { params: Promi
                 <TableHead>Mã</TableHead>
                 <TableHead className="min-w-48">Nội dung</TableHead>
                 <TableHead>Nhóm</TableHead>
-                <TableHead>Phương thức</TableHead>
+                <TableHead>Tài khoản</TableHead>
                 <TableHead className="text-right">Số tiền</TableHead>
                 <TableHead>Thanh toán</TableHead>
                 <TableHead>Duyệt</TableHead>
@@ -144,6 +190,7 @@ export default async function CashPage({ params, searchParams }: { params: Promi
             <TableBody>
               {rows.map((r) => {
                 const ap = APPROVAL[r.approval_status as keyof typeof APPROVAL];
+                const change = r.pending_data as { amount?: number; description?: string } | null;
                 return (
                   <TableRow key={r.id}>
                     <TableCell className="whitespace-nowrap">{formatDateVN(r.occurred_on)}</TableCell>
@@ -155,24 +202,49 @@ export default async function CashPage({ params, searchParams }: { params: Promi
                           .filter(Boolean)
                           .join(" - ")}
                       </div>
-                      {r.reject_reason && <div className="text-xs text-destructive">Từ chối: {r.reject_reason}</div>}
+                      {r.reject_reason && (
+                        <div className="text-xs text-destructive">
+                          {r.approval_status === "rejected" ? "Từ chối: " : ""}
+                          {r.reject_reason}
+                        </div>
+                      )}
+                      {r.pending_action && (
+                        <div className="text-xs text-warning">
+                          Xin {r.pending_action === "edit" ? "sửa" : "xóa"}: {r.pending_reason}
+                          {change?.amount !== undefined && change.amount !== r.amount && ` - số tiền mới ${formatMoney(change.amount)}`}
+                          {change?.description && change.description !== r.description && ` - nội dung mới "${change.description}"`}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>{(r.expense_categories as unknown as { name: string } | null)?.name}</TableCell>
-                    <TableCell>{PAYMENT_METHOD_LABEL[r.method as keyof typeof PAYMENT_METHOD_LABEL]}</TableCell>
+                    <TableCell>
+                      {(r.account_id && accById.get(r.account_id)?.name) || "-"}
+                      <div className="text-xs text-muted-foreground">{PAYMENT_METHOD_LABEL[r.method as keyof typeof PAYMENT_METHOD_LABEL]}</div>
+                    </TableCell>
                     <TableCell className={`text-right tabular-nums ${r.kind === "income" ? "text-success" : ""}`}>
                       {r.kind === "income" ? "+" : "-"}
                       {formatMoney(r.amount)}
                     </TableCell>
                     <TableCell>{r.payment_status === "paid" ? `Đã trả ${formatDateVN(r.paid_on)}` : <Badge variant="outline">Chưa trả</Badge>}</TableCell>
                     <TableCell>
-                      <Badge variant={ap.variant}>{ap.label}</Badge>
+                      {r.pending_action ? (
+                        <Badge variant="default">Chờ duyệt {r.pending_action === "edit" ? "sửa" : "xóa"}</Badge>
+                      ) : (
+                        <Badge variant={ap.variant}>{ap.label}</Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <CashRowActions
                         storeCode={store.code}
                         id={r.id}
-                        canReview={isManager && r.approval_status === "pending"}
+                        canReview={(r.approval_status === "pending" || r.pending_action !== null) && canApprove(r.account_id)}
                         canMarkPaid={canFinance && r.payment_status === "unpaid" && r.approval_status !== "rejected"}
+                        canRequest={
+                          r.approval_status === "approved" &&
+                          !r.pending_action &&
+                          !r.payout_id &&
+                          (r.created_by === ctx.profile.id || isManager)
+                        }
                       />
                     </TableCell>
                   </TableRow>

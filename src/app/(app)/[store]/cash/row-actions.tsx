@@ -1,9 +1,10 @@
 "use client";
 
 import { useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { markCashPaid, reviewCash } from "./actions";
+import { markCashPaid, requestCashChange, reviewCash } from "./actions";
 import { todayVN } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
 
@@ -12,11 +13,13 @@ export function CashRowActions({
   id,
   canReview,
   canMarkPaid,
+  canRequest,
 }: {
   storeCode: string;
   id: string;
   canReview: boolean;
   canMarkPaid: boolean;
+  canRequest: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -52,6 +55,30 @@ export function CashRowActions({
         <Button size="sm" variant="outline" disabled={pending} onClick={() => run(() => markCashPaid(storeCode, id, todayVN()), "Đã đánh dấu đã trả")}>
           Đã trả
         </Button>
+      )}
+      {canRequest && (
+        <>
+          <Button size="sm" variant="ghost" disabled={pending} render={<Link href={`/${storeCode}/cash/${id}/edit`} />}>
+            Sửa
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={pending}
+            onClick={() => {
+              const reason = prompt("Lý do xóa khoản này?");
+              if (!reason?.trim()) return;
+              start(async () => {
+                const res = await requestCashChange(storeCode, id, "delete", null, reason);
+                if (!res.ok) return void toast.error(res.error);
+                toast.success(res.data!.applied ? "Đã xóa" : "Đã gửi yêu cầu xóa, chờ người giữ tài khoản duyệt");
+                router.refresh();
+              });
+            }}
+          >
+            Xóa
+          </Button>
+        </>
       )}
     </div>
   );

@@ -4,7 +4,7 @@ import { todayVN } from "@/lib/dates";
 import { PageHeader } from "@/components/page-header";
 import { CashForm } from "./cash-form";
 
-export const metadata = { title: "Ghi thu chi" };
+export const metadata = { title: "Xin chi / báo thu" };
 
 export default async function NewCashPage({ params }: { params: Promise<{ store: string }> }) {
   const { store: code } = await params;
@@ -20,23 +20,19 @@ export default async function NewCashPage({ params }: { params: Promise<{ store:
   return (
     <div className="max-w-2xl">
       <PageHeader
-        title="Ghi thu chi"
+        title="Xin chi / báo thu"
         back={{ href: `/${store.code}/cash`, label: "Danh sách thu chi" }}
-        description={isStaff ? "Nhân viên ghi được khoản chi tiền mặt lấy từ két trong ca đang mở." : "Khoản thu chi ngoài bán hàng và nhập hàng."}
+        description="Khoản thu chi ngoài bán hàng và nhập hàng. Người giữ tài khoản duyệt xong mới vào số dư; nếu bạn là người giữ thì tự duyệt."
       />
-      {isStaff && !shift ? (
-        <p className="rounded-xl border bg-card p-4 text-sm">Bạn cần mở ca trước khi ghi khoản chi tiền mặt.</p>
-      ) : (
-        <CashForm
-          storeId={store.id}
-          storeCode={store.code}
-          categories={(cats ?? []) as { id: string; name: string; kind: "income" | "expense" }[]}
-          accounts={(accounts ?? []) as { id: string; name: string; kind: string }[]}
-          isStaff={isStaff}
-          openShiftCode={shift?.code ?? null}
-          today={todayVN()}
-        />
-      )}
+      <CashForm
+        storeId={store.id}
+        storeCode={store.code}
+        categories={(cats ?? []) as { id: string; name: string; kind: "income" | "expense" }[]}
+        accounts={(accounts ?? []) as { id: string; name: string; kind: string }[]}
+        isStaff={isStaff}
+        openShiftCode={shift?.code ?? null}
+        today={todayVN()}
+      />
     </div>
   );
 }
