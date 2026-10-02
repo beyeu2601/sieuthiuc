@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDateVN } from "@/lib/dates";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
-import { Badge } from "@/components/ui/badge";
+import { ChipSac } from "@/components/ui/chip";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CancelPayoutButton } from "./cancel-button";
 
@@ -36,7 +36,7 @@ export default async function PayoutPage({ params }: { params: Promise<{ store: 
         back={{ href: `/${store.code}/orders/payouts`, label: "Đối soát Shopee" }}
         description={
           <span className="flex flex-wrap items-center gap-2">
-            {r.status === "cancelled" && <Badge variant="destructive">Đã hủy</Badge>}
+            {r.status === "cancelled" && <ChipSac sac="red">Đã hủy</ChipSac>}
             Tiền về {formatDateVN(r.received_on)} - {(r.money_accounts as unknown as { name: string } | null)?.name} - ghi bởi{" "}
             {(r.creator as unknown as { full_name: string } | null)?.full_name ?? ""} lúc {formatDateTime(r.created_at)}
           </span>

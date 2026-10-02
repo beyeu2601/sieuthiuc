@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { createUser, resetUserPassword, updateUser, type UserInput } from "../actions";
 import { ROLE_LABEL, type AppRole, type StoreLite } from "@/lib/roles";
 import { NativeSelect } from "@/components/native-select";
-import { Badge } from "@/components/ui/badge";
+import { ChipSac } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -81,7 +81,7 @@ export function UserManager({
                   {u.role === "sadmin" ? "Tất cả" : u.store_ids.map((s) => storeCode.get(s) ?? "?").join(", ") || "-"}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={u.is_active ? "secondary" : "outline"}>{u.is_active ? "Hoạt động" : "Đã khóa"}</Badge>
+                  <ChipSac sac={u.is_active ? "emerald" : "slate"}>{u.is_active ? "Hoạt động" : "Đã khóa"}</ChipSac>
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap">
                   {canManage(u) && (

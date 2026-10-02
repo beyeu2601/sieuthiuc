@@ -1,8 +1,8 @@
 export const SHIFT_STATUS = {
-  open: { label: "Đang mở", variant: "default" },
-  closed: { label: "Đã chốt", variant: "secondary" },
-  flagged: { label: "Cần kiểm tra", variant: "destructive" },
-  approved: { label: "Đã duyệt", variant: "outline" },
+  open: { label: "Đang mở", sac: "emerald" },
+  closed: { label: "Đã chốt", sac: "amber" },
+  flagged: { label: "Cần kiểm tra", sac: "red" },
+  approved: { label: "Đã duyệt", sac: "brand" },
 } as const;
 
 export type ShiftSummary = {

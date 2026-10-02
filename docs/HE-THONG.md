@@ -133,7 +133,8 @@ Thành phần giao diện dùng chung (đợt nâng UX/UI 09/2026, chi tiết th
 | Thẻ chỉ số | `KpiCard` + `HangKpi` | Là Link sang màn chi tiết |
 | Tiến độ x/y | `ThanhTienDo` | Luôn in kèm số x/y |
 | Biểu đồ | `DailyBars`, `charts/thanh-co-cau.tsx` (`ThanhCoCau`) | Không thêm thư viện biểu đồ |
-| Bảng trên điện thoại | `MobileCardList` + `MobileCard`, bảng bọc `hidden md:block` | |
+| Bảng trên điện thoại | `MobileCardList` + `MobileCard`, bảng bọc `hidden md:block` | Nút thao tác của dòng đặt ở `footer` |
+| Trạng thái chứng từ | `ChipSac` với `sac` khai trong `labels.ts` của miền | Không dùng `Badge` cho trạng thái |
 | Phân trang | `Pagination` qua `?page=` | Số dòng mỗi trang cố định ở server (`PAGE_SIZE`) |
 | Hộp thoại | `DialogContent` > `DialogHeader` / `DialogBody` / `DialogFooter` | Chỉ `DialogBody` cuộn; nằm trong `<form>` thì form `flex min-h-0 flex-col` |
 | Form nhiều bước | `FormWizard` (+ `Stepper`) | Mọi bước đều mount; đang dùng ở phiếu nhập |

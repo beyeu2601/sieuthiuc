@@ -12,7 +12,7 @@ export function FilterChip({
   checked: boolean;
 }) {
   return (
-    <label className="inline-flex cursor-pointer select-none items-center rounded-full border px-3 py-1.5 text-sm transition-colors hover:bg-accent has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring">
+    <label className="inline-flex min-h-11 cursor-pointer select-none items-center rounded-full border px-3.5 text-sm lg:min-h-9 transition-colors hover:bg-accent has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring">
       <input type="checkbox" name={name} value={value} defaultChecked={checked} className="sr-only" />
       {label}
     </label>

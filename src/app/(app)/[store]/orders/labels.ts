@@ -1,9 +1,9 @@
 export const ORDER_STATUS = {
-  pending: { label: "Chờ giao", variant: "outline" },
-  shipped: { label: "Đang giao", variant: "default" },
-  delivered: { label: "Đã giao", variant: "secondary" },
-  cancelled: { label: "Đã hủy", variant: "destructive" },
-  returned: { label: "Hoàn hàng", variant: "outline" },
+  pending: { label: "Chờ giao", sac: "indigo" },
+  shipped: { label: "Đang giao", sac: "sky" },
+  delivered: { label: "Đã giao", sac: "emerald" },
+  cancelled: { label: "Đã hủy", sac: "red" },
+  returned: { label: "Hoàn hàng", sac: "rose" },
 } as const;
 
 export const ONLINE_CHANNELS = { shopee: "Shopee", facebook: "Facebook", other: "Khác" } as const;

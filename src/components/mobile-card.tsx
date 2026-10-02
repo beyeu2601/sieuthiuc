@@ -15,11 +15,14 @@ export function MobileCard({
   subtitle,
   badge,
   stats,
+  footer,
 }: {
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   badge?: React.ReactNode;
   stats: CardStat[];
+  /** Ghi chu hoac nut thao tac cua dong (vd duyet thu chi), nam duoi so lieu. */
+  footer?: React.ReactNode;
 }) {
   return (
     <li className="rounded-xl border bg-card p-3.5 motion-safe:animate-in fade-in duration-200">
@@ -38,6 +41,7 @@ export function MobileCard({
           </div>
         ))}
       </dl>
+      {footer && <div className="mt-3 border-t pt-3">{footer}</div>}
     </li>
   );
 }

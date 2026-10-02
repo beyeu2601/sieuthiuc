@@ -12,7 +12,7 @@ import { Pagination } from "@/components/pagination";
 import { EmptyState } from "@/components/empty-state";
 import { NativeSelect } from "@/components/native-select";
 import { CategoryInfo } from "@/components/category-info";
-import { Badge } from "@/components/ui/badge";
+import { ChipSac } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -183,9 +183,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                       {GOODS_TYPE_LABEL[p.goods_type]} - {p.unit} - {p.sku}
                     </div>
                     {p.status === "inactive" && (
-                      <Badge variant="outline" className="mt-1">
+                      <ChipSac sac="slate" className="mt-1">
                         Ngừng bán
-                      </Badge>
+                      </ChipSac>
                     )}
                   </div>
                   <div className="shrink-0 text-right">
@@ -249,9 +249,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{formatNumber(stock)}</TableCell>
                     <TableCell>
-                      <Badge variant={p.status === "active" ? "secondary" : "outline"}>
+                      <ChipSac sac={p.status === "active" ? "emerald" : "slate"}>
                         {p.status === "active" ? "Đang bán" : "Ngừng bán"}
-                      </Badge>
+                      </ChipSac>
                     </TableCell>
                   </TableRow>
                 );

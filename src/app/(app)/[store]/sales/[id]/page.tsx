@@ -4,7 +4,7 @@ import { requireStore } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime, formatMoney, formatNumber } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
-import { Badge } from "@/components/ui/badge";
+import { ChipSac } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CHANNEL_LABEL, SALE_STATUS } from "../labels";
@@ -44,7 +44,7 @@ export default async function SalePage({ params }: { params: Promise<{ store: st
         title={`Hóa đơn ${s.code}`}
         description={
           <span className="flex flex-wrap items-center gap-2">
-            <Badge variant={st.variant}>{st.label}</Badge>
+            <ChipSac sac={st.sac}>{st.label}</ChipSac>
             {CHANNEL_LABEL[s.channel as keyof typeof CHANNEL_LABEL]} - {formatDateTime(s.completed_at)} -{" "}
             {(s.creator as unknown as { full_name: string } | null)?.full_name}
             {shift && (

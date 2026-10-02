@@ -6,7 +6,7 @@ import { formatDateTime, formatMoney, formatNumber } from "@/lib/format";
 import { GOODS_TYPE_LABEL } from "@/lib/text";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { PageHeader } from "@/components/page-header";
-import { Badge } from "@/components/ui/badge";
+import { ChipSac } from "@/components/ui/chip";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ReceiptEditor, type EditorLine } from "../receipt-editor";
 import { ReopenButton } from "../reopen-button";
@@ -93,7 +93,7 @@ export default async function ReceiptPage({
     }));
     return (
       <div>
-        <PageHeader title={`Phiếu nhập ${r.code}`} description={<Badge variant="outline">Nháp</Badge>} />
+        <PageHeader title={`Phiếu nhập ${r.code}`} description={<ChipSac sac="slate">Nháp</ChipSac>} />
         <ReceiptEditor
           storeId={store.id}
           storeCode={store.code}
@@ -133,7 +133,7 @@ export default async function ReceiptPage({
         title={`Phiếu nhập ${r.code}`}
         description={
           <span className="flex flex-wrap items-center gap-2">
-            <Badge variant={st.variant}>{st.label}</Badge>
+            <ChipSac sac={st.sac}>{st.label}</ChipSac>
             {supplier?.name} - ngày {new Date(r.receipt_date).toLocaleDateString("vi-VN")}
             {r.invoice_no ? ` - HĐ ${r.invoice_no}` : ""}
           </span>

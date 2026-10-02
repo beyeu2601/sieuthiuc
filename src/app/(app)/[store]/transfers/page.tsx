@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDateTime } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import { Badge } from "@/components/ui/badge";
+import { ChipSac } from "@/components/ui/chip";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TRANSFER_STATUS } from "./labels";
@@ -38,40 +39,63 @@ export default async function TransfersPage({ params }: { params: Promise<{ stor
       {rows.length === 0 ? (
         <EmptyState title="Chưa có phiếu chuyển kho" />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Mã phiếu</TableHead>
-                <TableHead>Chiều</TableHead>
-                <TableHead>Tạo lúc</TableHead>
-                <TableHead>Trạng thái</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((t) => {
-                const st = TRANSFER_STATUS[t.status as keyof typeof TRANSFER_STATUS];
-                return (
-                  <TableRow key={t.id}>
-                    <TableCell>
-                      <Link href={`/${store.code}/transfers/${t.id}`} className="font-medium hover:underline">
-                        {t.code}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      {storeCode.get(t.from_store_id)} {"->"} {storeCode.get(t.to_store_id)}
-                      <span className="ml-2 text-xs text-muted-foreground">{t.from_store_id === store.id ? "Chuyển đi" : "Chuyển đến"}</span>
-                    </TableCell>
-                    <TableCell>{formatDateTime(t.created_at)}</TableCell>
-                    <TableCell>
-                      <Badge variant={st.variant}>{st.label}</Badge>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+        <>
+          <MobileCardList label="Phiếu chuyển kho">
+            {rows.map((t) => {
+              const st = TRANSFER_STATUS[t.status as keyof typeof TRANSFER_STATUS];
+              return (
+                <MobileCard
+                  key={t.id}
+                  title={
+                    <Link href={`/${store.code}/transfers/${t.id}`} className="underline-offset-4 hover:underline">
+                      {t.code}
+                    </Link>
+                  }
+                  subtitle={formatDateTime(t.created_at)}
+                  badge={<ChipSac sac={st.sac}>{st.label}</ChipSac>}
+                  stats={[
+                    { label: "Chiều", value: `${storeCode.get(t.from_store_id)} -> ${storeCode.get(t.to_store_id)}` },
+                    { label: "Hướng", value: t.from_store_id === store.id ? "Chuyển đi" : "Chuyển đến" },
+                  ]}
+                />
+              );
+            })}
+          </MobileCardList>
+          <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Mã phiếu</TableHead>
+                  <TableHead>Chiều</TableHead>
+                  <TableHead>Tạo lúc</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((t) => {
+                  const st = TRANSFER_STATUS[t.status as keyof typeof TRANSFER_STATUS];
+                  return (
+                    <TableRow key={t.id}>
+                      <TableCell>
+                        <Link href={`/${store.code}/transfers/${t.id}`} className="font-medium hover:underline">
+                          {t.code}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        {storeCode.get(t.from_store_id)} {"->"} {storeCode.get(t.to_store_id)}
+                        <span className="ml-2 text-xs text-muted-foreground">{t.from_store_id === store.id ? "Chuyển đi" : "Chuyển đến"}</span>
+                      </TableCell>
+                      <TableCell>{formatDateTime(t.created_at)}</TableCell>
+                      <TableCell>
+                        <ChipSac sac={st.sac}>{st.label}</ChipSac>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
     </div>
   );

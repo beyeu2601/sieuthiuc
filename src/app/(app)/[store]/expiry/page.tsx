@@ -5,7 +5,8 @@ import { getNumberSetting } from "@/lib/settings";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import { Badge } from "@/components/ui/badge";
+import { ChipHan } from "@/components/ui/chip";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { InventoryTabs } from "../inventory/inventory-tabs";
 import type { LotRow } from "../catalog-actions";
@@ -69,7 +70,26 @@ export default async function ExpiryPage({
               {rows.length} lô, giá trị theo giá vốn <strong>{formatMoney(value)}</strong>. Hủy hàng hết hạn làm ở phiếu hủy hàng (giai đoạn 2).
             </p>
           )}
-          <div className="overflow-x-auto rounded-xl border bg-card">
+          <MobileCardList label="Lô sắp hết hạn">
+            {rows.map((r) => (
+              <MobileCard
+                key={r.lot_id}
+                title={r.name}
+                subtitle={`${r.sku} - Lô ${r.lot_no} - ${r.date_type === "short" ? "Date ngắn" : "Date dài"}`}
+                badge={
+                  <ChipHan ma={r.expiry_status === "expired" ? "hetHan" : "canDate"}>
+                    {r.days_left != null && r.days_left < 0 ? `Quá ${-r.days_left}` : r.days_left}
+                  </ChipHan>
+                }
+                stats={[
+                  { label: "Số lượng", value: `${formatNumber(r.qty_on_hand)} ${r.unit}`, strong: true },
+                  { label: "Hạn", value: r.expiry_date ? new Date(r.expiry_date).toLocaleDateString("vi-VN") : "-" },
+                  ...(!isStaff ? [{ label: "Giá đề xuất", value: r.suggested_price != null ? formatMoney(r.suggested_price) : "-" }] : []),
+                ]}
+              />
+            ))}
+          </MobileCardList>
+          <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -94,9 +114,9 @@ export default async function ExpiryPage({
                     <TableCell>{r.lot_no}</TableCell>
                     <TableCell>{r.expiry_date ? new Date(r.expiry_date).toLocaleDateString("vi-VN") : "-"}</TableCell>
                     <TableCell className="text-right">
-                      <Badge variant={r.expiry_status === "expired" ? "destructive" : "outline"}>
+                      <ChipHan ma={r.expiry_status === "expired" ? "hetHan" : "canDate"}>
                         {r.days_left != null && r.days_left < 0 ? `Quá ${-r.days_left}` : r.days_left}
-                      </Badge>
+                      </ChipHan>
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {formatNumber(r.qty_on_hand)} {r.unit}

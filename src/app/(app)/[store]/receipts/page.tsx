@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/empty-state";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { NativeSelect } from "@/components/native-select";
 import { Pagination } from "@/components/pagination";
-import { Badge } from "@/components/ui/badge";
+import { ChipSac } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -85,7 +85,7 @@ export default async function ReceiptsPage({ params, searchParams }: { params: P
                     </Link>
                   }
                   subtitle={`${new Date(r.receipt_date).toLocaleDateString("vi-VN")} - ${(r.suppliers as unknown as { name: string } | null)?.name ?? ""}`}
-                  badge={<Badge variant={st.variant}>{st.label}</Badge>}
+                  badge={<ChipSac sac={st.sac}>{st.label}</ChipSac>}
                   stats={[
                     { label: "Tổng", value: formatMoney(r.total), strong: true },
                     { label: "Còn nợ", value: r.status === "confirmed" ? formatMoney(r.total - r.paid_amount) : "-" },
@@ -126,7 +126,7 @@ export default async function ReceiptsPage({ params, searchParams }: { params: P
                         {r.status === "confirmed" ? formatMoney(r.total - r.paid_amount) : "-"}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={st.variant}>{st.label}</Badge>
+                        <ChipSac sac={st.sac}>{st.label}</ChipSac>
                       </TableCell>
                     </TableRow>
                   );

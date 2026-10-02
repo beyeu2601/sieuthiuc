@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { NativeSelect } from "@/components/native-select";
 import { Pagination } from "@/components/pagination";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -91,60 +92,102 @@ export default async function MovementsPage({ params, searchParams }: { params: 
       ) : rows.length === 0 ? (
         <EmptyState title="Không có biến động trong khoảng đã chọn" />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Thời gian</TableHead>
-                <TableHead className="min-w-52">Sản phẩm</TableHead>
-                <TableHead>Loại</TableHead>
-                <TableHead className="text-right">Thay đổi</TableHead>
-                <TableHead className="text-right">Trước</TableHead>
-                <TableHead className="text-right">Sau</TableHead>
-                {!isStaff && <TableHead className="text-right">Giá vốn</TableHead>}
-                <TableHead>Lô</TableHead>
-                <TableHead>Chứng từ</TableHead>
-                <TableHead>Người thực hiện</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((r) => {
-                const href = refHref(store.code, r);
-                const d = Number(r.qty_delta);
-                return (
-                  <TableRow key={r.id}>
-                    <TableCell className="whitespace-nowrap">{formatDateTime(r.created_at)}</TableCell>
-                    <TableCell>
-                      <Link href={`?product=${r.product_id}`} className="hover:underline">
-                        {r.name}
-                      </Link>
-                      <div className="text-xs text-muted-foreground">{r.sku}</div>
-                    </TableCell>
-                    <TableCell>{MOVEMENT_LABEL[r.movement_type] ?? r.movement_type}</TableCell>
-                    <TableCell className={`text-right tabular-nums ${d > 0 ? "text-success" : d < 0 ? "text-destructive" : ""}`}>
-                      {d > 0 ? "+" : ""}
-                      {formatNumber(d)}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">{formatNumber(r.qty_before)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatNumber(r.qty_after)}</TableCell>
-                    {!isStaff && <TableCell className="text-right tabular-nums">{formatMoney(r.unit_cost)}</TableCell>}
-                    <TableCell>{r.lot_no ?? "-"}</TableCell>
-                    <TableCell>
-                      {href ? (
+        <>
+          <MobileCardList label="Biến động kho">
+            {rows.map((r) => {
+              const href = refHref(store.code, r);
+              const d = Number(r.qty_delta);
+              return (
+                <MobileCard
+                  key={r.id}
+                  title={
+                    <Link href={`?product=${r.product_id}`} className="underline-offset-4 hover:underline">
+                      {r.name}
+                    </Link>
+                  }
+                  subtitle={`${formatDateTime(r.created_at)} - ${MOVEMENT_LABEL[r.movement_type] ?? r.movement_type}`}
+                  stats={[
+                    {
+                      label: "Thay đổi",
+                      value: (
+                        <span className={d > 0 ? "text-success" : d < 0 ? "text-destructive" : ""}>
+                          {d > 0 ? "+" : ""}
+                          {formatNumber(d)}
+                        </span>
+                      ),
+                      strong: true,
+                    },
+                    { label: "Tồn sau", value: formatNumber(r.qty_after) },
+                    {
+                      label: "Chứng từ",
+                      value: href ? (
                         <Link href={href} className="underline underline-offset-4">
                           {r.ref_code ?? "Xem"}
                         </Link>
                       ) : (
                         (r.note ?? "-")
-                      )}
-                    </TableCell>
-                    <TableCell>{r.performed_by_name ?? "-"}</TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+                      ),
+                    },
+                  ]}
+                />
+              );
+            })}
+          </MobileCardList>
+          <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Thời gian</TableHead>
+                  <TableHead className="min-w-52">Sản phẩm</TableHead>
+                  <TableHead>Loại</TableHead>
+                  <TableHead className="text-right">Thay đổi</TableHead>
+                  <TableHead className="text-right">Trước</TableHead>
+                  <TableHead className="text-right">Sau</TableHead>
+                  {!isStaff && <TableHead className="text-right">Giá vốn</TableHead>}
+                  <TableHead>Lô</TableHead>
+                  <TableHead>Chứng từ</TableHead>
+                  <TableHead>Người thực hiện</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((r) => {
+                  const href = refHref(store.code, r);
+                  const d = Number(r.qty_delta);
+                  return (
+                    <TableRow key={r.id}>
+                      <TableCell className="whitespace-nowrap">{formatDateTime(r.created_at)}</TableCell>
+                      <TableCell>
+                        <Link href={`?product=${r.product_id}`} className="hover:underline">
+                          {r.name}
+                        </Link>
+                        <div className="text-xs text-muted-foreground">{r.sku}</div>
+                      </TableCell>
+                      <TableCell>{MOVEMENT_LABEL[r.movement_type] ?? r.movement_type}</TableCell>
+                      <TableCell className={`text-right tabular-nums ${d > 0 ? "text-success" : d < 0 ? "text-destructive" : ""}`}>
+                        {d > 0 ? "+" : ""}
+                        {formatNumber(d)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{formatNumber(r.qty_before)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatNumber(r.qty_after)}</TableCell>
+                      {!isStaff && <TableCell className="text-right tabular-nums">{formatMoney(r.unit_cost)}</TableCell>}
+                      <TableCell>{r.lot_no ?? "-"}</TableCell>
+                      <TableCell>
+                        {href ? (
+                          <Link href={href} className="underline underline-offset-4">
+                            {r.ref_code ?? "Xem"}
+                          </Link>
+                        ) : (
+                          (r.note ?? "-")
+                        )}
+                      </TableCell>
+                      <TableCell>{r.performed_by_name ?? "-"}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
       <Pagination
         page={page}

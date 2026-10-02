@@ -5,7 +5,8 @@ import { formatDateVN } from "@/lib/dates";
 import { formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import { Badge } from "@/components/ui/badge";
+import { ChipSac } from "@/components/ui/chip";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -53,48 +54,73 @@ export default async function PayoutsPage({ params }: { params: Promise<{ store:
       {rows.length === 0 ? (
         <EmptyState title="Chưa có đợt đối soát nào" />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Mã đợt</TableHead>
-                <TableHead>Ngày nhận</TableHead>
-                <TableHead>Tài khoản</TableHead>
-                <TableHead className="text-right">Số đơn</TableHead>
-                <TableHead className="text-right">Tổng đơn</TableHead>
-                <TableHead className="text-right">Thực nhận</TableHead>
-                <TableHead className="text-right">Phí sàn</TableHead>
-                <TableHead className="text-right">Quảng cáo</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((r) => (
-                <TableRow key={r.id} className={r.status === "cancelled" ? "text-muted-foreground" : undefined}>
-                  <TableCell>
-                    <Link href={`/${store.code}/orders/payouts/${r.id}`} className="font-medium hover:underline">
-                      {r.code}
-                    </Link>
-                    {r.status === "cancelled" && (
-                      <Badge variant="destructive" className="ml-2">
-                        Đã hủy
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap">{formatDateVN(r.received_on)}</TableCell>
-                  <TableCell>{(r.money_accounts as unknown as { name: string } | null)?.name ?? "-"}</TableCell>
-                  <TableCell className="text-right tabular-nums">{r.order_count}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatMoney(r.orders_total)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatMoney(r.amount_received)}</TableCell>
-                  <TableCell className="text-right whitespace-nowrap tabular-nums">
-                    {formatMoney(r.fee_amount)}
-                    <div className="text-xs text-muted-foreground">{feePct(r.fee_amount, r.orders_total)}</div>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">{formatMoney(r.ads_amount)}</TableCell>
+        <>
+          <MobileCardList label="Đợt đối soát Shopee">
+            {rows.map((r) => (
+              <MobileCard
+                key={r.id}
+                title={
+                  <Link href={`/${store.code}/orders/payouts/${r.id}`} className="underline-offset-4 hover:underline">
+                    {r.code}
+                  </Link>
+                }
+                subtitle={`${formatDateVN(r.received_on)} - ${(r.money_accounts as unknown as { name: string } | null)?.name ?? "-"}`}
+                badge={
+                  r.status === "cancelled" ? (
+                    <ChipSac sac="red">Đã hủy</ChipSac>
+                  ) : undefined
+                }
+                stats={[
+                  { label: "Thực nhận", value: formatMoney(r.amount_received), strong: true },
+                  { label: "Tổng đơn", value: formatMoney(r.orders_total) },
+                  { label: "Phí sàn", value: `${formatMoney(r.fee_amount)} (${feePct(r.fee_amount, r.orders_total)})` },
+                ]}
+              />
+            ))}
+          </MobileCardList>
+          <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Mã đợt</TableHead>
+                  <TableHead>Ngày nhận</TableHead>
+                  <TableHead>Tài khoản</TableHead>
+                  <TableHead className="text-right">Số đơn</TableHead>
+                  <TableHead className="text-right">Tổng đơn</TableHead>
+                  <TableHead className="text-right">Thực nhận</TableHead>
+                  <TableHead className="text-right">Phí sàn</TableHead>
+                  <TableHead className="text-right">Quảng cáo</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {rows.map((r) => (
+                  <TableRow key={r.id} className={r.status === "cancelled" ? "text-muted-foreground" : undefined}>
+                    <TableCell>
+                      <Link href={`/${store.code}/orders/payouts/${r.id}`} className="font-medium hover:underline">
+                        {r.code}
+                      </Link>
+                      {r.status === "cancelled" && (
+                        <ChipSac sac="red" className="ml-2">
+                          Đã hủy
+                        </ChipSac>
+                      )}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">{formatDateVN(r.received_on)}</TableCell>
+                    <TableCell>{(r.money_accounts as unknown as { name: string } | null)?.name ?? "-"}</TableCell>
+                    <TableCell className="text-right tabular-nums">{r.order_count}</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatMoney(r.orders_total)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatMoney(r.amount_received)}</TableCell>
+                    <TableCell className="text-right whitespace-nowrap tabular-nums">
+                      {formatMoney(r.fee_amount)}
+                      <div className="text-xs text-muted-foreground">{feePct(r.fee_amount, r.orders_total)}</div>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{formatMoney(r.ads_amount)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
     </div>
   );

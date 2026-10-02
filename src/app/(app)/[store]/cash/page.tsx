@@ -6,19 +6,20 @@ import { formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { NativeSelect } from "@/components/native-select";
-import { Badge } from "@/components/ui/badge";
+import { ChipSac } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PAYMENT_METHOD_LABEL } from "../receipts/labels";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { CashRowActions } from "./row-actions";
 
 export const metadata = { title: "Thu chi" };
 
 const APPROVAL = {
-  pending: { label: "Chờ duyệt", variant: "default" },
-  approved: { label: "Đã duyệt", variant: "secondary" },
-  rejected: { label: "Từ chối", variant: "destructive" },
+  pending: { label: "Chờ duyệt", sac: "amber" },
+  approved: { label: "Đã duyệt", sac: "emerald" },
+  rejected: { label: "Từ chối", sac: "red" },
 } as const;
 
 type AccountOverview = { id: string; name: string; kind: string; holder_id: string | null; holder_name: string | null; balance: number | null };
@@ -172,36 +173,47 @@ export default async function CashPage({ params, searchParams }: { params: Promi
       {rows.length === 0 ? (
         <EmptyState title="Không có khoản thu chi trong khoảng đã chọn" />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Ngày</TableHead>
-                <TableHead>Mã</TableHead>
-                <TableHead className="min-w-48">Nội dung</TableHead>
-                <TableHead>Nhóm</TableHead>
-                <TableHead>Tài khoản</TableHead>
-                <TableHead className="text-right">Số tiền</TableHead>
-                <TableHead>Thanh toán</TableHead>
-                <TableHead>Duyệt</TableHead>
-                <TableHead />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((r) => {
-                const ap = APPROVAL[r.approval_status as keyof typeof APPROVAL];
-                const change = r.pending_data as { amount?: number; description?: string } | null;
-                return (
-                  <TableRow key={r.id}>
-                    <TableCell className="whitespace-nowrap">{formatDateVN(r.occurred_on)}</TableCell>
-                    <TableCell>{r.code}</TableCell>
-                    <TableCell>
-                      {r.description}
-                      <div className="text-xs text-muted-foreground">
-                        {[r.counterparty, r.doc_no && `CT ${r.doc_no}`, (r.creator as unknown as { full_name: string } | null)?.full_name, r.shift_id && "trong ca"]
-                          .filter(Boolean)
-                          .join(" - ")}
-                      </div>
+        <>
+          <MobileCardList label="Thu chi">
+            {rows.map((r) => {
+              const ap = APPROVAL[r.approval_status as keyof typeof APPROVAL];
+              const change = r.pending_data as { amount?: number; description?: string } | null;
+              const canReview = (r.approval_status === "pending" || r.pending_action !== null) && canApprove(r.account_id);
+              const canMarkPaid = canFinance && r.payment_status === "unpaid" && r.approval_status !== "rejected";
+              const canRequest =
+                r.approval_status === "approved" && !r.pending_action && !r.payout_id && (r.created_by === ctx.profile.id || isManager);
+              const hasFooter = r.reject_reason || r.pending_action || canReview || canMarkPaid || canRequest;
+              return (
+                <MobileCard
+                  key={r.id}
+                  title={r.description}
+                  subtitle={[formatDateVN(r.occurred_on), r.code, (r.creator as unknown as { full_name: string } | null)?.full_name]
+                    .filter(Boolean)
+                    .join(" - ")}
+                  badge={
+                    r.pending_action ? (
+                      <ChipSac sac="amber">Chờ duyệt {r.pending_action === "edit" ? "sửa" : "xóa"}</ChipSac>
+                    ) : (
+                      <ChipSac sac={ap.sac}>{ap.label}</ChipSac>
+                    )
+                  }
+                  stats={[
+                    {
+                      label: "Số tiền",
+                      value: (
+                        <span className={r.kind === "income" ? "text-success" : ""}>
+                          {r.kind === "income" ? "+" : "-"}
+                          {formatMoney(r.amount)}
+                        </span>
+                      ),
+                      strong: true,
+                    },
+                    { label: "Tài khoản", value: (r.account_id && accById.get(r.account_id)?.name) || "-" },
+                    { label: "Thanh toán", value: r.payment_status === "paid" ? `Đã trả ${formatDateVN(r.paid_on)}` : "Chưa trả" },
+                  ]}
+                  footer={
+                    hasFooter && (
+                    <div className="space-y-2">
                       {r.reject_reason && (
                         <div className="text-xs text-destructive">
                           {r.approval_status === "rejected" ? "Từ chối: " : ""}
@@ -215,44 +227,96 @@ export default async function CashPage({ params, searchParams }: { params: Promi
                           {change?.description && change.description !== r.description && ` - nội dung mới "${change.description}"`}
                         </div>
                       )}
-                    </TableCell>
-                    <TableCell>{(r.expense_categories as unknown as { name: string } | null)?.name}</TableCell>
-                    <TableCell>
-                      {(r.account_id && accById.get(r.account_id)?.name) || "-"}
-                      <div className="text-xs text-muted-foreground">{PAYMENT_METHOD_LABEL[r.method as keyof typeof PAYMENT_METHOD_LABEL]}</div>
-                    </TableCell>
-                    <TableCell className={`text-right tabular-nums ${r.kind === "income" ? "text-success" : ""}`}>
-                      {r.kind === "income" ? "+" : "-"}
-                      {formatMoney(r.amount)}
-                    </TableCell>
-                    <TableCell>{r.payment_status === "paid" ? `Đã trả ${formatDateVN(r.paid_on)}` : <Badge variant="outline">Chưa trả</Badge>}</TableCell>
-                    <TableCell>
-                      {r.pending_action ? (
-                        <Badge variant="default">Chờ duyệt {r.pending_action === "edit" ? "sửa" : "xóa"}</Badge>
-                      ) : (
-                        <Badge variant={ap.variant}>{ap.label}</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <CashRowActions
-                        storeCode={store.code}
-                        id={r.id}
-                        canReview={(r.approval_status === "pending" || r.pending_action !== null) && canApprove(r.account_id)}
-                        canMarkPaid={canFinance && r.payment_status === "unpaid" && r.approval_status !== "rejected"}
-                        canRequest={
-                          r.approval_status === "approved" &&
-                          !r.pending_action &&
-                          !r.payout_id &&
-                          (r.created_by === ctx.profile.id || isManager)
-                        }
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+                      <CashRowActions storeCode={store.code} id={r.id} canReview={canReview} canMarkPaid={canMarkPaid} canRequest={canRequest} />
+                    </div>
+                    )
+                  }
+                />
+              );
+            })}
+          </MobileCardList>
+          <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Ngày</TableHead>
+                  <TableHead>Mã</TableHead>
+                  <TableHead className="min-w-48">Nội dung</TableHead>
+                  <TableHead>Nhóm</TableHead>
+                  <TableHead>Tài khoản</TableHead>
+                  <TableHead className="text-right">Số tiền</TableHead>
+                  <TableHead>Thanh toán</TableHead>
+                  <TableHead>Duyệt</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((r) => {
+                  const ap = APPROVAL[r.approval_status as keyof typeof APPROVAL];
+                  const change = r.pending_data as { amount?: number; description?: string } | null;
+                  return (
+                    <TableRow key={r.id}>
+                      <TableCell className="whitespace-nowrap">{formatDateVN(r.occurred_on)}</TableCell>
+                      <TableCell>{r.code}</TableCell>
+                      <TableCell>
+                        {r.description}
+                        <div className="text-xs text-muted-foreground">
+                          {[r.counterparty, r.doc_no && `CT ${r.doc_no}`, (r.creator as unknown as { full_name: string } | null)?.full_name, r.shift_id && "trong ca"]
+                            .filter(Boolean)
+                            .join(" - ")}
+                        </div>
+                        {r.reject_reason && (
+                          <div className="text-xs text-destructive">
+                            {r.approval_status === "rejected" ? "Từ chối: " : ""}
+                            {r.reject_reason}
+                          </div>
+                        )}
+                        {r.pending_action && (
+                          <div className="text-xs text-warning">
+                            Xin {r.pending_action === "edit" ? "sửa" : "xóa"}: {r.pending_reason}
+                            {change?.amount !== undefined && change.amount !== r.amount && ` - số tiền mới ${formatMoney(change.amount)}`}
+                            {change?.description && change.description !== r.description && ` - nội dung mới "${change.description}"`}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>{(r.expense_categories as unknown as { name: string } | null)?.name}</TableCell>
+                      <TableCell>
+                        {(r.account_id && accById.get(r.account_id)?.name) || "-"}
+                        <div className="text-xs text-muted-foreground">{PAYMENT_METHOD_LABEL[r.method as keyof typeof PAYMENT_METHOD_LABEL]}</div>
+                      </TableCell>
+                      <TableCell className={`text-right tabular-nums ${r.kind === "income" ? "text-success" : ""}`}>
+                        {r.kind === "income" ? "+" : "-"}
+                        {formatMoney(r.amount)}
+                      </TableCell>
+                      <TableCell>{r.payment_status === "paid" ? `Đã trả ${formatDateVN(r.paid_on)}` : <ChipSac sac="red">Chưa trả</ChipSac>}</TableCell>
+                      <TableCell>
+                        {r.pending_action ? (
+                          <ChipSac sac="amber">Chờ duyệt {r.pending_action === "edit" ? "sửa" : "xóa"}</ChipSac>
+                        ) : (
+                          <ChipSac sac={ap.sac}>{ap.label}</ChipSac>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <CashRowActions
+                          storeCode={store.code}
+                          id={r.id}
+                          canReview={(r.approval_status === "pending" || r.pending_action !== null) && canApprove(r.account_id)}
+                          canMarkPaid={canFinance && r.payment_status === "unpaid" && r.approval_status !== "rejected"}
+                          canRequest={
+                            r.approval_status === "approved" &&
+                            !r.pending_action &&
+                            !r.payout_id &&
+                            (r.created_by === ctx.profile.id || isManager)
+                          }
+                        />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
     </div>
   );

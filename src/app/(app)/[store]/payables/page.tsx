@@ -7,7 +7,7 @@ import { formatDateTime, formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { MobileCard, MobileCardList } from "@/components/mobile-card";
-import { Badge } from "@/components/ui/badge";
+import { ChipSac } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
@@ -45,10 +45,10 @@ type Debt = {
 };
 
 const DUE = {
-  overdue: { label: "Quá hạn", variant: "destructive" },
-  due_soon: { label: "Sắp đến hạn", variant: "default" },
-  not_due: { label: "Chưa đến hạn", variant: "outline" },
-  paid: { label: "Đã trả", variant: "secondary" },
+  overdue: { label: "Quá hạn", sac: "red" },
+  due_soon: { label: "Sắp đến hạn", sac: "amber" },
+  not_due: { label: "Chưa đến hạn", sac: "slate" },
+  paid: { label: "Đã trả", sac: "emerald" },
 } as const;
 
 export default async function PayablesPage({
@@ -339,7 +339,7 @@ export default async function PayablesPage({
                           )}
                         </>
                       }
-                      badge={<Badge variant={ds.variant}>{ds.label}</Badge>}
+                      badge={<ChipSac sac={ds.sac}>{ds.label}</ChipSac>}
                       stats={[
                         { label: "Còn nợ", value: formatMoney(d.remaining), strong: true },
                         { label: "Tổng", value: formatMoney(d.total_amount) },
@@ -384,7 +384,7 @@ export default async function PayablesPage({
                           <TableCell className="text-right tabular-nums">{formatMoney(d.total_amount)}</TableCell>
                           <TableCell className="text-right font-medium tabular-nums">{formatMoney(d.remaining)}</TableCell>
                           <TableCell>
-                            <Badge variant={ds.variant}>{ds.label}</Badge>
+                            <ChipSac sac={ds.sac}>{ds.label}</ChipSac>
                           </TableCell>
                         </TableRow>
                       );

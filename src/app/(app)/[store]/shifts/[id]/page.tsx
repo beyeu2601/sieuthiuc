@@ -4,7 +4,7 @@ import { requireStore } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
-import { Badge } from "@/components/ui/badge";
+import { ChipSac } from "@/components/ui/chip";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SHIFT_STATUS, type ShiftSummary } from "../labels";
 import { AdjustCountForm, ApproveShiftForm, CloseShiftForm } from "../shift-forms";
@@ -52,7 +52,7 @@ export default async function ShiftPage({ params }: { params: Promise<{ store: s
         back={{ href: `/${store.code}/shifts`, label: "Danh sách ca" }}
         description={
           <span className="flex flex-wrap items-center gap-2">
-            <Badge variant={st.variant}>{st.label}</Badge>
+            <ChipSac sac={st.sac}>{st.label}</ChipSac>
             {(s.profiles as unknown as { full_name: string } | null)?.full_name} - mở {formatDateTime(s.opened_at)}
             {s.closed_at ? ` - chốt ${formatDateTime(s.closed_at)}` : ""}
           </span>
@@ -163,7 +163,7 @@ export default async function ShiftPage({ params }: { params: Promise<{ store: s
                       .join(", ")}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{formatMoney(x.total)}</TableCell>
-                  <TableCell>{x.status === "cancelled" ? <Badge variant="destructive">Đã hủy</Badge> : "Hoàn tất"}</TableCell>
+                  <TableCell>{x.status === "cancelled" ? <ChipSac sac="red">Đã hủy</ChipSac> : "Hoàn tất"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

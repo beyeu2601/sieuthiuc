@@ -3,7 +3,7 @@ import { requireStore } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime, formatNumber } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
-import { Badge } from "@/components/ui/badge";
+import { ChipSac } from "@/components/ui/chip";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TRANSFER_STATUS } from "../labels";
 import { TransferButtons } from "./transfer-buttons";
@@ -39,7 +39,7 @@ export default async function TransferPage({ params }: { params: Promise<{ store
         title={`Phiếu chuyển ${t.code}`}
         description={
           <span className="flex items-center gap-2">
-            <Badge variant={st.variant}>{st.label}</Badge>
+            <ChipSac sac={st.sac}>{st.label}</ChipSac>
             {from.code} - {from.name} {"->"} {to.code} - {to.name}
           </span>
         }

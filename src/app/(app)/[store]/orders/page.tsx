@@ -6,7 +6,8 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { NativeSelect } from "@/components/native-select";
 import { Pagination } from "@/components/pagination";
-import { Badge } from "@/components/ui/badge";
+import { ChipSac } from "@/components/ui/chip";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -98,49 +99,73 @@ export default async function OrdersPage({ params, searchParams }: { params: Pro
       {rows.length === 0 ? (
         <EmptyState title="Không có đơn phù hợp" />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Mã</TableHead>
-                <TableHead>Kênh</TableHead>
-                <TableHead>Khách</TableHead>
-                <TableHead>Tạo lúc</TableHead>
-                <TableHead className="text-right">Tổng</TableHead>
-                <TableHead>Trạng thái</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((o) => {
-                const st = ORDER_STATUS[o.status as keyof typeof ORDER_STATUS];
-                return (
-                  <TableRow key={o.id}>
-                    <TableCell>
-                      <Link href={`/${store.code}/orders/${o.id}`} className="font-medium hover:underline">
-                        {o.code}
-                      </Link>
-                      {o.external_order_id && <div className="text-xs text-muted-foreground">{o.external_order_id}</div>}
-                    </TableCell>
-                    <TableCell>{ONLINE_CHANNELS[o.channel as keyof typeof ONLINE_CHANNELS]}</TableCell>
-                    <TableCell>
-                      {o.customer_name ?? "-"}
-                      {o.customer_phone && <div className="text-xs text-muted-foreground">{o.customer_phone}</div>}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">{formatDateTime(o.created_at)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatMoney(o.total)}</TableCell>
-                    <TableCell>
-                      <Badge variant={st.variant}>{st.label}</Badge>
-                      {o.channel === "shopee" && o.status === "delivered" && (
-                        <div className="text-xs text-muted-foreground">{o.payout_id ? "Đã nhận tiền" : "Chờ Shopee trả"}</div>
-                      )}
-                      {o.return_status === "pending_check" && <div className="text-xs text-muted-foreground">Chờ kiểm hàng</div>}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+        <>
+          <MobileCardList label="Đơn online">
+            {rows.map((o) => {
+              const st = ORDER_STATUS[o.status as keyof typeof ORDER_STATUS];
+              return (
+                <MobileCard
+                  key={o.id}
+                  title={
+                    <Link href={`/${store.code}/orders/${o.id}`} className="underline-offset-4 hover:underline">
+                      {o.code}
+                    </Link>
+                  }
+                  subtitle={`${formatDateTime(o.created_at)}${o.external_order_id ? ` - ${o.external_order_id}` : ""}`}
+                  badge={<ChipSac sac={st.sac}>{st.label}</ChipSac>}
+                  stats={[
+                    { label: "Tổng", value: formatMoney(o.total), strong: true },
+                    { label: "Kênh", value: ONLINE_CHANNELS[o.channel as keyof typeof ONLINE_CHANNELS] },
+                    { label: "Khách", value: o.customer_name ?? "-" },
+                  ]}
+                />
+              );
+            })}
+          </MobileCardList>
+          <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Mã</TableHead>
+                  <TableHead>Kênh</TableHead>
+                  <TableHead>Khách</TableHead>
+                  <TableHead>Tạo lúc</TableHead>
+                  <TableHead className="text-right">Tổng</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((o) => {
+                  const st = ORDER_STATUS[o.status as keyof typeof ORDER_STATUS];
+                  return (
+                    <TableRow key={o.id}>
+                      <TableCell>
+                        <Link href={`/${store.code}/orders/${o.id}`} className="font-medium hover:underline">
+                          {o.code}
+                        </Link>
+                        {o.external_order_id && <div className="text-xs text-muted-foreground">{o.external_order_id}</div>}
+                      </TableCell>
+                      <TableCell>{ONLINE_CHANNELS[o.channel as keyof typeof ONLINE_CHANNELS]}</TableCell>
+                      <TableCell>
+                        {o.customer_name ?? "-"}
+                        {o.customer_phone && <div className="text-xs text-muted-foreground">{o.customer_phone}</div>}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">{formatDateTime(o.created_at)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatMoney(o.total)}</TableCell>
+                      <TableCell>
+                        <ChipSac sac={st.sac}>{st.label}</ChipSac>
+                        {o.channel === "shopee" && o.status === "delivered" && (
+                          <div className="text-xs text-muted-foreground">{o.payout_id ? "Đã nhận tiền" : "Chờ Shopee trả"}</div>
+                        )}
+                        {o.return_status === "pending_check" && <div className="text-xs text-muted-foreground">Chờ kiểm hàng</div>}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
       <Pagination
         page={page}

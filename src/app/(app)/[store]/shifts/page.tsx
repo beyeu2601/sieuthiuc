@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import { Badge } from "@/components/ui/badge";
+import { ChipSac } from "@/components/ui/chip";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -86,50 +87,78 @@ export default async function ShiftsPage({
       {rows.length === 0 ? (
         <EmptyState title="Chưa có ca nào" />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Ca</TableHead>
-                <TableHead>Nhân viên</TableHead>
-                <TableHead>Mở</TableHead>
-                <TableHead>Chốt</TableHead>
-                <TableHead className="text-right">Đầu ca</TableHead>
-                <TableHead className="text-right">Kỳ vọng</TableHead>
-                <TableHead className="text-right">Thực đếm</TableHead>
-                <TableHead className="text-right">Lệch</TableHead>
-                <TableHead>Trạng thái</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((s) => {
-                const st = SHIFT_STATUS[s.status as keyof typeof SHIFT_STATUS];
-                const diff = s.cash_diff ?? 0;
-                return (
-                  <TableRow key={s.id}>
-                    <TableCell>
-                      <Link href={`/${store.code}/shifts/${s.id}`} className="font-medium hover:underline">
-                        {s.code}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{(s.profiles as unknown as { full_name: string } | null)?.full_name ?? "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{formatDateTime(s.opened_at)}</TableCell>
-                    <TableCell className="whitespace-nowrap">{s.closed_at ? formatDateTime(s.closed_at) : "-"}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatMoney(s.opening_cash)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatMoney(s.expected_cash)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatMoney(s.counted_cash)}</TableCell>
-                    <TableCell className={`text-right tabular-nums ${diff < 0 ? "text-destructive" : diff > 0 ? "text-warning" : ""}`}>
-                      {s.cash_diff == null ? "-" : formatMoney(diff)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={st.variant}>{st.label}</Badge>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+        <>
+          <MobileCardList label="Ca làm việc">
+            {rows.map((s) => {
+              const st = SHIFT_STATUS[s.status as keyof typeof SHIFT_STATUS];
+              const diff = s.cash_diff ?? 0;
+              return (
+                <MobileCard
+                  key={s.id}
+                  title={
+                    <Link href={`/${store.code}/shifts/${s.id}`} className="underline-offset-4 hover:underline">
+                      {s.code}
+                    </Link>
+                  }
+                  subtitle={`${formatDateTime(s.opened_at)} - ${(s.profiles as unknown as { full_name: string } | null)?.full_name ?? "-"}`}
+                  badge={<ChipSac sac={st.sac}>{st.label}</ChipSac>}
+                  stats={[
+                    { label: "Kỳ vọng", value: formatMoney(s.expected_cash), strong: true },
+                    { label: "Thực đếm", value: formatMoney(s.counted_cash) },
+                    {
+                      label: "Lệch",
+                      value: <span className={diff < 0 ? "text-destructive" : diff > 0 ? "text-warning" : ""}>{s.cash_diff == null ? "-" : formatMoney(diff)}</span>,
+                    },
+                  ]}
+                />
+              );
+            })}
+          </MobileCardList>
+          <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Ca</TableHead>
+                  <TableHead>Nhân viên</TableHead>
+                  <TableHead>Mở</TableHead>
+                  <TableHead>Chốt</TableHead>
+                  <TableHead className="text-right">Đầu ca</TableHead>
+                  <TableHead className="text-right">Kỳ vọng</TableHead>
+                  <TableHead className="text-right">Thực đếm</TableHead>
+                  <TableHead className="text-right">Lệch</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((s) => {
+                  const st = SHIFT_STATUS[s.status as keyof typeof SHIFT_STATUS];
+                  const diff = s.cash_diff ?? 0;
+                  return (
+                    <TableRow key={s.id}>
+                      <TableCell>
+                        <Link href={`/${store.code}/shifts/${s.id}`} className="font-medium hover:underline">
+                          {s.code}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{(s.profiles as unknown as { full_name: string } | null)?.full_name ?? "-"}</TableCell>
+                      <TableCell className="whitespace-nowrap">{formatDateTime(s.opened_at)}</TableCell>
+                      <TableCell className="whitespace-nowrap">{s.closed_at ? formatDateTime(s.closed_at) : "-"}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatMoney(s.opening_cash)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatMoney(s.expected_cash)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatMoney(s.counted_cash)}</TableCell>
+                      <TableCell className={`text-right tabular-nums ${diff < 0 ? "text-destructive" : diff > 0 ? "text-warning" : ""}`}>
+                        {s.cash_diff == null ? "-" : formatMoney(diff)}
+                      </TableCell>
+                      <TableCell>
+                        <ChipSac sac={st.sac}>{st.label}</ChipSac>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
     </div>
   );

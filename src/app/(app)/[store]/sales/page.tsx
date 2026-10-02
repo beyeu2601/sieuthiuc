@@ -6,7 +6,8 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { NativeSelect } from "@/components/native-select";
 import { Pagination } from "@/components/pagination";
-import { Badge } from "@/components/ui/badge";
+import { ChipSac } from "@/components/ui/chip";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -82,7 +83,29 @@ export default async function SalesPage({ params, searchParams }: { params: Prom
           <p className="mb-2 text-sm">
             Trang này: tổng giao dịch hoàn tất <strong className="tabular-nums">{formatMoney(completedTotal)}</strong>
           </p>
-          <div className="overflow-x-auto rounded-xl border bg-card">
+          <MobileCardList label="Giao dịch bán">
+            {rows.map((r) => {
+              const st = SALE_STATUS[r.status as keyof typeof SALE_STATUS];
+              return (
+                <MobileCard
+                  key={r.id}
+                  title={
+                    <Link href={`/${store.code}/sales/${r.id}`} className="underline-offset-4 hover:underline">
+                      {r.code}
+                    </Link>
+                  }
+                  subtitle={`${formatDateTime(r.completed_at)} - ${CHANNEL_LABEL[r.channel as keyof typeof CHANNEL_LABEL]}`}
+                  badge={<ChipSac sac={st.sac}>{st.label}</ChipSac>}
+                  stats={[
+                    { label: "Tổng", value: formatMoney(r.total), strong: true },
+                    { label: "Giảm giá", value: r.discount_amount ? formatMoney(r.discount_amount) : "-" },
+                    { label: "Nhân viên", value: (r.creator as unknown as { full_name: string } | null)?.full_name ?? "-" },
+                  ]}
+                />
+              );
+            })}
+          </MobileCardList>
+          <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -111,7 +134,7 @@ export default async function SalesPage({ params, searchParams }: { params: Prom
                       <TableCell className="text-right tabular-nums">{r.discount_amount ? formatMoney(r.discount_amount) : "-"}</TableCell>
                       <TableCell className="text-right tabular-nums">{formatMoney(r.total)}</TableCell>
                       <TableCell>
-                        <Badge variant={st.variant}>{st.label}</Badge>
+                        <ChipSac sac={st.sac}>{st.label}</ChipSac>
                       </TableCell>
                     </TableRow>
                   );

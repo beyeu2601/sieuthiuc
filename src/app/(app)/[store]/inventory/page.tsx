@@ -9,7 +9,7 @@ import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { AutoSubmitForm } from "@/components/auto-submit-form";
 import { FilterChip } from "@/components/filter-chip";
 import { Pagination } from "@/components/pagination";
-import { Badge } from "@/components/ui/badge";
+import { ChipSac } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -129,7 +129,7 @@ export default async function InventoryPage({ params, searchParams }: { params: 
                 key={r.product_id}
                 title={isStaff ? r.name : <Link href={`/products/${r.product_id}?from=${from}`} className="hover:underline">{r.name}</Link>}
                 subtitle={`${r.sku}${r.barcode ? ` - ${r.barcode}` : ""}${isStaff ? "" : ` - ${GOODS_TYPE_LABEL[r.goods_type]}`}`}
-                badge={<Badge variant={st.variant}>{st.label}</Badge>}
+                badge={<ChipSac sac={st.sac}>{st.label}</ChipSac>}
                 stats={[
                   { label: `Khả dụng (${r.unit})`, value: formatNumber(r.qty_available), strong: true },
                   ...(!isStaff
@@ -183,7 +183,7 @@ export default async function InventoryPage({ params, searchParams }: { params: 
                     {!isStaff && <TableCell className="text-right tabular-nums">{formatMoney(r.avg_cost)}</TableCell>}
                     {!isStaff && <TableCell className="text-right tabular-nums">{formatMoney(r.stock_value)}</TableCell>}
                     <TableCell>
-                      <Badge variant={st.variant}>{st.label}</Badge>
+                      <ChipSac sac={st.sac}>{st.label}</ChipSac>
                     </TableCell>
                   </TableRow>
                 );

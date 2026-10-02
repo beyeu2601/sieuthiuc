@@ -1,7 +1,7 @@
 export const STOCK_STATUS = {
-  out: { label: "Hết hàng", variant: "destructive" },
-  low: { label: "Sắp hết", variant: "outline" },
-  in_stock: { label: "Còn hàng", variant: "secondary" },
+  out: { label: "Hết hàng", sac: "red" },
+  low: { label: "Sắp hết", sac: "amber" },
+  in_stock: { label: "Còn hàng", sac: "slate" },
 } as const;
 
 export const MOVEMENT_LABEL: Record<string, string> = {

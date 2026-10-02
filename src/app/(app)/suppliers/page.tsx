@@ -5,7 +5,8 @@ import { ilikeTerm } from "@/lib/text";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { NativeSelect } from "@/components/native-select";
-import { Badge } from "@/components/ui/badge";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
+import { ChipSac } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -52,42 +53,63 @@ export default async function SuppliersPage({
       ) : rows.length === 0 ? (
         <EmptyState title="Chưa có nhà cung cấp">Thêm nhà cung cấp trước khi tạo phiếu nhập hàng.</EmptyState>
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Mã</TableHead>
-                <TableHead>Tên</TableHead>
-                <TableHead>Liên hệ</TableHead>
-                <TableHead>Điện thoại</TableHead>
-                <TableHead className="text-right">Ngày được nợ</TableHead>
-                <TableHead>Trạng thái</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((s) => (
-                <TableRow key={s.id}>
-                  <TableCell>
-                    <Link href={`/suppliers/${s.id}`} className="font-medium hover:underline">
-                      {s.code}
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <Link href={`/suppliers/${s.id}`} className="hover:underline">
-                      {s.name}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{s.contact_name ?? "-"}</TableCell>
-                  <TableCell>{s.phone ?? "-"}</TableCell>
-                  <TableCell className="text-right tabular-nums">{s.payment_terms_days}</TableCell>
-                  <TableCell>
-                    <Badge variant={s.is_active ? "secondary" : "outline"}>{s.is_active ? "Đang giao dịch" : "Ngừng"}</Badge>
-                  </TableCell>
+        <>
+          <MobileCardList label="Nhà cung cấp">
+            {rows.map((s) => (
+              <MobileCard
+                key={s.id}
+                title={
+                  <Link href={`/suppliers/${s.id}`} className="underline-offset-4 hover:underline">
+                    {s.name}
+                  </Link>
+                }
+                subtitle={s.code}
+                badge={<ChipSac sac={s.is_active ? "emerald" : "slate"}>{s.is_active ? "Đang giao dịch" : "Ngừng"}</ChipSac>}
+                stats={[
+                  { label: "Điện thoại", value: s.phone ?? "-", strong: true },
+                  { label: "Liên hệ", value: s.contact_name ?? "-" },
+                  { label: "Ngày được nợ", value: s.payment_terms_days },
+                ]}
+              />
+            ))}
+          </MobileCardList>
+          <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Mã</TableHead>
+                  <TableHead>Tên</TableHead>
+                  <TableHead>Liên hệ</TableHead>
+                  <TableHead>Điện thoại</TableHead>
+                  <TableHead className="text-right">Ngày được nợ</TableHead>
+                  <TableHead>Trạng thái</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {rows.map((s) => (
+                  <TableRow key={s.id}>
+                    <TableCell>
+                      <Link href={`/suppliers/${s.id}`} className="font-medium hover:underline">
+                        {s.code}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Link href={`/suppliers/${s.id}`} className="hover:underline">
+                        {s.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{s.contact_name ?? "-"}</TableCell>
+                    <TableCell>{s.phone ?? "-"}</TableCell>
+                    <TableCell className="text-right tabular-nums">{s.payment_terms_days}</TableCell>
+                    <TableCell>
+                      <ChipSac sac={s.is_active ? "emerald" : "slate"}>{s.is_active ? "Đang giao dịch" : "Ngừng"}</ChipSac>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
     </div>
   );

@@ -67,7 +67,21 @@ Chín sắc và nghĩa cố định:
 | `purple` | Phân loại phụ (dành cho nhóm chưa có nghĩa cố định) |
 | `slate` | Trung tính: nháp, đủ tồn, còn hạn, kênh khác |
 
-`rose` và `red` là hai thang khác nhau, cố ý không gộp. Nhãn tự do (nhóm hàng, tên nhà cung cấp) dùng `sacTheoNhan` để một tên luôn ra một sắc ổn định. Bảng ánh xạ đầy đủ nghĩa -> sắc ở `docs/KE-HOACH-UI.md` mục 3.
+`rose` và `red` là hai thang khác nhau, cố ý không gộp.
+
+Ánh xạ bổ sung ngoài bảng gốc (02/10/2026), khai cạnh nhãn ở các file `labels.ts` và đầu trang:
+
+| Trạng thái | Sắc |
+|---|---|
+| Đơn online chờ giao (đang giữ hàng) | `indigo` |
+| Đơn hoàn hàng; giao dịch đã hoàn trả, hoàn trả một phần | `rose` (sự cố cần để ý, không phải mất tiền như hủy) |
+| Thu chi chờ duyệt, chờ duyệt sửa/xóa | `amber` |
+| Thu chi đã duyệt / từ chối | `emerald` / `red` |
+| Phải trả chưa trả | `red` (theo "Còn nợ") |
+| Công nợ sắp đến hạn / chưa đến hạn | `amber` / `slate` |
+| Sản phẩm đang bán, NCC đang giao dịch, người dùng hoạt động | `emerald`; ngừng hoặc khóa là `slate` |
+
+`Badge` chỉ còn dùng cho nhãn không phải trạng thái (nhóm hàng, loại mã vạch, ảnh đại diện, loại tài khoản). Nhãn tự do (nhóm hàng, tên nhà cung cấp) dùng `sacTheoNhan` để một tên luôn ra một sắc ổn định. Bảng ánh xạ đầy đủ nghĩa -> sắc ở `docs/KE-HOACH-UI.md` mục 3.
 
 Tương phản đo lại ngày 30/09/2026 từ mã màu trong `globals.css` (bản sáng / tối / in):
 
@@ -125,10 +139,11 @@ Không kéo giãn, không đổi màu logo ngoài hai bản xanh và trắng, ch
 | Tab dưới đáy điện thoại | 64px, cộng vùng an toàn của máy |
 | Nút thanh toán POS | 56px |
 | Nút phân trang, nút điều hướng wizard (Quay lại, Tiếp tục, Lưu nháp) | 44px |
+| Chip lọc | 44px dưới `lg`, 36px từ `lg` (chuột) |
 | Bước trên thanh tiến trình wizard | 44px |
 | Thẻ chỉ số dashboard, dòng cảnh báo | 56px / 48px |
 
-Ô tên sản phẩm trong bảng được xuống dòng để các cột giá, tồn luôn nằm trong màn hình. Trên điện thoại (dưới 768px), bảng nhiều cột chuyển thành thẻ: tên và trạng thái ở trên, số liệu có nhãn ở dưới (`src/components/mobile-card.tsx`). Đã áp cho Tồn kho, Nhập xuất tồn, Sản phẩm, Giá vốn, Lãi lỗ, Bán chạy, Công nợ, Phiếu nhập.
+Ô tên sản phẩm trong bảng được xuống dòng để các cột giá, tồn luôn nằm trong màn hình. Trên điện thoại (dưới 768px), bảng nhiều cột chuyển thành thẻ: tên và trạng thái ở trên, số liệu có nhãn ở dưới (`src/components/mobile-card.tsx`). Đã áp cho Tồn kho, Nhập xuất tồn, Sản phẩm, Giá vốn, Lãi lỗ, Bán chạy, Công nợ, Phiếu nhập và các danh sách chứng từ (mục 8). Dòng có nút thao tác (duyệt thu chi) đặt nút ở `footer` của thẻ.
 
 Thanh dính đáy (tổng tiền, nút lưu) trên điện thoại đặt cách đáy bằng chiều cao tab dưới đáy (`bottom-[calc(4rem+env(safe-area-inset-bottom))]`, về `bottom-0` từ `lg`), nếu không sẽ bị tab che.
 
@@ -167,6 +182,6 @@ Thanh dính đáy (tổng tiền, nút lưu) trên điện thoại đặt cách 
 ## 8. Việc còn lại
 
 - Logo trên hóa đơn đã dùng bản đen thuần nhưng chưa thử trên máy in nhiệt thật (cửa hàng chưa có máy in).
-- Các bảng còn cuộn ngang trên điện thoại, chuyển sang thẻ bằng `MobileCard` khi cần: giao dịch bán (danh sách, chi tiết), ca (danh sách, chi tiết), đơn online (danh sách, chi tiết), chuyển kho (danh sách, chi tiết), thu chi, đối soát, hạn sử dụng, cần nhập thêm, lịch sử biến động kho, nhà cung cấp, người dùng, chi tiết sản phẩm, gợi ý giá, import Excel.
-- Chip lọc (`filter-chip.tsx`) cao khoảng 32px, dưới mức 44px; nên nâng khi rà lại màn Tồn kho.
-- Một số helper chip đã khai nhưng chưa trang nào dùng: `ChipTrangThaiCa`, `ChipTrangThaiPhieu`, `sacTonKho`, `sacHan`, `sacTheoNhan`; màn ca và phiếu nhập vẫn dùng `Badge`. Giữ lại vì là bảng ánh xạ đã chốt ở mục 2; chuyển các `Badge` trạng thái sang chip khi rà lại các màn đó.
+- Các bảng còn cuộn ngang trên điện thoại, chuyển sang thẻ bằng `MobileCard` khi cần: chi tiết giao dịch bán, ca, đơn online, chuyển kho; đối soát; người dùng; chi tiết sản phẩm; gợi ý giá; import Excel. Danh sách bán hàng, ca, đơn online, đối soát Shopee, chuyển kho, thu chi, hạn sử dụng, cần nhập thêm, biến động kho, nhà cung cấp đã có thẻ (02/10/2026).
+- Thẻ đơn online trên điện thoại chưa hiện dòng phụ "Chờ Shopee trả" / "Chờ kiểm hàng" như bảng; mở chi tiết đơn để xem.
+- Helper chip chưa trang nào dùng: `ChipTrangThaiCa`, `ChipTrangThaiPhieu`, `sacTonKho`, `sacHan`, `sacTheoNhan`. Các màn trạng thái gọi thẳng `ChipSac` với sắc khai trong `labels.ts`, cùng bảng ánh xạ ở mục 2.
