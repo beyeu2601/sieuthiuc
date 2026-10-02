@@ -39,6 +39,17 @@ export async function saveProduct(id: string | null, input: ProductInput): Promi
 }
 
 // Chinh truc tiep ton kho (so ton thuc te) va gia von cua san pham tai 1 cua hang. cost = null: giu gia von.
+// Tao nhanh thuong hieu ngay trong form san pham (RLS: sadmin/admin)
+export async function quickCreateBrand(name: string): Promise<ActionResult<{ id: string; name: string }>> {
+  const n = name.trim();
+  if (!n) return { ok: false, error: "Nhập tên thương hiệu" };
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("brands").insert({ name: n }).select("id, name").single();
+  if (error) return { ok: false, error: errorMessage(error) };
+  revalidatePath("/settings/catalog");
+  return { ok: true, data };
+}
+
 export async function adjustProductStock(
   productId: string,
   storeId: string,

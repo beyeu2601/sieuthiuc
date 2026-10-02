@@ -28,8 +28,20 @@ function showValue(field: string, v: string | null) {
   return v;
 }
 
-export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ProductDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
+}) {
   const { id } = await params;
+  const { from } = await searchParams;
+  // Chi nhan duong dan noi bo cua man Ton kho, con lai quay ve danh sach san pham
+  const back =
+    from && /^\/[A-Za-z0-9_-]+\/inventory(\/|\?|$)/.test(from)
+      ? { href: from, label: "Tồn kho" }
+      : { href: "/products", label: "Sản phẩm" };
   const ctx = await requireRole("sadmin", "admin", "accountant");
   const canEdit = ctx.profile.role !== "accountant";
   const supabase = await createClient();
@@ -91,6 +103,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   return (
     <div className="space-y-6">
       <PageHeader
+        back={back}
         title={p.name}
         description={`${p.sku} - ${GOODS_TYPE_LABEL[p.goods_type as "cont" | "air"]} - Giá vốn tham chiếu ${formatMoney(p.cost_price_ref)}`}
       />

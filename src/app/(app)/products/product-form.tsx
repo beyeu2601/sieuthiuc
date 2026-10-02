@@ -3,13 +3,15 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { saveProduct } from "./actions";
+import { PlusIcon } from "lucide-react";
+import { quickCreateBrand, saveProduct } from "./actions";
 import type { ProductInput } from "@/lib/schemas/product";
 import { formatMoney } from "@/lib/format";
 import { MoneyInput } from "@/components/money-input";
 import { NativeSelect } from "@/components/native-select";
 import { CategoryInfo } from "@/components/category-info";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,6 +39,8 @@ export function ProductForm({
   const [v, setV] = useState<ProductInput>(initial);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [brandList, setBrandList] = useState(brands);
+  const [brandOpen, setBrandOpen] = useState(false);
   const set = <K extends keyof ProductInput>(k: K, val: ProductInput[K]) => setV((s) => ({ ...s, [k]: val }));
 
   const catPct = categories.find((c) => c.id === v.category_id)?.benefit_pct ?? null;
@@ -102,14 +106,21 @@ export function ProductForm({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="brand">Thương hiệu</Label>
-          <NativeSelect id="brand" value={v.brand_id ?? ""} onChange={(e) => set("brand_id", e.target.value || null)}>
-            <option value="">Không có</option>
-            {brands.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </NativeSelect>
+          <div className="flex gap-2">
+            <NativeSelect id="brand" value={v.brand_id ?? ""} onChange={(e) => set("brand_id", e.target.value || null)}>
+              <option value="">Không có</option>
+              {brandList.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </NativeSelect>
+            {!readOnly && (
+              <Button type="button" variant="outline" className="shrink-0" onClick={() => setBrandOpen(true)}>
+                <PlusIcon /> Thêm
+              </Button>
+            )}
+          </div>
         </div>
 
         {!id && (
@@ -257,6 +268,88 @@ export function ProductForm({
           </Button>
         </div>
       )}
+      <QuickBrandDialog
+        open={brandOpen}
+        onOpenChange={setBrandOpen}
+        brands={brandList}
+        onPicked={(b) => {
+          setBrandList((ls) => (ls.some((x) => x.id === b.id) ? ls : [...ls, b].sort((x, y) => x.name.localeCompare(y.name, "vi"))));
+          set("brand_id", b.id);
+        }}
+      />
     </form>
+  );
+}
+
+function QuickBrandDialog({
+  open,
+  onOpenChange,
+  brands,
+  onPicked,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  brands: Option[];
+  onPicked: (b: Option) => void;
+}) {
+  const [name, setName] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    // Hop thoai render qua portal nhung su kien submit van noi bot len form san pham
+    e.stopPropagation();
+    setError(null);
+    const n = name.trim();
+    const done = (b: Option) => {
+      onPicked(b);
+      setName("");
+      onOpenChange(false);
+    };
+    // Trung ten (khong phan biet hoa thuong) thi chon luon thuong hieu da co
+    const existing = brands.find((b) => b.name.toLocaleLowerCase("vi") === n.toLocaleLowerCase("vi"));
+    if (existing) {
+      toast.info(`Đã có thương hiệu ${existing.name}, đã chọn`);
+      return done(existing);
+    }
+    start(async () => {
+      const res = await quickCreateBrand(n);
+      if (!res.ok) return setError(res.error);
+      toast.success(`Đã thêm thương hiệu ${res.data!.name}`);
+      done(res.data!);
+    });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <form onSubmit={submit} className="flex min-h-0 flex-col gap-3">
+          <DialogHeader>
+            <DialogTitle>Thêm thương hiệu</DialogTitle>
+            <DialogDescription>Tạo nhanh thương hiệu chưa có trong danh sách. Sửa tên ở Cài đặt &gt; Nhóm hàng &amp; thương hiệu.</DialogDescription>
+          </DialogHeader>
+          <DialogBody className="space-y-3">
+            {error && (
+              <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {error}
+              </p>
+            )}
+            <div className="space-y-1.5">
+              <Label htmlFor="qb-name">Tên thương hiệu *</Label>
+              <Input id="qb-name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+            </div>
+          </DialogBody>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              Hủy
+            </Button>
+            <Button type="submit" disabled={pending || !name.trim()}>
+              {pending ? "Đang tạo..." : "Tạo và chọn"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -69,6 +69,10 @@ export default async function InventoryPage({ params, searchParams }: { params: 
   ]);
   const rows = (data ?? []) as Row[];
   const total = rows[0]?.total_count ?? 0;
+  // Giu bo loc hien tai de trang chi tiet san pham quay lai dung danh sach
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(sp)) for (const x of toArr(v)) qs.append(k, x);
+  const from = encodeURIComponent(`/${store.code}/inventory${qs.size ? `?${qs}` : ""}`);
 
   return (
     <div>
@@ -121,7 +125,7 @@ export default async function InventoryPage({ params, searchParams }: { params: 
             return (
               <MobileCard
                 key={r.product_id}
-                title={isStaff ? r.name : <Link href={`/products/${r.product_id}`} className="hover:underline">{r.name}</Link>}
+                title={isStaff ? r.name : <Link href={`/products/${r.product_id}?from=${from}`} className="hover:underline">{r.name}</Link>}
                 subtitle={`${r.sku}${r.barcode ? ` - ${r.barcode}` : ""}${isStaff ? "" : ` - ${GOODS_TYPE_LABEL[r.goods_type]}`}`}
                 badge={<Badge variant={st.variant}>{st.label}</Badge>}
                 stats={[
@@ -162,7 +166,7 @@ export default async function InventoryPage({ params, searchParams }: { params: 
                 return (
                   <TableRow key={r.product_id}>
                     <TableCell className="min-w-56 whitespace-normal">
-                      {isStaff ? r.name : <Link href={`/products/${r.product_id}`} className="hover:underline">{r.name}</Link>}
+                      {isStaff ? r.name : <Link href={`/products/${r.product_id}?from=${from}`} className="hover:underline">{r.name}</Link>}
                       <div className="text-xs text-muted-foreground">
                         {r.sku}
                         {r.barcode ? ` - ${r.barcode}` : ""}
