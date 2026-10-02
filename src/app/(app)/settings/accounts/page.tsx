@@ -1,28 +1,35 @@
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { AccountEditor } from "./account-editor";
+import { AccountEditor, type AccountRow } from "./account-editor";
 
 export const metadata = { title: "Tài khoản tiền" };
 
 export default async function AccountsSettingsPage() {
-  await requireRole("sadmin");
+  const ctx = await requireRole("sadmin", "admin");
   const supabase = await createClient();
-  const { data } = await supabase.rpc("money_account_balances");
-  const rows = (data ?? []) as {
-    id: string;
-    name: string;
-    kind: "cash" | "bank" | "ewallet" | "other";
-    is_active: boolean;
-    opening_balance: number;
-    balance: number;
-  }[];
+  const [{ data: balances }, { data: holders }, { data: users }] = await Promise.all([
+    supabase.rpc("money_account_balances"),
+    supabase.from("money_accounts").select("id, holder_id"),
+    supabase.from("profiles").select("id, full_name").eq("is_active", true).order("full_name"),
+  ]);
+  const holderOf = new Map((holders ?? []).map((h) => [h.id, h.holder_id as string | null]));
+  const rows: AccountRow[] = ((balances ?? []) as Omit<AccountRow, "holder_id">[]).map((r) => ({
+    ...r,
+    holder_id: holderOf.get(r.id) ?? null,
+  }));
+  const isSadmin = ctx.profile.role === "sadmin";
   return (
-    <section className="max-w-2xl rounded-xl border bg-card p-4">
-      <h2 className="mb-1 font-medium">Tài khoản giữ tiền</h2>
-      <p className="mb-3 text-sm text-muted-foreground">
-        Nơi giữ tiền của cửa hàng (két tiền mặt, tài khoản ngân hàng, ví). Mỗi khoản thu chi, thu bán hàng và trả nhà cung cấp chọn đúng tài khoản để theo dõi số dư.
-      </p>
-      <AccountEditor rows={rows} />
+    <section className="max-w-3xl space-y-3">
+      <div>
+        <h2 className="font-medium">Tài khoản giữ tiền</h2>
+        <p className="text-sm text-muted-foreground">
+          Nơi giữ tiền của cửa hàng (két tiền mặt, ngân hàng, ví). Người giữ quỹ duyệt mọi khoản thu chi của tài khoản mình; tài khoản chưa có người giữ thì quản lý cửa
+          hàng duyệt.
+        </p>
+        <p className="text-sm text-muted-foreground">Số dư hiện tại = số dư đầu kỳ + thu bán hàng + thu khác đã duyệt - chi đã duyệt - trả nhà cung cấp.</p>
+        {!isSadmin && <p className="text-sm text-muted-foreground">Bạn chọn được người giữ quỹ. Thêm hoặc sửa tài khoản do quản trị hệ thống làm.</p>}
+      </div>
+      <AccountEditor rows={rows} users={users ?? []} isSadmin={isSadmin} storeCode={ctx.stores[0]?.code ?? null} />
     </section>
   );
 }

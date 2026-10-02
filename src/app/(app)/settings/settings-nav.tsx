@@ -9,13 +9,13 @@ const ITEMS = [
   { href: "/settings/users", label: "Người dùng" },
   { href: "/settings/general", label: "Cấu hình" },
   { href: "/settings/catalog", label: "Nhóm hàng & thương hiệu" },
-  { href: "/settings/accounts", label: "Tài khoản tiền", sadminOnly: true },
+  { href: "/settings/accounts", label: "Tài khoản tiền" },
   // Hang thanh vien tam an, chua ap dung. Trang /settings/loyalty van con nhung khong hien tren nav.
 ];
 
-export function SettingsNav({ isSadmin }: { isSadmin: boolean }) {
+export function SettingsNav() {
   const pathname = usePathname();
-  const items = ITEMS.filter((i) => !i.sadminOnly || isSadmin);
+  const items = ITEMS;
   return (
     <nav aria-label="Mục cài đặt" className="overflow-x-auto">
       <ul className="flex gap-1 border-b">

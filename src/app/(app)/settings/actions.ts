@@ -81,10 +81,18 @@ export type MoneyAccountInput = {
   note: string | null;
 };
 
-export async function saveMoneyAccount(input: MoneyAccountInput): Promise<ActionResult> {
+export async function saveMoneyAccount(input: MoneyAccountInput): Promise<ActionResult<{ id: string }>> {
   if (!input.name.trim()) return { ok: false, error: "Nhập tên tài khoản" };
   const supabase = await createClient();
-  const { error } = await supabase.rpc("manage_money_account", { p: input });
+  const { data, error } = await supabase.rpc("manage_money_account", { p: input });
+  if (error) return { ok: false, error: errorMessage(error) };
+  revalidatePath("/settings/accounts");
+  return { ok: true, data: data as { id: string } };
+}
+
+export async function setMoneyAccountHolder(accountId: string, userId: string | null): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_money_account_holder", { p_account_id: accountId, p_user_id: userId });
   if (error) return { ok: false, error: errorMessage(error) };
   revalidatePath("/settings/accounts");
   return { ok: true };
