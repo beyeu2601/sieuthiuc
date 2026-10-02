@@ -8,6 +8,7 @@ import { completeSale, requestDiscountApproval } from "./actions";
 import type { CatalogItem } from "../catalog-actions";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { ProductPicker } from "@/components/product-picker";
+import { BackButton } from "@/components/back-button";
 import { MoneyInput } from "@/components/money-input";
 import { NativeSelect } from "@/components/native-select";
 import { Button } from "@/components/ui/button";
@@ -224,7 +225,8 @@ export function PosClient({
     <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
       <section className="space-y-3" aria-label="Giỏ hàng">
         <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
-          <span>
+          <span className="flex flex-wrap items-center gap-x-2">
+            <BackButton />
             Ca <Link href={`/${storeCode}/shifts/${shiftId}`} className="underline underline-offset-4">{shiftCode}</Link>. Phím tắt: F2 tìm, F4 thanh
             toán, F8 giảm giá.
           </span>

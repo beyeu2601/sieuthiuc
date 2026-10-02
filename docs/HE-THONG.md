@@ -124,6 +124,7 @@ Thành phần giao diện dùng chung (đợt nâng UX/UI 09/2026, chi tiết th
 | Tô màu trạng thái, kênh, loại hàng | `src/components/ui/chip.tsx` (`ChipSac` + helper theo miền) | Không tô màu thủ công ở trang, không ghi mã hex ngoài `globals.css` |
 | Đang tải | `loading.tsx` + `SkeletonTrang` hoặc `Skeleton` | Khung phải có `aria-busy` |
 | Không có dữ liệu | `EmptyState` (`icon`, `action`) | |
+| Nút quay lại | `PageHeader` (`back`) hoặc `BackButton` | Mọi màn trừ Tổng quan đều có. Truyền `back` khi cần về màn cha cố định; bỏ trống thì quay về màn vừa xem, mở thẳng bằng link thì về Tổng quan |
 | Hỏi xác nhận | `useConfirm()` trả `{ confirm, dialog }`, render `{dialog}` | Không dùng `confirm()` của trình duyệt |
 | Báo kết quả | `src/lib/feedback.ts` (`baoTheoKetQua`) | |
 | Thẻ chỉ số | `KpiCard` + `HangKpi` | Là Link sang màn chi tiết |
