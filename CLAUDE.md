@@ -109,3 +109,14 @@ Khi phân tích hoặc đề xuất bất kỳ tính năng nào, luôn áp dụn
 - Accessibility: tương phản, cỡ chữ, vùng chạm, bàn phím, trình đọc màn hình.
 
 Yếu tố nào không áp dụng thì ghi một dòng lý do, không bịa nội dung cho đủ. Phân tích rộng nhưng triển khai vẫn theo mục 2 (Simplicity First): chỉ làm phần đã được đồng ý.
+### 8. Quy tắc thiết kế màn hình (bắt buộc cho mọi màn mới và màn sửa)
+Khách chốt 02/10/2026, mẫu chuẩn là trang chi tiết sản phẩm `src/app/(app)/products/[id]/page.tsx` (học từ app 26C: thông tin cô đọng trong một màn). Thành phần dùng chung ghi ở `docs/HE-THONG.md` mục 6.
+- Một màn, ít cuộn: trên máy tính, con số chính và thao tác chính nằm ngay màn đầu; cả trang không quá khoảng 1,5 lần chiều cao màn hình. Điện thoại xếp một cột theo đúng thứ tự ưu tiên.
+- Đầu trang: tiêu đề + dãy chip (`ChipSac`) cho mã, trạng thái, phân loại, cảnh báo thiếu dữ liệu. Không viết dòng mô tả bằng câu chữ.
+- Hàng chỉ số (`HangChiSo` + `ChiSo`) cho 2-4 con số quan trọng nhất, tô màu theo nghĩa: đỏ là xấu/hết/lỗ/quá hạn, vàng là cần chú ý, xanh lá là tốt, brand là con số chính trung tính, slate là chưa có dữ liệu. Ô màu luôn kèm nhãn chữ nói nghĩa (màu không phải tín hiệu duy nhất).
+- Màn chi tiết và form lớn: từ `lg` chia 2 cột, trái là nội dung chính/form, phải 360-420px cho khối phụ (`Khoi`). Bảng phụ (lịch sử, lô, dòng chứng từ phụ) gộp vào `Tabs` có số đếm.
+- Form: `@container`, lưới `@md:grid-cols-2 @3xl:grid-cols-4`; nút lưu dính đáy (`sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] lg:bottom-0`); màn sửa báo "Có thay đổi chưa lưu" và khóa nút Lưu khi chưa đổi gì. Không thêm nút "Quay lại" thứ hai (đầu trang đã có).
+- Chữ: không viết câu mô tả dưới tiêu đề khối; gợi ý tối đa một dòng `text-xs`; hướng dẫn dài đưa vào `title` hoặc biểu tượng (i). Không lặp lại thông tin đã có trên trang.
+- Thao tác ít dùng thu gọn: chỉnh phụ mở bằng nút "Chỉnh"; xóa là nút nhỏ cuối cột, giải thích nằm trong hộp xác nhận.
+- Lựa chọn một giá trị: luôn dùng `LuaChon`. Từ 3 phương án trở xuống hiện thành nút bấm chọn ngay; trên 3 phương án mới là danh sách thả xuống. Danh sách động (tài khoản, cửa hàng...) cũng theo số phương án lúc chạy. Không dùng `NativeSelect` trực tiếp cho lựa chọn đơn.
+- Màu: chỉ dùng token ngữ nghĩa (`ChipSac`, `NEN_SAC`/`CHU_SAC`/`VIEN_SAC`, `text-chu-*`, `bg-nen-*`), không ghi mã màu, phải đúng ở chế độ tối.

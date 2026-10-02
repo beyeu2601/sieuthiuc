@@ -6,9 +6,10 @@ import { driveConfigured } from "@/lib/google-drive";
 import { formatDateTime, formatMoney, formatNumber } from "@/lib/format";
 import { diffDays, formatDateVN, todayVN } from "@/lib/dates";
 import { GOODS_TYPE_LABEL } from "@/lib/text";
-import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
-import { ChipHan, ChipSac, CHU_SAC, NEN_SAC, VIEN_SAC, sacLoaiHang, sacTheoNhan, type MaHan, type SacNguNghia } from "@/components/ui/chip";
+import { ChipHan, ChipSac, sacLoaiHang, sacTheoNhan, type MaHan, type SacNguNghia } from "@/components/ui/chip";
+import { ChiSo, HangChiSo } from "@/components/ui/chi-so";
+import { Khoi } from "@/components/khoi";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProductForm } from "../product-form";
@@ -31,29 +32,6 @@ function showValue(field: string, v: string | null) {
   if (field === "benefit_pct") return `${v}%`;
   if (field === "pricing_method") return METHOD_LABEL[v] ?? v;
   return v;
-}
-
-// O chi so dau trang: nen nhat + chu dam theo sac ngu nghia, nhan van noi nghia nen mau khong phai tin hieu duy nhat
-function ChiSo({ nhan, giaTri, phu, sac }: { nhan: string; giaTri: React.ReactNode; phu?: React.ReactNode; sac: SacNguNghia }) {
-  return (
-    <div className={cn("rounded-xl border px-4 py-3", NEN_SAC[sac], VIEN_SAC[sac])}>
-      <div className={cn("text-sm font-medium", CHU_SAC[sac])}>{nhan}</div>
-      <div className="mt-0.5 text-xl font-semibold whitespace-nowrap tabular-nums lg:text-2xl">{giaTri}</div>
-      {phu && <div className="mt-0.5 text-xs text-muted-foreground">{phu}</div>}
-    </div>
-  );
-}
-
-function Khoi({ title, aside, children, className }: { title: string; aside?: React.ReactNode; children: React.ReactNode; className?: string }) {
-  return (
-    <section className={cn("rounded-xl border bg-card p-4", className)}>
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="font-medium">{title}</h2>
-        {aside}
-      </div>
-      {children}
-    </section>
-  );
 }
 
 export default async function ProductDetailPage({
@@ -190,7 +168,7 @@ export default async function ProductDetailPage({
         }
       />
 
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+      <HangChiSo>
         <ChiSo
           nhan="Giá bán"
           sac="brand"
@@ -233,7 +211,7 @@ export default async function ProductDetailPage({
                   : "Chưa có lô nào còn hàng"
           }
         />
-      </div>
+      </HangChiSo>
 
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="min-w-0 space-y-4">

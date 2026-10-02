@@ -8,7 +8,7 @@ import { quickCreateBrand, saveProduct } from "./actions";
 import type { ProductInput } from "@/lib/schemas/product";
 import { formatMoney } from "@/lib/format";
 import { MoneyInput } from "@/components/money-input";
-import { NativeSelect } from "@/components/native-select";
+import { LuaChon } from "@/components/lua-chon";
 import { CategoryInfo } from "@/components/category-info";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -82,10 +82,16 @@ export function ProductForm({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="goods_type">Loại hàng *</Label>
-          <NativeSelect id="goods_type" value={v.goods_type} onChange={(e) => set("goods_type", e.target.value as "cont" | "air")}>
-            <option value="cont">Cont</option>
-            <option value="air">Air</option>
-          </NativeSelect>
+          <LuaChon
+            id="goods_type"
+            aria-label="Loại hàng"
+            value={v.goods_type}
+            onChange={(x) => set("goods_type", x as "cont" | "air")}
+            options={[
+              { value: "cont", label: "Cont" },
+              { value: "air", label: "Air" },
+            ]}
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="unit">Đơn vị tính *</Label>
@@ -96,27 +102,27 @@ export function ProductForm({
             <Label htmlFor="category">Nhóm hàng</Label>
             <CategoryInfo categories={categories} />
           </div>
-          <NativeSelect id="category" value={v.category_id ?? ""} onChange={(e) => set("category_id", e.target.value || null)}>
-            <option value="">Chưa phân nhóm</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-                {c.benefit_pct != null ? ` (${c.benefit_pct}%)` : ""}
-              </option>
-            ))}
-          </NativeSelect>
+          <LuaChon
+            id="category"
+            aria-label="Nhóm hàng"
+            value={v.category_id ?? ""}
+            onChange={(x) => set("category_id", x || null)}
+            options={[
+              { value: "", label: "Chưa phân nhóm" },
+              ...categories.map((c) => ({ value: c.id, label: `${c.name}${c.benefit_pct != null ? ` (${c.benefit_pct}%)` : ""}` })),
+            ]}
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="brand">Thương hiệu</Label>
           <div className="flex gap-2">
-            <NativeSelect id="brand" value={v.brand_id ?? ""} onChange={(e) => set("brand_id", e.target.value || null)}>
-              <option value="">Không có</option>
-              {brandList.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </NativeSelect>
+            <LuaChon
+              id="brand"
+              aria-label="Thương hiệu"
+              value={v.brand_id ?? ""}
+              onChange={(x) => set("brand_id", x || null)}
+              options={[{ value: "", label: "Không có" }, ...brandList.map((b) => ({ value: b.id, label: b.name }))]}
+            />
             {!readOnly && (
               <Button type="button" variant="outline" className="shrink-0" onClick={() => setBrandOpen(true)}>
                 <PlusIcon /> Thêm
@@ -134,14 +140,16 @@ export function ProductForm({
         )}
         <div className="space-y-1.5">
           <Label htmlFor="pricing_method">Cách đặt giá</Label>
-          <NativeSelect
+          <LuaChon
             id="pricing_method"
+            aria-label="Cách đặt giá"
             value={v.pricing_method}
-            onChange={(e) => set("pricing_method", e.target.value as "manual" | "benefit")}
-          >
-            <option value="manual">Nhập giá trực tiếp</option>
-            <option value="benefit">Theo % Benefit trên giá vốn</option>
-          </NativeSelect>
+            onChange={(x) => set("pricing_method", x as "manual" | "benefit")}
+            options={[
+              { value: "manual", label: "Nhập trực tiếp" },
+              { value: "benefit", label: "% Benefit" },
+            ]}
+          />
         </div>
         {v.pricing_method === "manual" ? (
           <div className="space-y-1.5">
@@ -173,28 +181,32 @@ export function ProductForm({
 
         <div className="space-y-1.5">
           <Label htmlFor="date_type">Loại date (cận date)</Label>
-          <NativeSelect
+          <LuaChon
             id="date_type"
+            aria-label="Loại date"
             value={v.date_type}
-            onChange={(e) => set("date_type", e.target.value as "short" | "long")}
-          >
-            <option value="long">Date dài</option>
-            <option value="short">Date ngắn</option>
-          </NativeSelect>
+            onChange={(x) => set("date_type", x as "short" | "long")}
+            options={[
+              { value: "long", label: "Date dài" },
+              { value: "short", label: "Date ngắn" },
+            ]}
+          />
           <p className="text-xs text-muted-foreground">Ngưỡng gợi ý giảm giá ở màn Hạn sử dụng.</p>
         </div>
 
         <div className="space-y-1.5">
           <Label htmlFor="expiry_level">Quản lý hạn sử dụng</Label>
-          <NativeSelect
+          <LuaChon
             id="expiry_level"
+            aria-label="Quản lý hạn sử dụng"
             value={v.expiry_level}
-            onChange={(e) => set("expiry_level", e.target.value as ProductInput["expiry_level"])}
-          >
-            <option value="lot">Theo lô (nhập khi nhập hàng)</option>
-            <option value="product">Một hạn cho cả sản phẩm</option>
-            <option value="none">Không có hạn</option>
-          </NativeSelect>
+            onChange={(x) => set("expiry_level", x as ProductInput["expiry_level"])}
+            options={[
+              { value: "lot", label: "Theo lô" },
+              { value: "product", label: "Một hạn" },
+              { value: "none", label: "Không có" },
+            ]}
+          />
         </div>
         {v.expiry_level === "product" && (
           <div className="space-y-1.5">
@@ -248,10 +260,16 @@ export function ProductForm({
         )}
         <div className="space-y-1.5">
           <Label htmlFor="status">Trạng thái</Label>
-          <NativeSelect id="status" value={v.status} onChange={(e) => set("status", e.target.value as "active" | "inactive")}>
-            <option value="active">Đang bán</option>
-            <option value="inactive">Ngừng bán (ẩn khỏi quầy)</option>
-          </NativeSelect>
+          <LuaChon
+            id="status"
+            aria-label="Trạng thái"
+            value={v.status}
+            onChange={(x) => set("status", x as "active" | "inactive")}
+            options={[
+              { value: "active", label: "Đang bán" },
+              { value: "inactive", label: "Ngừng bán" },
+            ]}
+          />
         </div>
         <div className="space-y-1.5 @md:col-span-2 @3xl:col-span-3">
           <Label htmlFor="note">Ghi chú</Label>

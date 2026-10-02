@@ -133,6 +133,9 @@ Thành phần giao diện dùng chung (đợt nâng UX/UI 09/2026, chi tiết th
 | Hỏi xác nhận | `useConfirm()` trả `{ confirm, dialog }`, render `{dialog}` | Không dùng `confirm()` của trình duyệt |
 | Báo kết quả | `src/lib/feedback.ts` (`baoTheoKetQua`) | |
 | Thẻ chỉ số | `KpiCard` + `HangKpi` | Là Link sang màn chi tiết |
+| Ô chỉ số đầu trang (không phải link) | `ChiSo` + `HangChiSo` (`components/ui/chi-so.tsx`) | 2-4 ô, `sac` theo nghĩa, nhãn chữ nói nghĩa. Xem CLAUDE.md mục 8 |
+| Khối nội dung có tiêu đề | `Khoi` (`components/khoi.tsx`) | Không câu mô tả; `aside` cho số đếm/nút nhỏ |
+| Chọn một giá trị | `LuaChon` (`components/lua-chon.tsx`) | Từ 3 phương án trở xuống là nút bấm (radio), trên 3 là danh sách. Dùng cả form client (`value`/`onChange`) lẫn bộ lọc (`name`/`defaultValue`) |
 | Tiến độ x/y | `ThanhTienDo` | Luôn in kèm số x/y |
 | Biểu đồ | `DailyBars`, `charts/thanh-co-cau.tsx` (`ThanhCoCau`) | Không thêm thư viện biểu đồ |
 | Bộ lọc danh sách | `AutoSubmitForm` > `FilterBar` (`search`, `ignore`) | Không thêm nút Lọc/Xem |
