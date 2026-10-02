@@ -19,6 +19,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BulkBar, BulkSelectProvider, SelectAllBox, SelectBox } from "./bulk-select";
+import { CategoryCell } from "./category-cell";
 
 export const metadata = { title: "Sản phẩm" };
 
@@ -35,6 +36,7 @@ type Row = {
   pricing_method: "manual" | "benefit";
   benefit_pct: number | null;
   status: "active" | "inactive";
+  category_id: string | null;
   categories: { name: string; benefit_pct: number | null } | null;
   product_barcodes: { barcode: string; is_primary: boolean }[];
   inventory: { qty_on_hand: number }[];
@@ -74,7 +76,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   let query = supabase
     .from("products")
     .select(
-      "id, sku, name, unit, goods_type, sell_price, cost_price_ref, pricing_method, benefit_pct, status, categories(name, benefit_pct), product_barcodes(barcode, is_primary), inventory(qty_on_hand), product_images(drive_thumb_id)",
+      "id, sku, name, unit, goods_type, sell_price, cost_price_ref, pricing_method, benefit_pct, status, category_id, categories(name, benefit_pct), product_barcodes(barcode, is_primary), inventory(qty_on_hand), product_images(drive_thumb_id)",
       { count: "exact" }
     )
     .eq("product_images.is_thumbnail", true)
@@ -265,7 +267,13 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                       <Link href={`/products/${p.id}`} className="hover:underline">
                         {p.name}
                       </Link>
-                      {p.categories && <div className="text-xs text-muted-foreground">{p.categories.name}</div>}
+                      {canEdit ? (
+                        <div>
+                          <CategoryCell productId={p.id} productName={p.name} categoryId={p.category_id} categories={categories ?? []} />
+                        </div>
+                      ) : (
+                        p.categories && <div className="text-xs text-muted-foreground">{p.categories.name}</div>
+                      )}
                     </TableCell>
                     <TableCell>{GOODS_TYPE_LABEL[p.goods_type]}</TableCell>
                     <TableCell>{p.unit}</TableCell>
