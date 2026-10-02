@@ -103,6 +103,7 @@ Cơ chế:
 | `20261009000002` | `inventory_status`: trong mỗi nhóm cảnh báo (hết, sắp hết, còn hàng) sản phẩm tạo mới nhất đứng trước |
 | `20261010000001` | Người giữ tài khoản duyệt thu chi: `money_accounts.holder_id`, cột `cash_transactions.pending_*`; `set_money_account_holder`, `request_cash_change`, `money_accounts_overview`, `money_account_ledger`; `create_cash_transaction` và `review_cash_transaction` viết lại theo người giữ |
 | `20261011000001` | Gộp nhóm hàng trùng (dữ liệu): TPCN vào Thực Phẩm Chức Năng, Hàng Tiêu Dùng vào Hàng tiêu dùng, Hàng lạnh và Thực Phẩm - Bảo Quản Lạnh vào Hàng Đông Lạnh |
+| `20261012000001` | Sắp lại nhóm hàng (dữ liệu): bỏ nhóm Thực Phẩm, chuyển sang Thực Phẩm Khô (trừ vài món sang Sữa, Thực Phẩm Chức Năng, Hàng Đông Lạnh); 3 món ăn uống từ Hàng tiêu dùng sang Thực Phẩm Khô; bật lại nhóm Hàng tiêu dùng |
 
 Các RPC chính theo nghiệp vụ:
 
