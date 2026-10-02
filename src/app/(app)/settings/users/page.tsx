@@ -11,7 +11,7 @@ export default async function UsersPage() {
   const { data } = await supabase
     .from("profiles")
     .select("id, username, full_name, phone, role, is_active, default_store_id, extra_permissions, user_stores(store_id)")
-    .order("username");
+    .order("created_at", { ascending: false });
 
   const users: UserRow[] = (data ?? []).map((u) => ({
     id: u.id,

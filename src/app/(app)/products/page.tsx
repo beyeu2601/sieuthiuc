@@ -60,7 +60,8 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       { count: "exact" }
     )
     .eq("product_images.is_thumbnail", true)
-    .order("name")
+    .order("created_at", { ascending: false })
+    .order("sku", { ascending: false })
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
   const q = sp.q?.trim();

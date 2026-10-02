@@ -24,7 +24,7 @@ export default async function SuppliersPage({
   let query = supabase
     .from("suppliers")
     .select("id, code, name, contact_name, phone, payment_terms_days, is_active")
-    .order("name")
+    .order("created_at", { ascending: false })
     .limit(500);
   if (sp.q?.trim()) query = query.ilike("search_key", ilikeTerm(sp.q));
   if (status !== "all") query = query.eq("is_active", status === "active");

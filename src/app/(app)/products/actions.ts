@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { errorMessage, type ActionResult } from "@/lib/errors";
+import { trashOnDrive } from "@/lib/google-drive";
 import { productSchema, type ProductInput } from "@/lib/schemas/product";
 
 export async function saveProduct(id: string | null, input: ProductInput): Promise<ActionResult<{ id: string }>> {
@@ -149,4 +150,15 @@ export async function importProducts(items: ImportRow[]): Promise<ActionResult<{
   if (error) return { ok: false, error: errorMessage(error) };
   revalidatePath("/products");
   return { ok: true, data: data as { products: number } };
+}
+
+export async function deleteProduct(productId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("delete_product", { p_product_id: productId });
+  if (error) return { ok: false, error: errorMessage(error) };
+  // DB da xoa; loi o Drive chi de lai file trong thu muc, khong anh huong app
+  const files = (data as { drive_file_id: string; drive_thumb_id: string }[] | null) ?? [];
+  await Promise.allSettled(files.flatMap((f) => [trashOnDrive(f.drive_file_id), trashOnDrive(f.drive_thumb_id)]));
+  revalidatePath("/products");
+  return { ok: true };
 }

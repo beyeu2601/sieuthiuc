@@ -12,6 +12,7 @@ import { BarcodePanel } from "./barcode-panel";
 import { LabelPreview } from "./label-preview";
 import { ImageGallery } from "./image-gallery";
 import { StockCostPanel } from "./stock-cost-panel";
+import { DeleteProduct } from "./delete-product";
 
 const FIELD_LABEL: Record<string, string> = {
   sell_price: "Giá bán",
@@ -254,6 +255,18 @@ export default async function ProductDetailPage({
           </div>
         )}
       </section>
+
+      {canEdit && (
+        <section className="rounded-xl border border-destructive/30 bg-card p-4" aria-labelledby="danger">
+          <h2 id="danger" className="mb-1 font-medium">
+            Xóa sản phẩm
+          </h2>
+          <p className="mb-3 text-sm text-muted-foreground">
+            Chỉ xóa được sản phẩm chưa có giao dịch bán, nhập hoặc chuyển kho và đã hết tồn. Sản phẩm đã có giao dịch thì đặt trạng thái Ngừng bán ở phần Thông tin.
+          </p>
+          <DeleteProduct productId={p.id} productName={p.name} />
+        </section>
+      )}
     </div>
   );
 }
