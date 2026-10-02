@@ -11,7 +11,7 @@ import { FilterBar } from "@/components/filter-bar";
 import { CameraScanButton } from "@/components/camera-scan-button";
 import { Pagination } from "@/components/pagination";
 import { EmptyState } from "@/components/empty-state";
-import { NativeSelect } from "@/components/native-select";
+import { FilterChip } from "@/components/filter-chip";
 import { CategoryInfo } from "@/components/category-info";
 import { ChipSac } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,16 @@ type Row = {
   product_images: { drive_thumb_id: string }[];
 };
 
-type SP = { q?: string; type?: string; status?: string; cat?: string; missing?: string; page?: string };
+type SP = { q?: string; type?: string | string[]; status?: string | string[]; cat?: string | string[]; missing?: string | string[]; page?: string; f?: string };
+
+const toArr = (v: string | string[] | undefined) => (Array.isArray(v) ? v : v ? [v] : []);
+
+// du lieu con thieu sau import ton dau ky: DVT "Chua ro", gia von hoac gia ban bang 0
+const MISSING_COND: Record<string, string> = {
+  unit: 'unit.eq."Chưa rõ"',
+  cost: "cost_price_ref.eq.0",
+  price: "sell_price.eq.0",
+};
 
 const stockOf = (p: Row) => p.inventory.reduce((s, i) => s + Number(i.qty_on_hand), 0);
 
@@ -50,7 +59,11 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const canEdit = ctx.profile.role !== "accountant";
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
-  const status = sp.status ?? "active";
+  // Vao trang lan dau (chua gui form, khong co f) mac dinh loc "Dang ban"; form luon gui f=1 nen bo tick het van la khong loc.
+  const statusSel = sp.f ? toArr(sp.status).filter((s) => s === "active" || s === "inactive") : ["active"];
+  const typeSel = toArr(sp.type).filter((t) => t === "cont" || t === "air");
+  const catSel = toArr(sp.cat);
+  const missingSel = toArr(sp.missing).filter((m) => m in MISSING_COND);
   const supabase = await createClient();
 
   const [{ data: categories }, { data: brands }] = await Promise.all([
@@ -76,14 +89,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
     if (hit && hit.length > 0) query = query.in("id", hit.map((h) => h.product_id));
     else query = query.ilike("search_key", ilikeTerm(q));
   }
-  if (sp.type === "cont" || sp.type === "air") query = query.eq("goods_type", sp.type);
-  if (status === "active" || status === "inactive") query = query.eq("status", status);
-  if (sp.cat) query = query.eq("category_id", sp.cat);
-  // du lieu con thieu sau import ton dau ky: DVT "Chua ro", gia von hoac gia ban bang 0
-  if (sp.missing === "unit") query = query.eq("unit", "Chưa rõ");
-  else if (sp.missing === "cost") query = query.eq("cost_price_ref", 0);
-  else if (sp.missing === "price") query = query.eq("sell_price", 0);
-  else if (sp.missing === "any") query = query.or('unit.eq."Chưa rõ",cost_price_ref.eq.0,sell_price.eq.0');
+  if (typeSel.length) query = query.in("goods_type", typeSel);
+  if (statusSel.length) query = query.in("status", statusSel);
+  if (catSel.length) query = query.in("category_id", catSel);
+  if (missingSel.length) query = query.or(missingSel.map((m) => MISSING_COND[m]).join(","));
 
   const { data, count, error } = await query.returns<Row[]>();
   const rows = data ?? [];
@@ -120,6 +129,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       />
 
       <AutoSubmitForm action="/products" debounceMs={400} className="mb-3" role="search">
+        <input type="hidden" name="f" value="1" />
         <FilterBar
           search={
             <div className="flex gap-2">
@@ -137,35 +147,32 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
             </div>
           }
         >
-          <div className="grid grid-cols-2 gap-2 lg:grid-cols-[120px_130px_170px_160px]">
-            <NativeSelect name="type" defaultValue={sp.type ?? ""} aria-label="Loại hàng">
-              <option value="">Mọi loại hàng</option>
-              <option value="cont">Cont</option>
-              <option value="air">Air</option>
-            </NativeSelect>
-            <NativeSelect name="status" defaultValue={status} aria-label="Trạng thái">
-              <option value="active">Đang bán</option>
-              <option value="inactive">Ngừng bán</option>
-              <option value="all">Tất cả</option>
-            </NativeSelect>
-            <div className="flex items-center gap-1">
-              <NativeSelect name="cat" defaultValue={sp.cat ?? ""} aria-label="Nhóm hàng" className="flex-1">
-                <option value="">Mọi nhóm hàng</option>
-                {(categories ?? []).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </NativeSelect>
-              <CategoryInfo categories={categories ?? []} />
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <div role="group" aria-label="Trạng thái" className="flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 text-xs font-medium text-muted-foreground">Trạng thái</span>
+              <FilterChip name="status" value="active" label="Đang bán" checked={statusSel.includes("active")} />
+              <FilterChip name="status" value="inactive" label="Ngừng bán" checked={statusSel.includes("inactive")} />
             </div>
-            <NativeSelect name="missing" defaultValue={sp.missing ?? ""} aria-label="Thiếu thông tin">
-              <option value="">Mọi dữ liệu</option>
-              <option value="any">Thiếu thông tin</option>
-              <option value="unit">Chưa rõ ĐVT</option>
-              <option value="cost">Thiếu giá vốn</option>
-              <option value="price">Thiếu giá bán</option>
-            </NativeSelect>
+            <div role="group" aria-label="Loại hàng" className="flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 text-xs font-medium text-muted-foreground">Loại</span>
+              <FilterChip name="type" value="cont" label="Cont" checked={typeSel.includes("cont")} />
+              <FilterChip name="type" value="air" label="Air" checked={typeSel.includes("air")} />
+            </div>
+            <div role="group" aria-label="Thiếu thông tin" className="flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 text-xs font-medium text-muted-foreground">Thiếu</span>
+              <FilterChip name="missing" value="unit" label="ĐVT" checked={missingSel.includes("unit")} />
+              <FilterChip name="missing" value="cost" label="Giá vốn" checked={missingSel.includes("cost")} />
+              <FilterChip name="missing" value="price" label="Giá bán" checked={missingSel.includes("price")} />
+            </div>
+            <div role="group" aria-label="Nhóm hàng" className="flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                Nhóm hàng
+                <CategoryInfo categories={categories ?? []} />
+              </span>
+              {(categories ?? []).map((c) => (
+                <FilterChip key={c.id} name="cat" value={c.id} label={c.name} checked={catSel.includes(c.id)} />
+              ))}
+            </div>
           </div>
         </FilterBar>
       </AutoSubmitForm>
@@ -287,7 +294,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         pageSize={PAGE_SIZE}
         total={count ?? 0}
         basePath="/products"
-        params={{ q: sp.q, type: sp.type, status: sp.status, cat: sp.cat, missing: sp.missing }}
+        params={{ q: sp.q, type: sp.type, status: sp.status, cat: sp.cat, missing: sp.missing, f: sp.f }}
       />
     </div>
   );
