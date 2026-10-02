@@ -39,7 +39,7 @@ type Row = {
   total_count: number;
 };
 
-type SP = { q?: string; status?: string | string[]; type?: string | string[]; cat?: string | string[]; page?: string };
+type SP = { q?: string; status?: string | string[]; type?: string | string[]; cat?: string | string[]; page?: string; f?: string };
 
 const toArr = (v: string | string[] | undefined) => (Array.isArray(v) ? v : v ? [v] : []);
 
@@ -51,7 +51,8 @@ export default async function InventoryPage({ params, searchParams }: { params: 
   const page = Math.max(1, Number(sp.page) || 1);
   const supabase = await createClient();
 
-  const statusSel = toArr(sp.status).filter((s) => s === "out" || s === "low" || s === "in_stock");
+  // Vao trang lan dau (chua gui form, khong co f) mac dinh loc "Con hang"; form luon gui f=1 nen bo tick het van la khong loc.
+  const statusSel: string[] = sp.f ? toArr(sp.status).filter((s) => s === "out" || s === "low" || s === "in_stock") : ["in_stock"];
   const typeSel = toArr(sp.type).filter((t) => t === "cont" || t === "air");
   const catSel = toArr(sp.cat);
 
@@ -89,6 +90,7 @@ export default async function InventoryPage({ params, searchParams }: { params: 
       />
       <InventoryTabs storeCode={store.code} />
       <AutoSubmitForm action={`/${store.code}/inventory`} debounceMs={400} className="my-3 space-y-2.5" role="search">
+        <input type="hidden" name="f" value="1" />
         <Input type="search" enterKeyHint="search" name="q" defaultValue={sp.q} placeholder="Tìm tên, SKU hoặc quét mã" aria-label="Tìm sản phẩm" className="sm:max-w-md" />
         <div className="flex flex-wrap gap-x-6 gap-y-2">
           <div role="group" aria-label="Trạng thái tồn" className="flex flex-wrap items-center gap-1.5">
@@ -196,7 +198,7 @@ export default async function InventoryPage({ params, searchParams }: { params: 
         pageSize={PAGE_SIZE}
         total={Number(total)}
         basePath={`/${store.code}/inventory`}
-        params={{ q: sp.q, status: statusSel, type: typeSel, cat: catSel }}
+        params={{ f: "1", q: sp.q, status: statusSel, type: typeSel, cat: catSel }}
       />
     </div>
   );
