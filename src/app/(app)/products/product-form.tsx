@@ -10,6 +10,7 @@ import { formatMoney } from "@/lib/format";
 import { MoneyInput } from "@/components/money-input";
 import { LuaChon } from "@/components/lua-chon";
 import { CategoryInfo } from "@/components/category-info";
+import { GoiY } from "@/components/goi-y";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -133,13 +134,26 @@ export function ProductForm({
 
         {!id && (
           <div className="space-y-1.5">
-            <Label htmlFor="cost_price_ref">Giá vốn (₫)</Label>
+            <div className="flex items-center gap-1">
+              <Label htmlFor="cost_price_ref">Giá vốn (₫)</Label>
+              <GoiY label="Giá vốn">
+                <p>Không bắt buộc, có thể nhập sau ở trang sản phẩm.</p>
+                <p>Khi xác nhận phiếu nhập, giá vốn tự cập nhật theo bình quân.</p>
+              </GoiY>
+            </div>
             <MoneyInput id="cost_price_ref" value={v.cost_price_ref ?? 0} onChange={(n) => set("cost_price_ref", n ?? 0)} />
-            <p className="text-xs text-muted-foreground">Không bắt buộc, có thể nhập sau ở trang sản phẩm. Khi nhập hàng, giá vốn tự cập nhật theo bình quân.</p>
           </div>
         )}
         <div className="space-y-1.5">
-          <Label htmlFor="pricing_method">Cách đặt giá</Label>
+          <div className="flex items-center gap-1">
+            <Label htmlFor="pricing_method">Cách đặt giá</Label>
+            <GoiY label="Cách đặt giá">
+              <p>Nhập trực tiếp: tự gõ giá bán.</p>
+              <p>
+                % Benefit: giá bán = giá vốn x (1 + %), làm tròn {formatMoney(roundingUnit)}. Để trống % thì lấy % của nhóm hàng.
+              </p>
+            </GoiY>
+          </div>
           <LuaChon
             id="pricing_method"
             aria-label="Cách đặt giá"
@@ -180,7 +194,13 @@ export function ProductForm({
         )}
 
         <div className="space-y-1.5">
-          <Label htmlFor="date_type">Loại date (cận date)</Label>
+          <div className="flex items-center gap-1">
+            <Label htmlFor="date_type">Loại date (cận date)</Label>
+            <GoiY label="Loại date">
+              <p>Lô còn ít ngày hơn ngưỡng thì màn Hạn sử dụng gợi ý giá giảm.</p>
+              <p>Date ngắn và date dài có ngưỡng riêng (mặc định 15 và 60 ngày), sửa ở Cài đặt &gt; Cấu hình.</p>
+            </GoiY>
+          </div>
           <LuaChon
             id="date_type"
             aria-label="Loại date"
@@ -191,11 +211,17 @@ export function ProductForm({
               { value: "short", label: "Date ngắn" },
             ]}
           />
-          <p className="text-xs text-muted-foreground">Ngưỡng gợi ý giảm giá ở màn Hạn sử dụng.</p>
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="expiry_level">Quản lý hạn sử dụng</Label>
+          <div className="flex items-center gap-1">
+            <Label htmlFor="expiry_level">Quản lý hạn sử dụng</Label>
+            <GoiY label="Quản lý hạn sử dụng">
+              <p>Theo lô: mỗi lần nhập ghi hạn riêng, bán trừ lô gần hết hạn trước.</p>
+              <p>Một hạn: một hạn sử dụng chung cho sản phẩm.</p>
+              <p>Không có: hàng không theo dõi hạn.</p>
+            </GoiY>
+          </div>
           <LuaChon
             id="expiry_level"
             aria-label="Quản lý hạn sử dụng"
@@ -219,31 +245,6 @@ export function ProductForm({
             />
           </div>
         )}
-
-        <div className="space-y-1.5">
-          <Label htmlFor="min_stock">Tồn tối thiểu</Label>
-          <Input
-            id="min_stock"
-            type="number"
-            inputMode="decimal"
-            min={0}
-            value={v.min_stock ?? ""}
-            placeholder="Theo cấu hình chung"
-            onChange={(e) => set("min_stock", e.target.value === "" ? null : Number(e.target.value))}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="max_stock">Tồn tối đa</Label>
-          <Input
-            id="max_stock"
-            type="number"
-            inputMode="decimal"
-            min={0}
-            value={v.max_stock ?? ""}
-            placeholder="Mặc định = tối thiểu x 3"
-            onChange={(e) => set("max_stock", e.target.value === "" ? null : Number(e.target.value))}
-          />
-        </div>
 
         {!id && (
           <div className="space-y-1.5">

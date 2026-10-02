@@ -38,8 +38,6 @@ export default async function NewProductPage() {
             date_type: "long",
             expiry_level: "lot",
             expiry_date: null,
-            min_stock: null,
-            max_stock: null,
             status: "active",
             note: null,
             barcode: null,

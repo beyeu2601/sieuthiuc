@@ -1,5 +1,7 @@
 import { cn } from "cn";
+import type { LucideIcon } from "lucide-react";
 import { CHU_SAC, NEN_SAC, VIEN_SAC, type SacNguNghia } from "@/components/ui/chip";
+import { GoiY } from "@/components/goi-y";
 
 /*
  * O chi so dau trang (mau trang chi tiet san pham, 02/10/2026): nen nhat + vien
@@ -11,17 +13,26 @@ export function ChiSo({
   giaTri,
   phu,
   sac = "slate",
+  icon: Icon,
+  goiY,
   className,
 }: {
   nhan: string;
   giaTri: React.ReactNode;
   phu?: React.ReactNode;
   sac?: SacNguNghia;
+  icon?: LucideIcon;
+  /** Noi dung nut (i): cach tinh, nguong */
+  goiY?: React.ReactNode;
   className?: string;
 }) {
   return (
     <div className={cn("min-w-0 rounded-xl border px-4 py-3", NEN_SAC[sac], VIEN_SAC[sac], className)}>
-      <div className={cn("text-sm font-medium", CHU_SAC[sac])}>{nhan}</div>
+      <div className={cn("flex items-center gap-1.5 text-sm font-medium", CHU_SAC[sac])}>
+        {Icon && <Icon aria-hidden className="size-4 shrink-0" />}
+        <span className="min-w-0">{nhan}</span>
+        {goiY && <GoiY label={nhan}>{goiY}</GoiY>}
+      </div>
       <div className="mt-0.5 truncate text-xl font-semibold whitespace-nowrap tabular-nums lg:text-2xl">{giaTri}</div>
       {phu && <div className="mt-0.5 text-xs text-muted-foreground">{phu}</div>}
     </div>

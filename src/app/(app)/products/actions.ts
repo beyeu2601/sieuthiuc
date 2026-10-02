@@ -157,7 +157,6 @@ export type ImportRow = {
   category: string | null;
   brand: string | null;
   barcode: string | null;
-  min_stock: number | null;
   note: string | null;
 };
 

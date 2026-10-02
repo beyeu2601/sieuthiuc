@@ -13,8 +13,6 @@ export const productSchema = z
     date_type: z.enum(["short", "long"]),
     expiry_level: z.enum(["none", "product", "lot"]),
     expiry_date: z.string().nullable(),
-    min_stock: z.number().min(0).nullable(),
-    max_stock: z.number().min(0).nullable(),
     status: z.enum(["active", "inactive"]),
     note: z.string().max(1000).nullable(),
     barcode: z.string().trim().max(32).nullable().optional(),
@@ -23,10 +21,6 @@ export const productSchema = z
   .refine((v) => v.expiry_level !== "product" || !!v.expiry_date, {
     message: "Nhập hạn sử dụng khi quản lý hạn theo sản phẩm",
     path: ["expiry_date"],
-  })
-  .refine((v) => v.min_stock == null || v.max_stock == null || v.max_stock >= v.min_stock, {
-    message: "Tồn tối đa phải lớn hơn hoặc bằng tồn tối thiểu",
-    path: ["max_stock"],
   });
 
 export type ProductInput = z.infer<typeof productSchema>;

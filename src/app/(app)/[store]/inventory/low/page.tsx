@@ -38,7 +38,7 @@ export default async function LowStockPage({ params }: { params: Promise<{ store
     <div>
       <PageHeader
         title="Cần nhập thêm"
-        description="Sản phẩm đang bán có tồn khả dụng dưới mức tối thiểu. Gợi ý nhập = tồn tối đa - khả dụng (mặc định tối đa = 3 lần tối thiểu)."
+        description="Sản phẩm đang bán có tồn khả dụng dưới mức tối thiểu. Gợi ý nhập = 3 lần tồn tối thiểu - khả dụng."
         actions={
           canCreate &&
           withSuggest.length > 0 && (

@@ -8,7 +8,7 @@ import { formatMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-const HEADERS = ["Tên sản phẩm", "ĐVT", "Loại hàng (Cont/Air)", "Giá bán", "Nhóm hàng", "Thương hiệu", "Mã vạch", "Tồn tối thiểu", "Ghi chú"];
+const HEADERS = ["Tên sản phẩm", "ĐVT", "Loại hàng (Cont/Air)", "Giá bán", "Nhóm hàng", "Thương hiệu", "Mã vạch", "Ghi chú"];
 
 function num(v: unknown): number | null {
   if (v == null || v === "") return null;
@@ -32,7 +32,7 @@ export function ImportForm() {
     const XLSX = await import("xlsx");
     const ws = XLSX.utils.aoa_to_sheet([
       HEADERS,
-      ["Sữa Bột Ensure Úc 850g", "Lon", "Cont", 900000, "Sữa", "Abbott", "9300617000123", 5, ""],
+      ["Sữa Bột Ensure Úc 850g", "Lon", "Cont", 900000, "Sữa", "Abbott", "9300617000123", ""],
     ]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "SanPham");
@@ -49,6 +49,9 @@ export function ImportForm() {
     const data = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null, blankrows: false });
     const rows: ImportRow[] = [];
     const errors: string[] = [];
+    // File mau cu con cot "Ton toi thieu" truoc "Ghi chu": tim cot ghi chu theo tieu de
+    const noteIdx = (data[0] ?? []).findIndex((h) => str(h) === "Ghi chú");
+    const noteCol = noteIdx >= 0 ? noteIdx : 7;
     data.slice(1).forEach((r, i) => {
       const rowNo = i + 2;
       if (!r.some((c) => c != null && String(c).trim() !== "")) return;
@@ -62,15 +65,13 @@ export function ImportForm() {
         category: str(r[4]),
         brand: str(r[5]),
         barcode: str(r[6]),
-        min_stock: num(r[7]),
-        note: str(r[8]),
+        note: str(r[noteCol]),
       };
       const errs: string[] = [];
       if (!row.name) errs.push("thiếu tên");
       if (!row.unit) errs.push("thiếu ĐVT");
       if (type !== "cont" && type !== "air") errs.push("loại hàng phải là Cont hoặc Air");
       if (row.sell_price != null && (Number.isNaN(row.sell_price) || row.sell_price < 0)) errs.push("giá bán không hợp lệ");
-      if (row.min_stock != null && (Number.isNaN(row.min_stock) || row.min_stock < 0)) errs.push("tồn tối thiểu không hợp lệ");
       if (errs.length) errors.push(`Dòng ${rowNo}: ${errs.join(", ")}`);
       rows.push(row);
     });

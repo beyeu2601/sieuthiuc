@@ -8,7 +8,7 @@ export type SettingDef = {
 };
 
 export const GENERAL_SETTINGS: SettingDef[] = [
-  { key: "inventory.default_min_stock", label: "Tồn tối thiểu mặc định", kind: "number", min: 0, help: "Dùng khi sản phẩm không đặt tồn tối thiểu riêng." },
+  { key: "inventory.default_min_stock", label: "Tồn tối thiểu mặc định", kind: "number", min: 0, help: "Ngưỡng sắp hết cho mọi sản phẩm. Gợi ý nhập thêm = 3 lần ngưỡng - tồn khả dụng." },
   { key: "pricing.rounding_unit", label: "Làm tròn giá theo % Benefit (₫)", kind: "money", min: 1 },
   { key: "pos.max_manual_discount_pct", label: "Nhân viên được giảm giá tối đa (%)", kind: "number", min: 0, max: 100 },
   { key: "shift.diff_alert_amount", label: "Cảnh báo lệch tiền ca từ (₫)", kind: "money", min: 0 },

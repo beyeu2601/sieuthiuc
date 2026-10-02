@@ -1,4 +1,18 @@
 import { notFound } from "next/navigation";
+import {
+  CalendarClock,
+  ClipboardList,
+  History,
+  ImageIcon,
+  Layers,
+  Package,
+  PackageX,
+  ScanBarcode,
+  Tag,
+  TrendingDown,
+  TrendingUp,
+  Warehouse,
+} from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getNumberSetting, getSetting } from "@/lib/settings";
@@ -56,7 +70,7 @@ export default async function ProductDetailPage({
   const { data: p } = await supabase
     .from("products")
     .select(
-      "id, sku, name, goods_type, unit, category_id, brand_id, pricing_method, sell_price, benefit_pct, cost_price_ref, date_type, expiry_level, expiry_date, min_stock, max_stock, status, note"
+      "id, sku, name, goods_type, unit, category_id, brand_id, pricing_method, sell_price, benefit_pct, cost_price_ref, date_type, expiry_level, expiry_date, status, note"
     )
     .eq("id", id)
     .maybeSingle();
@@ -122,11 +136,11 @@ export default async function ProductDetailPage({
     };
   });
 
-  // Ton: cung quy tac voi inventory_status (kha dung <= 0 la het, <= toi thieu la sap het)
+  // Ton: cung quy tac voi inventory_status (kha dung <= 0 la het, <= toi thieu la sap het); toi thieu lay tu cau hinh chung
   const onHand = storeStock.reduce((s, x) => s + x.qty, 0);
   const reserved = storeStock.reduce((s, x) => s + x.reserved, 0);
   const available = onHand - reserved;
-  const minStock = p.min_stock != null ? Number(p.min_stock) : defaultMin;
+  const minStock = defaultMin;
   const stockSac: SacNguNghia = available <= 0 ? "red" : available <= minStock ? "amber" : "emerald";
   const stockLabel = available <= 0 ? "Hết hàng" : available <= minStock ? "Sắp hết" : "Còn hàng";
 
@@ -172,18 +186,43 @@ export default async function ProductDetailPage({
         <ChiSo
           nhan="Giá bán"
           sac="brand"
+          icon={Tag}
+          goiY={
+            p.pricing_method === "benefit" ? (
+              <>
+                <p>Giá bán = giá vốn x (1 + % Benefit), làm tròn {formatMoney(roundingUnit)}.</p>
+                <p>Sửa giá vốn trực tiếp ở khối Tồn kho không tự đổi giá bán.</p>
+              </>
+            ) : undefined
+          }
           giaTri={formatMoney(sell)}
           phu={p.pricing_method === "benefit" ? `Theo % Benefit${p.benefit_pct != null ? ` ${p.benefit_pct}%` : ""}` : `Nhập trực tiếp, mỗi ${p.unit}`}
         />
         <ChiSo
           nhan={cost <= 0 ? "Chưa có giá vốn" : margin <= 0 ? "Lãi mỗi đơn vị: lỗ hoặc hòa" : "Lãi mỗi đơn vị"}
           sac={marginSac}
+          icon={cost > 0 && margin <= 0 ? TrendingDown : TrendingUp}
+          goiY={
+            <>
+              <p>Lãi = giá bán - giá vốn tham chiếu. % tính trên giá vốn, giống % Benefit.</p>
+              <p>Giá vốn tham chiếu cập nhật theo bình quân khi xác nhận phiếu nhập, hoặc khi sửa ở khối Tồn kho và giá vốn.</p>
+            </>
+          }
           giaTri={cost <= 0 ? "-" : formatMoney(margin)}
           phu={cost <= 0 ? "Nhập giá vốn ở khối Tồn kho" : `Giá vốn ${formatMoney(cost)} - ${Math.round((margin / cost) * 100)}% trên giá vốn`}
         />
         <ChiSo
           nhan={`Tồn kho: ${stockLabel}`}
           sac={stockSac}
+          icon={available <= 0 ? PackageX : Package}
+          goiY={
+            <>
+              <p>Khả dụng = đang tồn - phần giữ cho đơn online, cộng mọi cửa hàng.</p>
+              <p>
+                Hết hàng khi khả dụng bằng 0, sắp hết khi không quá {formatNumber(minStock)} (Tồn tối thiểu mặc định ở Cài đặt &gt; Cấu hình).
+              </p>
+            </>
+          }
           giaTri={`${formatNumber(available)} ${p.unit}`}
           phu={`${reserved > 0 ? `Giữ cho đơn ${formatNumber(reserved)} - ` : ""}Tối thiểu ${formatNumber(minStock)}`}
         />
@@ -200,6 +239,17 @@ export default async function ProductDetailPage({
                     : "Hạn gần nhất"
           }
           sac={expirySac}
+          icon={CalendarClock}
+          goiY={
+            p.expiry_level === "none" ? undefined : (
+              <>
+                <p>
+                  Lô cận date khi còn không quá {nearDays} ngày ({p.date_type === "short" ? "date ngắn" : "date dài"}).
+                </p>
+                <p>Ngưỡng sửa ở Cài đặt &gt; Cấu hình, nhóm Cận date và giá giảm.</p>
+              </>
+            )
+          }
           giaTri={nearest ? formatDateVN(String(nearest.expiry_date)) : "-"}
           phu={
             p.expiry_level === "none"
@@ -215,7 +265,7 @@ export default async function ProductDetailPage({
 
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="min-w-0 space-y-4">
-          <Khoi title="Thông tin sản phẩm">
+          <Khoi title="Thông tin sản phẩm" icon={ClipboardList}>
             <ProductForm
               id={p.id}
               readOnly={!canEdit}
@@ -235,8 +285,6 @@ export default async function ProductDetailPage({
                 date_type: p.date_type,
                 expiry_level: p.expiry_level,
                 expiry_date: p.expiry_date,
-                min_stock: p.min_stock,
-                max_stock: p.max_stock,
                 status: p.status,
                 note: p.note,
               }}
@@ -247,9 +295,11 @@ export default async function ProductDetailPage({
             <Tabs defaultValue="lots">
               <TabsList>
                 <TabsTrigger value="lots" className="px-3">
+                  <Layers aria-hidden />
                   Lô còn hàng ({lotRows.length})
                 </TabsTrigger>
                 <TabsTrigger value="history" className="px-3">
+                  <History aria-hidden />
                   Lịch sử giá ({(history ?? []).length})
                 </TabsTrigger>
               </TabsList>
@@ -344,12 +394,32 @@ export default async function ProductDetailPage({
 
         <div className="min-w-0 space-y-4">
           {canEdit && storeStock.length > 0 && (
-            <Khoi title="Tồn kho và giá vốn">
+            <Khoi
+              title="Tồn kho và giá vốn"
+              icon={Warehouse}
+              goiY={
+                <>
+                  <p>Nhập số tồn thực tế: tăng thì tạo lô mới theo giá vốn hiện tại, giảm thì trừ lô gần hết hạn trước.</p>
+                  <p>Không được thấp hơn số đang giữ cho đơn online. Không phát sinh công nợ nhà cung cấp.</p>
+                  <p>Sửa giá vốn áp cho hàng đang tồn và lần bán sau; hóa đơn cũ giữ nguyên.</p>
+                </>
+              }
+            >
               <StockCostPanel productId={p.id} stores={storeStock} lotExpiry={p.expiry_level === "lot"} />
             </Khoi>
           )}
 
-          <Khoi title="Mã vạch và tem">
+          <Khoi
+            title="Mã vạch và tem"
+            icon={ScanBarcode}
+            goiY={
+              <>
+                <p>Mã chính in lên tem và hiện khi tra cứu.</p>
+                <p>Mã lốc: quét ở quầy thêm nguyên lốc vào giỏ.</p>
+                <p>Hàng không có mã trên bao bì thì sinh mã nội bộ EAN-13.</p>
+              </>
+            }
+          >
             <div className="space-y-4">
               <LabelPreview
                 productId={p.id}
@@ -365,7 +435,11 @@ export default async function ProductDetailPage({
             </div>
           </Khoi>
 
-          <Khoi title="Ảnh sản phẩm" aside={<span className="text-xs text-muted-foreground tabular-nums">{(images ?? []).length}/10</span>}>
+          <Khoi
+            title="Ảnh sản phẩm"
+            icon={ImageIcon}
+            goiY={<p>Tối đa 10 ảnh, lưu trên Google Drive. Ảnh đại diện hiện ở danh sách Sản phẩm.</p>}
+            aside={<span className="text-xs text-muted-foreground tabular-nums">{(images ?? []).length}/10</span>}>
             <ImageGallery productId={p.id} productName={p.name} images={images ?? []} canEdit={canEdit} configured={driveConfigured()} />
           </Khoi>
 
