@@ -42,11 +42,7 @@ export function LabelPreview({
   heightMm: number;
 }) {
   return (
-    <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">
-        Xem trước tem sẽ in ra. Tem lấy <strong>tên sản phẩm</strong>, <strong>mã chính</strong> và{" "}
-        <strong>giá bán hiện tại</strong>. Bấm In tem để in ra máy (chọn được số lượng tem mỗi sản phẩm).
-      </p>
+    <div>
       <div className="flex flex-wrap items-center gap-4">
         <div
           className="flex shrink-0 flex-col items-center justify-between overflow-hidden rounded-sm border bg-white p-[2mm] text-black shadow-sm"
@@ -57,13 +53,12 @@ export function LabelPreview({
           <div className="text-[11px] font-bold">{formatMoney(price)}</div>
         </div>
         <div className="space-y-2 text-sm">
-          <div className="text-muted-foreground">
-            Khổ tem {widthMm}x{heightMm} mm
+          <div className="text-xs text-muted-foreground">
+            Tem {widthMm}x{heightMm} mm: tên, mã chính, giá bán
           </div>
           {!hasBarcode && (
-            <p className="max-w-xs rounded-lg bg-muted px-3 py-2 text-xs">
-              Sản phẩm chưa có mã vạch nên tem đang in tạm mã SKU <span className="font-mono">{sku}</span>. Nên bấm
-              &quot;Sinh mã nội bộ&quot; ở phần Mã vạch để quét được ở quầy.
+            <p className="text-xs text-chu-amber">
+              Đang in tạm mã SKU <span className="font-mono">{sku}</span>
             </p>
           )}
           <Button variant="outline" render={<Link href={`/print/labels?ids=${productId}`} target="_blank" />}>

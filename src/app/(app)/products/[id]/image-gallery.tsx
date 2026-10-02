@@ -101,7 +101,7 @@ export function ImageGallery({
     <div className="space-y-3">
       {dialog}
       {images.length === 0 && !canEdit && <p className="text-sm text-muted-foreground">Chưa có ảnh.</p>}
-      <ul className="grid grid-cols-3 gap-2 sm:grid-cols-5" aria-label={`Ảnh của ${productName}`}>
+      <ul className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-4" aria-label={`Ảnh của ${productName}`}>
         {images.map((img, i) => (
           <li key={img.id} className="relative">
             <button
@@ -113,7 +113,7 @@ export function ImageGallery({
               {/* eslint-disable-next-line @next/next/no-img-element -- anh qua route rieng */}
               <img src={productImageUrl(img.drive_thumb_id)} alt="" loading="lazy" className="size-full object-cover" />
             </button>
-            {img.is_thumbnail && <Badge className="pointer-events-none absolute bottom-1.5 left-1.5">Đại diện</Badge>}
+            {img.is_thumbnail && <Badge className="pointer-events-none absolute bottom-1 left-1 h-4 px-1 text-[10px]">Đại diện</Badge>}
           </li>
         ))}
         {canEdit && images.length < MAX && (
@@ -125,8 +125,7 @@ export function ImageGallery({
               className="flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-input text-sm text-muted-foreground hover:border-brand hover:text-brand disabled:opacity-60"
             >
               <ImagePlusIcon className="size-6" aria-hidden />
-              <span>{progress ?? "Thêm ảnh"}</span>
-              {!busy && <span className="text-xs tabular-nums">{images.length}/{MAX}</span>}
+              <span className="text-xs">{progress ?? "Thêm ảnh"}</span>
             </button>
           </li>
         )}

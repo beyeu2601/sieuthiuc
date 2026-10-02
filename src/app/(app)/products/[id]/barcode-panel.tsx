@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { addBarcode, deleteBarcode, generateInternalBarcode, setPrimaryBarcode } from "../actions";
-import { Badge } from "@/components/ui/badge";
+import { ChipSac } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
@@ -48,31 +48,33 @@ export function BarcodePanel({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {dialog}
-      <p className="text-sm text-muted-foreground">
-        Mã vạch dùng để <strong>quét ở màn Bán hàng</strong>: quét đúng mã là thêm ngay sản phẩm vào giỏ. Một sản phẩm
-        có thể gắn nhiều mã (mã lẻ, mã lốc/thùng). <strong>Mã chính</strong> là mã được in lên tem và hiện khi tra cứu.
-      </p>
-
       {barcodes.length === 0 ? (
-        <p className="rounded-lg bg-muted px-3 py-2 text-sm">
-          Chưa có mã vạch. Nếu bao bì có sẵn mã, quét vào ô dưới rồi Enter. Nếu hàng không có mã in sẵn, bấm &quot;Sinh
-          mã nội bộ&quot; để hệ thống tạo mã rồi in tem dán lên.
+        <p className="rounded-lg border border-vien-amber bg-nen-amber px-3 py-2 text-sm text-chu-amber">
+          Chưa có mã vạch nên chưa quét được ở quầy. Quét mã trên bao bì vào ô dưới, hoặc sinh mã nội bộ nếu hàng không
+          có mã.
         </p>
       ) : (
         <ul className="divide-y rounded-lg border">
           {barcodes.map((b) => (
-            <li key={b.id} className="flex flex-wrap items-center gap-2 px-3 py-2">
-              <span className="font-mono tabular-nums">{b.barcode}</span>
-              {b.is_primary && <Badge title="Mã in lên tem và hiển thị khi tra cứu">Mã chính</Badge>}
-              <Badge variant="outline" title={b.type === "internal" ? "Mã do hệ thống sinh (EAN-13)" : "Mã in sẵn trên bao bì"}>
+            <li key={b.id} className="flex flex-wrap items-center gap-1.5 px-3 py-2">
+              <span className="mr-1 font-mono tabular-nums">{b.barcode}</span>
+              {b.is_primary && (
+                <ChipSac sac="brand" title="Mã in lên tem và hiển thị khi tra cứu">
+                  Mã chính
+                </ChipSac>
+              )}
+              <ChipSac
+                sac={b.type === "internal" ? "purple" : "slate"}
+                title={b.type === "internal" ? "Mã do hệ thống sinh (EAN-13)" : "Mã in sẵn trên bao bì"}
+              >
                 {b.type === "internal" ? "Nội bộ" : "Nhà sản xuất"}
-              </Badge>
+              </ChipSac>
               {Number(b.pack_qty) > 1 && (
-                <Badge variant="secondary" title="Quét mã này ở quầy sẽ thêm nguyên lốc vào giỏ">
-                  Lốc {Number(b.pack_qty)} đơn vị
-                </Badge>
+                <ChipSac sac="amber" title="Quét mã này ở quầy sẽ thêm nguyên lốc vào giỏ">
+                  Lốc {Number(b.pack_qty)}
+                </ChipSac>
               )}
               {canEdit && (
                 <span className="ml-auto flex gap-1">
@@ -84,7 +86,7 @@ export function BarcodePanel({
                       title="Đặt mã này làm mã in lên tem"
                       onClick={() => run(() => setPrimaryBarcode(productId, b.id), "Đã đặt mã chính")}
                     >
-                      Đặt làm mã chính
+                      Đặt chính
                     </Button>
                   )}
                   <Button
@@ -107,40 +109,29 @@ export function BarcodePanel({
       )}
 
       {canEdit && (
-        <div className="space-y-3 rounded-lg border border-dashed p-3">
-          <form onSubmit={add} className="flex flex-wrap items-end gap-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="new-barcode">Thêm mã có sẵn trên bao bì</Label>
+        <div className="space-y-2">
+          <form onSubmit={add} className="flex items-end gap-2">
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <Label htmlFor="new-barcode">Thêm mã trên bao bì</Label>
               <Input
                 id="new-barcode"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 placeholder="Quét hoặc nhập mã"
-                className="w-56"
                 autoComplete="off"
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="pack-qty">Số đơn vị / mã</Label>
-              <Input
-                id="pack-qty"
-                type="number"
-                min={1}
-                value={pack}
-                onChange={(e) => setPack(e.target.value)}
-                className="w-28"
-              />
+            <div className="w-20 space-y-1.5">
+              <Label htmlFor="pack-qty">SL/mã</Label>
+              <Input id="pack-qty" type="number" min={1} value={pack} onChange={(e) => setPack(e.target.value)} />
             </div>
             <Button type="submit" disabled={pending || !code.trim()}>
-              Gán mã
+              Gán
             </Button>
           </form>
-          <p className="text-xs text-muted-foreground">
-            <strong>Số đơn vị / mã</strong>: để <strong>1</strong> với hàng bán lẻ. Nếu đây là mã của thùng/lốc thì nhập
-            số sản phẩm lẻ trong một lốc - khi quét mã lốc ở quầy, hệ thống tự thêm đủ số lượng đó.
-          </p>
+          <p className="text-xs text-muted-foreground">SL/mã: 1 với hàng lẻ, mã thùng/lốc thì nhập số sản phẩm trong lốc.</p>
 
-          <div className="flex flex-wrap items-center gap-3 border-t pt-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1">
             <Button
               type="button"
               variant="outline"
@@ -154,10 +145,7 @@ export function BarcodePanel({
             >
               Sinh mã nội bộ
             </Button>
-            <p className="text-xs text-muted-foreground">
-              Dùng khi hàng <strong>không có mã in sẵn</strong>. Hệ thống tạo một mã chuẩn EAN-13, bạn in tem dán lên để
-              quét được ở quầy.
-            </p>
+            <p className="text-xs text-muted-foreground">Khi hàng không có mã in sẵn (tạo mã EAN-13).</p>
           </div>
         </div>
       )}

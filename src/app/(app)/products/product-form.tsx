@@ -42,6 +42,8 @@ export function ProductForm({
   const [brandList, setBrandList] = useState(brands);
   const [brandOpen, setBrandOpen] = useState(false);
   const set = <K extends keyof ProductInput>(k: K, val: ProductInput[K]) => setV((s) => ({ ...s, [k]: val }));
+  // Sau khi luu, router.refresh() dua gia tri moi vao initial nen het "chua luu"
+  const dirty = JSON.stringify(v) !== JSON.stringify(initial);
 
   const catPct = categories.find((c) => c.id === v.category_id)?.benefit_pct ?? null;
   const pct = v.benefit_pct ?? catPct;
@@ -67,14 +69,14 @@ export function ProductForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <form onSubmit={submit} className="@container space-y-4">
       {error && (
         <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
       )}
-      <fieldset disabled={readOnly || pending} className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5 sm:col-span-2">
+      <fieldset disabled={readOnly || pending} className="grid gap-x-4 gap-y-3 @md:grid-cols-2 @3xl:grid-cols-4">
+        <div className="space-y-1.5 @md:col-span-2">
           <Label htmlFor="name">Tên sản phẩm *</Label>
           <Input id="name" value={v.name} onChange={(e) => set("name", e.target.value)} required />
         </div>
@@ -144,7 +146,7 @@ export function ProductForm({
         {v.pricing_method === "manual" ? (
           <div className="space-y-1.5">
             <Label htmlFor="sell_price">Giá bán (₫) *</Label>
-            <MoneyInput id="sell_price" value={v.sell_price} onChange={(n) => set("sell_price", n ?? 0)} />
+            <MoneyInput id="sell_price" value={v.sell_price} onChange={(n) => set("sell_price", n ?? 0)} className="font-semibold" />
           </div>
         ) : (
           <div className="space-y-1.5">
@@ -176,12 +178,10 @@ export function ProductForm({
             value={v.date_type}
             onChange={(e) => set("date_type", e.target.value as "short" | "long")}
           >
-            <option value="long">Date dài (giảm giá khi tới ngưỡng dài)</option>
-            <option value="short">Date ngắn (giảm giá khi tới ngưỡng ngắn)</option>
+            <option value="long">Date dài</option>
+            <option value="short">Date ngắn</option>
           </NativeSelect>
-          <p className="text-xs text-muted-foreground">
-            Khi lô tới ngưỡng cận date, hệ thống gợi ý giá bán = giá vốn lô + phụ thu ở màn Hạn sử dụng.
-          </p>
+          <p className="text-xs text-muted-foreground">Ngưỡng gợi ý giảm giá ở màn Hạn sử dụng.</p>
         </div>
 
         <div className="space-y-1.5">
@@ -191,9 +191,9 @@ export function ProductForm({
             value={v.expiry_level}
             onChange={(e) => set("expiry_level", e.target.value as ProductInput["expiry_level"])}
           >
-            <option value="lot">Theo lô (nhập HSD khi nhập hàng)</option>
+            <option value="lot">Theo lô (nhập khi nhập hàng)</option>
             <option value="product">Một hạn cho cả sản phẩm</option>
-            <option value="none">Không có hạn sử dụng</option>
+            <option value="none">Không có hạn</option>
           </NativeSelect>
         </div>
         {v.expiry_level === "product" && (
@@ -250,22 +250,24 @@ export function ProductForm({
           <Label htmlFor="status">Trạng thái</Label>
           <NativeSelect id="status" value={v.status} onChange={(e) => set("status", e.target.value as "active" | "inactive")}>
             <option value="active">Đang bán</option>
-            <option value="inactive">Ngừng bán (ẩn khỏi bán hàng)</option>
+            <option value="inactive">Ngừng bán (ẩn khỏi quầy)</option>
           </NativeSelect>
         </div>
-        <div className="space-y-1.5 sm:col-span-2">
+        <div className="space-y-1.5 @md:col-span-2 @3xl:col-span-3">
           <Label htmlFor="note">Ghi chú</Label>
-          <Textarea id="note" value={v.note ?? ""} onChange={(e) => set("note", e.target.value || null)} rows={2} />
+          <Textarea id="note" value={v.note ?? ""} onChange={(e) => set("note", e.target.value || null)} rows={1} className="min-h-9" />
         </div>
       </fieldset>
       {!readOnly && (
-        <div className="flex gap-2">
-          <Button type="submit" disabled={pending} className="h-10 px-5">
+        <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 -mx-4 -mb-4 flex flex-wrap items-center gap-3 rounded-b-xl border-t bg-card/95 px-4 py-3 backdrop-blur lg:bottom-0">
+          <Button type="submit" disabled={pending || (!!id && !dirty)} className="h-10 px-5">
             {pending ? "Đang lưu..." : id ? "Lưu thay đổi" : "Tạo sản phẩm"}
           </Button>
-          <Button type="button" variant="ghost" className="h-10" onClick={() => router.back()}>
-            Quay lại
-          </Button>
+          {id && (
+            <span aria-live="polite" className={dirty ? "text-sm font-medium text-chu-amber" : "text-sm text-muted-foreground"}>
+              {dirty ? "Có thay đổi chưa lưu" : "Đã lưu"}
+            </span>
+          )}
         </div>
       )}
       <QuickBrandDialog
