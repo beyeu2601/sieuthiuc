@@ -102,6 +102,7 @@ Cơ chế:
 | `20261009000001` | Xóa sản phẩm: `delete_product` (sadmin/admin); chặn khi sản phẩm đã có dòng bán, đơn online, phiếu nhập, chuyển kho hoặc còn tồn/đang giữ; xóa kèm tồn, lô, biến động, mã vạch, lịch sử giá, ảnh; trả mã file ảnh để app bỏ vào thùng rác Drive |
 | `20261009000002` | `inventory_status`: trong mỗi nhóm cảnh báo (hết, sắp hết, còn hàng) sản phẩm tạo mới nhất đứng trước |
 | `20261010000001` | Người giữ tài khoản duyệt thu chi: `money_accounts.holder_id`, cột `cash_transactions.pending_*`; `set_money_account_holder`, `request_cash_change`, `money_accounts_overview`, `money_account_ledger`; `create_cash_transaction` và `review_cash_transaction` viết lại theo người giữ |
+| `20261011000001` | Gộp nhóm hàng trùng (dữ liệu): TPCN vào Thực Phẩm Chức Năng, Hàng Tiêu Dùng vào Hàng tiêu dùng, Hàng lạnh và Thực Phẩm - Bảo Quản Lạnh vào Hàng Đông Lạnh |
 
 Các RPC chính theo nghiệp vụ:
 
@@ -198,6 +199,7 @@ Khác biệt kỹ thuật so với SPEC:
 - Cải tiến từ log sử dụng 27/09-02/10/2026 (435/437 sản phẩm chưa có mã vạch, quản lý sửa tay từng sản phẩm để đổi nhóm hàng/thương hiệu, ca mở bị bỏ quên nhiều ngày):
   - Gán mã vạch khi quét: ở Tra cứu, Enter/quét một mã chỉ gồm 8-14 chữ số mà không khớp sản phẩm nào thì hiện khối "Mã ... chưa gắn với sản phẩm nào"; chọn sản phẩm rồi bấm "Gán mã cho sản phẩm này" (gọi `add_product_barcode`, là mã chính nếu sản phẩm chưa có mã). Dùng được cho sadmin, admin, nhân viên (theo quyền của RPC). Quản lý thấy thanh tiến độ số sản phẩm đang bán đã có mã. `ProductPicker` có prop `onNotFound`.
   - Gán hàng loạt: màn Sản phẩm (sadmin/admin) có ô tick mỗi dòng và ô chọn cả trang; thanh dính đáy chọn nhóm hàng và/hoặc thương hiệu (có nút tạo nhanh thương hiệu), hỏi xác nhận rồi cập nhật qua `bulkUpdateProducts` (RLS `products_update`). Lựa chọn xóa khi đổi trang hoặc bộ lọc.
+  - Bộ lọc màn Sản phẩm (khách yêu cầu 02/10/2026) dùng chip chọn nhiều như Tồn kho: Trạng thái (mặc định Đang bán khi vào lần đầu, form gửi `f=1`), Loại, Thiếu (ĐVT/giá vốn/giá bán, chọn nhiều là thiếu một trong các mục), Nhóm hàng.
   - Tổng quan > Cần chú ý liệt kê ca đang mở quá 12 giờ, bấm vào màn chi tiết ca để chốt (người mở ca hoặc quản lý).
 - Giá cận date: mỗi sản phẩm gán loại date ngắn (ngưỡng 15 ngày) hoặc dài (ngưỡng 60 ngày), mặc định dài. Khi lô còn dưới ngưỡng, màn Hạn sử dụng đề xuất giá bán = giá vốn lô + phụ thu (mặc định 50.000₫); chỉ gợi ý, không tự ghi đè `products.sell_price`. Giá đề xuất ẩn với nhân viên (lộ giá vốn). sadmin sửa ngưỡng 15/60 và phụ thu ở Cài đặt > Cấu hình (nhóm "Cận date và giá giảm"); `inventory.near_expiry_days` không còn dùng cho màn này.
 
