@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireStore } from "@/lib/auth";
+import { hasPerm, requireStore } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getNumberSetting } from "@/lib/settings";
 import { formatDateTime, formatMoney } from "@/lib/format";
@@ -29,12 +29,12 @@ export default async function ShiftsPage({
   const { ctx, store } = await requireStore(code);
   const supabase = await createClient();
   const canWork = ctx.profile.role !== "accountant";
+  const canOpen = ctx.profile.role === "sadmin" || hasPerm(ctx, "open_shift");
 
   const { data: myOpen } = await supabase
     .from("shifts")
-    .select("id, code, opened_at")
+    .select("id, code, opened_at, profiles:user_id(full_name)")
     .eq("store_id", store.id)
-    .eq("user_id", ctx.profile.id)
     .eq("status", "open")
     .maybeSingle();
 
@@ -60,7 +60,8 @@ export default async function ShiftsPage({
           {myOpen ? (
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p>
-                Bạn đang mở ca <strong>{myOpen.code}</strong> từ {formatDateTime(myOpen.opened_at)}.
+                Ca <strong>{myOpen.code}</strong> của {(myOpen.profiles as unknown as { full_name: string } | null)?.full_name ?? "-"} đang
+                mở từ {formatDateTime(myOpen.opened_at)}.
               </p>
               <div className="flex gap-2">
                 <Button render={<Link href={`/${store.code}/pos`} />}>Bán hàng</Button>
@@ -69,8 +70,10 @@ export default async function ShiftsPage({
                 </Button>
               </div>
             </div>
-          ) : (
+          ) : canOpen ? (
             <OpenShiftForm storeCode={store.code} storeId={store.id} redirectTo={`/${store.code}/pos`} />
+          ) : (
+            <p className="text-sm text-muted-foreground">Chưa mở ca. Nhờ người được cấp quyền mở ca.</p>
           )}
         </section>
       )}

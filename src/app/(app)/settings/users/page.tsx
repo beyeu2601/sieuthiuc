@@ -22,6 +22,7 @@ export default async function UsersPage() {
     is_active: u.is_active,
     default_store_id: u.default_store_id,
     confirm_receipt: Boolean((u.extra_permissions as Record<string, unknown>)?.confirm_receipt),
+    open_shift: Boolean((u.extra_permissions as Record<string, unknown>)?.open_shift),
     store_ids: (u.user_stores as { store_id: string }[]).map((x) => x.store_id),
   }));
 

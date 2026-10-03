@@ -76,7 +76,7 @@ Cơ chế:
 - Quyền đọc từ bảng `profiles` và `user_stores` qua các hàm `SECURITY DEFINER`: `auth_role()`, `auth_store_ids()`, `can_access_store()`, `is_store_manager()`, `auth_has_perm()`, `assert_role()`. Đổi quyền có hiệu lực ở request kế tiếp.
 - RLS bật trên mọi bảng. SELECT qua RLS, ghi dữ liệu nghiệp vụ chỉ qua RPC.
 - Nhân viên không đọc được giá vốn: bảng `products`, `inventory`, `stock_lots`, `stock_movements` chặn nhân viên; nhân viên dùng RPC `catalog_search`, `inventory_status`, `lot_expiry`, `stock_movement_list`, `catalog_by_ids` (các cột giá vốn trả về rỗng). Cột `sales.cogs_total`, `sale_items.unit_cost/cogs` và `profiles.pos_pin_hash` bị chặn bằng quyền theo cột.
-- Quyền mở rộng cá nhân: `profiles.extra_permissions.confirm_receipt` cho nhân viên được xác nhận phiếu nhập.
+- Quyền mở rộng cá nhân: `profiles.extra_permissions.confirm_receipt` cho nhân viên được xác nhận phiếu nhập; `extra_permissions.open_shift` cho người được mở ca (admin, nhân viên; sadmin luôn mở được). Tick ở Cài đặt > Người dùng.
 - `protect_last_sadmin` chặn hạ quyền hoặc khóa sadmin cuối cùng. Admin chỉ tạo và sửa được tài khoản kế toán, nhân viên trong cửa hàng mình.
 
 ## 5. Mô hình dữ liệu và RPC
@@ -105,6 +105,7 @@ Cơ chế:
 | `20261011000001` | Gộp nhóm hàng trùng (dữ liệu): TPCN vào Thực Phẩm Chức Năng, Hàng Tiêu Dùng vào Hàng tiêu dùng, Hàng lạnh và Thực Phẩm - Bảo Quản Lạnh vào Hàng Đông Lạnh |
 | `20261012000001` | Sắp lại nhóm hàng (dữ liệu): bỏ nhóm Thực Phẩm, chuyển sang Thực Phẩm Khô (trừ vài món sang Sữa, Thực Phẩm Chức Năng, Hàng Đông Lạnh); 3 món ăn uống từ Hàng tiêu dùng sang Thực Phẩm Khô; bật lại nhóm Hàng tiêu dùng |
 | `20261013000001` | Góp ý 03/10/2026: `orders.platform_fee` (phí sàn = tiền hàng sau giảm - tiền Shopee trả về), `orders.discount_note`, `sales.discount_note`; `create_order` nhận `payout_amount`, `discount_note`, `deliver_now`; `complete_sale` và `update_order_status` lưu lý do giảm; `delete_order` |
+| `20261014000001` | Một ca cho một két: mỗi cửa hàng chỉ một ca mở (`shifts_one_open_per_store_uq`), `_my_open_shift` trả ca đang mở của cửa hàng; `open_shift` cần quyền `open_shift` (hoặc sadmin); `cancel_sale` cho nhân viên hủy giao dịch của mình trong ca đang mở; nhân viên của cửa hàng xem được ca đang mở (`shifts_select`, `shift_summary`) |
 
 Các RPC chính theo nghiệp vụ:
 
@@ -186,6 +187,7 @@ Khác biệt kỹ thuật so với SPEC:
   - Sửa/xóa khoản đã duyệt: người tạo hoặc quản lý cửa hàng xin kèm lý do; khoản giữ nguyên số cũ đến khi người giữ duyệt. Không sửa/xóa khoản thuộc ca đã chốt và khoản sinh từ đối soát Shopee. Xóa là xóa hẳn, vết còn trong `audit_logs`.
   - Khoản tiền mặt của người đang mở ca gắn vào ca, chỉ vào tiền mặt kỳ vọng của ca khi được duyệt lúc ca còn mở. Chốt ca còn khoản chờ duyệt: vẫn chốt được, màn chốt ca liệt kê các khoản đó.
   - Trang sổ tài khoản: số dư hiện tại và các dòng thu bán hàng, thu chi đã duyệt và đã trả, trả NCC kèm số dư sau mỗi dòng. Xem được: sadmin, admin, kế toán và người giữ tài khoản đó.
+- Một ca cho một két (khách chốt 03/10/2026, thay cho mỗi người một ca): trước đó Anna và Giang mở ca song song, ca của Giang treo từ 30/09 nên giao dịch tiền mặt vào nhầm ca và cùng một két bị đếm trong hai ca. Nay mỗi cửa hàng chỉ có một ca đang mở; ai bán tại quầy, ghi thu chi tiền mặt hoặc trả NCC tiền mặt trong lúc ca mở thì vào ca đó (giao dịch vẫn ghi người bán). Chỉ người có quyền `open_shift` (đang cấp cho Giang) hoặc sadmin mới mở ca; người không có quyền vào POS khi chưa có ca thì được báo nhờ người có quyền mở. Chốt ca: người mở ca hoặc quản lý. Nhân viên hủy được giao dịch do mình bán trong ca đang mở.
 - Giỏ hàng POS lưu localStorage thay cho Dexie.
 - Thanh toán POS bắt buộc chọn phương thức (bỏ mặc định tiền mặt toàn bộ khi để trống).
 - Tài khoản giữ tiền (két, ngân hàng, ví) do sadmin tạo và sửa ở Cài đặt > Tài khoản tiền. Người giữ quỹ chọn ở cùng màn đó (sadmin, admin; admin chỉ đổi được người giữ) hoặc ở trang sổ tài khoản bên Thu chi. Mỗi tài khoản ghi rõ số dư hiện tại, số âm tô đỏ. Thu chi, thu bán hàng (từng phương thức) và trả NCC đều chọn tài khoản để theo dõi số dư; `account_id` là tùy chọn ở RPC (validate khi có), bắt buộc chọn ở giao diện.

@@ -12,7 +12,7 @@ export default async function NewCashPage({ params }: { params: Promise<{ store:
   const supabase = await createClient();
   const [{ data: cats }, { data: shift }, { data: accounts }] = await Promise.all([
     supabase.from("expense_categories").select("id, name, kind").eq("is_active", true).order("name"),
-    supabase.from("shifts").select("id, code").eq("store_id", store.id).eq("user_id", ctx.profile.id).eq("status", "open").maybeSingle(),
+    supabase.from("shifts").select("id, code").eq("store_id", store.id).eq("status", "open").maybeSingle(),
     supabase.from("money_accounts").select("id, name, kind").eq("is_active", true).order("sort_order").order("name"),
   ]);
   const isStaff = ctx.profile.role === "staff";

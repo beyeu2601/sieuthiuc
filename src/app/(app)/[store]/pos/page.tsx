@@ -1,4 +1,4 @@
-import { requireStore } from "@/lib/auth";
+import { hasPerm, requireStore } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getNumberSetting } from "@/lib/settings";
 import { PageHeader } from "@/components/page-header";
@@ -16,7 +16,6 @@ export default async function PosPage({ params }: { params: Promise<{ store: str
       .from("shifts")
       .select("id, code")
       .eq("store_id", store.id)
-      .eq("user_id", ctx.profile.id)
       .eq("status", "open")
       .maybeSingle(),
     getNumberSetting("pos.max_manual_discount_pct", 10, store.id),
@@ -27,7 +26,11 @@ export default async function PosPage({ params }: { params: Promise<{ store: str
     return (
       <div className="mx-auto max-w-lg space-y-4 rounded-xl border bg-card p-6">
         <PageHeader title="Chưa mở ca" />
-        <OpenShiftForm storeCode={store.code} storeId={store.id} />
+        {ctx.profile.role === "sadmin" || hasPerm(ctx, "open_shift") ? (
+          <OpenShiftForm storeCode={store.code} storeId={store.id} />
+        ) : (
+          <p className="text-sm text-muted-foreground">Nhờ người được cấp quyền mở ca, sau đó tải lại trang này để bán.</p>
+        )}
       </div>
     );
   }

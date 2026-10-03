@@ -141,6 +141,7 @@ export type UserInput = {
   default_store_id: string | null;
   is_active: boolean;
   confirm_receipt: boolean;
+  open_shift: boolean;
   password?: string;
 };
 
@@ -203,7 +204,10 @@ export async function createUser(input: UserInput): Promise<ActionResult> {
     role: input.role,
     is_active: true,
     default_store_id: input.default_store_id ?? input.store_ids[0] ?? null,
-    extra_permissions: input.confirm_receipt ? { confirm_receipt: true } : {},
+    extra_permissions: {
+      ...(input.confirm_receipt ? { confirm_receipt: true } : {}),
+      ...(input.open_shift && input.role !== "sadmin" ? { open_shift: true } : {}),
+    },
   });
   if (pErr) {
     await admin.auth.admin.deleteUser(uid);
@@ -234,6 +238,8 @@ export async function updateUser(id: string, input: UserInput): Promise<ActionRe
   const extra = { ...((current?.extra_permissions as Record<string, unknown>) ?? {}) };
   if (input.confirm_receipt) extra.confirm_receipt = true;
   else delete extra.confirm_receipt;
+  if (input.open_shift && input.role !== "sadmin") extra.open_shift = true;
+  else delete extra.open_shift;
 
   const { error } = await admin
     .from("profiles")

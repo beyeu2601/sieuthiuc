@@ -45,3 +45,6 @@ insert into user_stores (user_id, store_id) values
   (tests.uid('acc'), tests.store('A')),
   (tests.uid('staff'), tests.store('A')),
   (tests.uid('staffb'), tests.store('B'));
+-- Quyen mo ca rieng (ca theo cua hang): cap san cho tai khoan test ban hang
+update profiles set extra_permissions = extra_permissions || '{"open_shift": true}'
+ where id in (tests.uid('admin'), tests.uid('staff'), tests.uid('staffb'));

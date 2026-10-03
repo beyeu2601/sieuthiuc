@@ -22,6 +22,7 @@ export type UserRow = {
   is_active: boolean;
   default_store_id: string | null;
   confirm_receipt: boolean;
+  open_shift: boolean;
   store_ids: string[];
 };
 
@@ -73,6 +74,7 @@ export function UserManager({
                   {u.confirm_receipt && u.role === "staff" && (
                     <div className="text-xs text-muted-foreground">Được xác nhận phiếu nhập</div>
                   )}
+                  {u.open_shift && u.role !== "sadmin" && <div className="text-xs text-muted-foreground">Được mở ca</div>}
                 </TableCell>
                 <TableCell>
                   {u.role === "sadmin" ? "Tất cả" : u.store_ids.map((s) => storeCode.get(s) ?? "?").join(", ") || "-"}
@@ -138,6 +140,7 @@ function UserForm({
     default_store_id: user?.default_store_id ?? null,
     is_active: user?.is_active ?? true,
     confirm_receipt: user?.confirm_receipt ?? false,
+    open_shift: user?.open_shift ?? false,
     password: "",
   });
   const roles: AppRole[] = myRole === "sadmin" ? ["sadmin", "admin", "accountant", "staff"] : ["accountant", "staff"];
@@ -244,6 +247,17 @@ function UserForm({
               onChange={(e) => setV({ ...v, confirm_receipt: e.target.checked })}
             />
             Cho phép xác nhận phiếu nhập hàng
+          </label>
+        )}
+        {(v.role === "admin" || v.role === "staff") && (
+          <label className="flex items-center gap-2 text-sm sm:col-span-2" title="Mỗi cửa hàng chỉ có một ca mở. Người không có quyền vẫn bán vào ca đang mở.">
+            <input
+              type="checkbox"
+              className="size-4"
+              checked={v.open_shift}
+              onChange={(e) => setV({ ...v, open_shift: e.target.checked })}
+            />
+            Cho phép mở ca
           </label>
         )}
         {user && !isSelf && (

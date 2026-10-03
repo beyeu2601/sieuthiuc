@@ -39,7 +39,7 @@ export default async function ShiftPage({ params }: { params: Promise<{ store: s
           .from("cash_transactions")
           .select("id, code, kind, description, amount, method")
           .eq("store_id", store.id)
-          .eq("created_by", s.user_id)
+          .eq("shift_id", s.id)
           .eq("approval_status", "pending")
           .order("created_at")
       : Promise.resolve({ data: [] as { id: string; code: string; kind: string; description: string; amount: number; method: string }[] }),

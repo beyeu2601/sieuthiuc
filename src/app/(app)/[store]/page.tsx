@@ -23,7 +23,7 @@ export default async function StoreHome({ params }: { params: Promise<{ store: s
 
   const [{ data: ov }, { data: myShift }, pnlRes, lowRes, nearRes, debtRes, pendingOrders, staleShifts] = await Promise.all([
     supabase.rpc("store_overview", { p_store_id: store.id }),
-    supabase.from("shifts").select("id, code").eq("store_id", store.id).eq("user_id", ctx.profile.id).eq("status", "open").maybeSingle(),
+    supabase.from("shifts").select("id, code").eq("store_id", store.id).eq("status", "open").maybeSingle(),
     isFinance ? supabase.rpc("pnl_report", { p_store_ids: [store.id], p_from: today, p_to: today }) : Promise.resolve({ data: null }),
     supabase.rpc("inventory_status", { p_store_id: store.id, p_status: ["low", "out"], p_limit: 1 }),
     supabase.rpc("lot_expiry", { p_store_id: store.id, p_status: "near" }),

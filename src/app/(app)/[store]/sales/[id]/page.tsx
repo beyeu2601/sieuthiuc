@@ -20,7 +20,7 @@ export default async function SalePage({ params }: { params: Promise<{ store: st
   const { data: s } = await supabase
     .from("sales")
     .select(
-      "id, code, shift_id, channel, order_id, status, subtotal, discount_amount, discount_note, total, completed_at, cancel_reason, cancelled_at, note, creator:created_by(full_name), approver:discount_approved_by(full_name), canceller:cancelled_by(full_name), shifts(code, user_id, status)"
+      "id, code, shift_id, channel, order_id, status, subtotal, discount_amount, discount_note, total, completed_at, cancel_reason, created_by, cancelled_at, note, creator:created_by(full_name), approver:discount_approved_by(full_name), canceller:cancelled_by(full_name), shifts(code, user_id, status)"
     )
     .eq("id", id)
     .eq("store_id", store.id)
@@ -38,7 +38,8 @@ export default async function SalePage({ params }: { params: Promise<{ store: st
   const isManager = ctx.profile.role === "sadmin" || ctx.profile.role === "admin";
   const canCancel =
     s.status === "completed" &&
-    (isManager || (ctx.profile.role === "staff" && shift?.user_id === ctx.profile.id && shift?.status === "open"));
+    // Khop cancel_sale: nhan vien huy giao dich cua minh trong ca dang mo
+    (isManager || (ctx.profile.role === "staff" && s.created_by === ctx.profile.id && shift?.status === "open"));
   const approverName = (s.approver as unknown as { full_name: string } | null)?.full_name;
   const lineCount = (items ?? []).length;
 
