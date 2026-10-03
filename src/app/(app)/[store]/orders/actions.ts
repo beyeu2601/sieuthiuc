@@ -13,6 +13,9 @@ export type OrderPayload = {
   shipping_address: string | null;
   shipping_fee: number;
   discount_amount: number;
+  discount_note: string | null;
+  payout_amount: number | null;
+  deliver_now: boolean;
   payment_method: "cash" | "transfer" | "other";
   note: string | null;
   items: { product_id: string; qty: number; unit_price: number }[];
@@ -38,6 +41,15 @@ export async function changeOrderStatus(
   if (error) return { ok: false, error: errorMessage(error) };
   revalidatePath(`/${storeCode}/orders`);
   revalidatePath(`/${storeCode}/orders/${id}`);
+  return { ok: true };
+}
+
+// Xoa don da huy hoac da hoan va nhap lai kho (sadmin/admin)
+export async function deleteOrder(storeCode: string, id: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_order", { p_order_id: id });
+  if (error) return { ok: false, error: errorMessage(error) };
+  revalidatePath(`/${storeCode}/orders`);
   return { ok: true };
 }
 

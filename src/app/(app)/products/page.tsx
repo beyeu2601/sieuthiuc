@@ -39,7 +39,7 @@ type Row = {
   category_id: string | null;
   categories: { name: string; benefit_pct: number | null } | null;
   product_barcodes: { barcode: string; is_primary: boolean }[];
-  inventory: { qty_on_hand: number }[];
+  inventory: { qty_on_hand: number; qty_reserved: number }[];
   product_images: { drive_thumb_id: string }[];
 };
 
@@ -54,7 +54,8 @@ const MISSING_COND: Record<string, string> = {
   price: "sell_price.eq.0",
 };
 
-const stockOf = (p: Row) => p.inventory.reduce((s, i) => s + Number(i.qty_on_hand), 0);
+// Ton kha dung: tru phan dang giu cho don online chua giao
+const stockOf = (p: Row) => p.inventory.reduce((s, i) => s + Number(i.qty_on_hand) - Number(i.qty_reserved), 0);
 
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<SP> }) {
   const ctx = await requireRole("sadmin", "admin", "accountant");
@@ -76,7 +77,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   let query = supabase
     .from("products")
     .select(
-      "id, sku, name, unit, goods_type, sell_price, cost_price_ref, pricing_method, benefit_pct, status, category_id, categories(name, benefit_pct), product_barcodes(barcode, is_primary), inventory(qty_on_hand), product_images(drive_thumb_id)",
+      "id, sku, name, unit, goods_type, sell_price, cost_price_ref, pricing_method, benefit_pct, status, category_id, categories(name, benefit_pct), product_barcodes(barcode, is_primary), inventory(qty_on_hand, qty_reserved), product_images(drive_thumb_id)",
       { count: "exact" }
     )
     .eq("product_images.is_thumbnail", true)

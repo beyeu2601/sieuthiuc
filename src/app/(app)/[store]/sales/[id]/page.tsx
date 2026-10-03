@@ -20,7 +20,7 @@ export default async function SalePage({ params }: { params: Promise<{ store: st
   const { data: s } = await supabase
     .from("sales")
     .select(
-      "id, code, shift_id, channel, order_id, status, subtotal, discount_amount, total, completed_at, cancel_reason, cancelled_at, note, creator:created_by(full_name), approver:discount_approved_by(full_name), canceller:cancelled_by(full_name), shifts(code, user_id, status)"
+      "id, code, shift_id, channel, order_id, status, subtotal, discount_amount, discount_note, total, completed_at, cancel_reason, cancelled_at, note, creator:created_by(full_name), approver:discount_approved_by(full_name), canceller:cancelled_by(full_name), shifts(code, user_id, status)"
     )
     .eq("id", id)
     .eq("store_id", store.id)
@@ -89,11 +89,16 @@ export default async function SalePage({ params }: { params: Promise<{ store: st
           sac={s.discount_amount ? "amber" : "slate"}
           giaTri={s.discount_amount ? formatMoney(s.discount_amount) : "-"}
           phu={
-            approverName
-              ? `Duyệt bởi ${approverName}`
-              : s.discount_amount && s.subtotal > 0
-                ? `${Math.round((s.discount_amount / s.subtotal) * 100)}% tiền hàng`
-                : undefined
+            [
+              approverName
+                ? `Duyệt bởi ${approverName}`
+                : s.discount_amount && s.subtotal > 0
+                  ? `${Math.round((s.discount_amount / s.subtotal) * 100)}% tiền hàng`
+                  : null,
+              s.discount_note,
+            ]
+              .filter(Boolean)
+              .join(" - ") || undefined
           }
         />
         <ChiSo nhan="Dòng hàng" sac="brand" giaTri={lineCount} />

@@ -19,6 +19,8 @@ export type UnpaidOrder = {
   external_order_id: string | null;
   customer_name: string | null;
   amount: number;
+  // Tien Shopee tra ve da nhap tren don (bang amount neu chua nhap)
+  expected: number;
   delivered_at: string | null;
 };
 
@@ -61,8 +63,12 @@ export function PayoutForm({
         [o.code, o.external_order_id, o.customer_name].some((v) => v?.toLowerCase().includes(term))
       )
     : orders;
-  const total = orders.filter((o) => picked.has(o.id)).reduce((s, o) => s + o.amount, 0);
-  const fee = total - (received ?? 0) - (ads ?? 0);
+  const pickedOrders = orders.filter((o) => picked.has(o.id));
+  const total = pickedOrders.reduce((s, o) => s + o.amount, 0);
+  const expected = pickedOrders.reduce((s, o) => s + o.expected, 0);
+  // Chua go thi lay tong tien Shopee tra ve cua cac don da tick, tru quang cao
+  const effReceived = received ?? (picked.size > 0 ? Math.max(0, expected - (ads ?? 0)) : null);
+  const fee = total - (effReceived ?? 0) - (ads ?? 0);
   const allShownPicked = shown.length > 0 && shown.every((o) => picked.has(o.id));
 
   function toggle(id: string) {
@@ -87,14 +93,14 @@ export function PayoutForm({
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (picked.size === 0) return void toast.error("Tick ít nhất một đơn");
-    if (received == null) return void toast.error("Nhập số tiền thực nhận");
+    if (effReceived == null) return void toast.error("Nhập số tiền thực nhận");
     if (!account) return void toast.error("Chọn tài khoản nhận tiền");
     start(async () => {
       const res = await recordPayout(storeCode, {
         store_id: storeId,
         account_id: account,
         received_on: date,
-        amount_received: received,
+        amount_received: effReceived,
         ads_amount: ads ?? 0,
         note: note.trim() || null,
         order_ids: [...picked],
@@ -146,7 +152,12 @@ export function PayoutForm({
                     {o.delivered_at ? ` - giao ${formatDateVN(o.delivered_at.slice(0, 10))}` : ""}
                   </span>
                 </span>
-                <span className="tabular-nums">{formatMoney(o.amount)}</span>
+                <span className="text-right tabular-nums">
+                  {formatMoney(o.expected)}
+                  {o.expected !== o.amount && (
+                    <span className="block text-xs text-muted-foreground">giá bán {formatMoney(o.amount)}</span>
+                  )}
+                </span>
               </label>
             </li>
           ))}
@@ -158,7 +169,7 @@ export function PayoutForm({
         <section className="grid gap-x-4 gap-y-3 rounded-xl border bg-card p-4 @md:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="received">Số tiền thực nhận *</Label>
-            <MoneyInput id="received" value={received} onChange={setReceived} className="h-11 text-base" />
+            <MoneyInput id="received" value={effReceived} onChange={setReceived} className="h-11 text-base" />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="ads">Shopee trừ nạp quảng cáo</Label>
@@ -191,10 +202,10 @@ export function PayoutForm({
 
         <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] rounded-xl border bg-card p-4 shadow-sm lg:bottom-0">
           <dl className="grid grid-cols-2 gap-y-1 text-sm">
-            <dt>Tổng {picked.size} đơn đã chọn</dt>
+            <dt>Giá bán {picked.size} đơn đã chọn</dt>
             <dd className="text-right tabular-nums">{formatMoney(total)}</dd>
             <dt>Thực nhận</dt>
-            <dd className="text-right tabular-nums">-{formatMoney(received ?? 0)}</dd>
+            <dd className="text-right tabular-nums">-{formatMoney(effReceived ?? 0)}</dd>
             <dt>Quảng cáo</dt>
             <dd className="text-right tabular-nums">-{formatMoney(ads ?? 0)}</dd>
             <dt className="font-semibold">{fee >= 0 ? "Phí sàn" : "Shopee trả dư (ghi Thu khác)"}</dt>

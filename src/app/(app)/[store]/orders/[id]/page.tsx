@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ONLINE_CHANNELS, ORDER_STATUS, RETURN_STATUS } from "../labels";
 import { OrderActions } from "./order-actions";
+import { DeleteOrder } from "./delete-order";
 
 const RETURN_SAC: Record<string, SacNguNghia> = { pending_check: "amber", restocked: "emerald", discarded: "red" };
 
@@ -20,7 +21,7 @@ export default async function OrderPage({ params }: { params: Promise<{ store: s
   const supabase = await createClient();
   const { data: o } = await supabase
     .from("orders")
-    .select("id, code, channel, external_order_id, customer_name, customer_phone, shipping_address, status, subtotal, shipping_fee, discount_amount, total, payment_method, sale_id, note, cancel_reason, created_at, payout_id, return_reason, return_status, return_checked_at, return_check_note")
+    .select("id, code, channel, external_order_id, customer_name, customer_phone, shipping_address, status, subtotal, shipping_fee, discount_amount, discount_note, platform_fee, total, payment_method, sale_id, note, cancel_reason, created_at, payout_id, return_reason, return_status, return_checked_at, return_check_note")
     .eq("id", id)
     .eq("store_id", store.id)
     .maybeSingle();
@@ -41,6 +42,10 @@ export default async function OrderPage({ params }: { params: Promise<{ store: s
   const itemRows = items ?? [];
   const historyRows = history ?? [];
   const shopeeDelivered = o.channel === "shopee" && o.status === "delivered";
+  const isManager = ctx.profile.role === "sadmin" || ctx.profile.role === "admin";
+  // Khop dieu kien cua delete_order
+  const canDelete =
+    isManager && !o.payout_id && (o.status === "cancelled" || (o.status === "returned" && o.return_status === "restocked"));
 
   return (
     <div className="space-y-4">
@@ -70,7 +75,7 @@ export default async function OrderPage({ params }: { params: Promise<{ store: s
               status={o.status}
               paidOut={!!o.payout_id}
               returnStatus={o.return_status}
-              isManager={ctx.profile.role === "sadmin" || ctx.profile.role === "admin"}
+              isManager={isManager}
             />
           )
         }
@@ -100,6 +105,7 @@ export default async function OrderPage({ params }: { params: Promise<{ store: s
           nhan={o.discount_amount ? "Giảm giá / voucher" : "Không giảm giá"}
           sac={o.discount_amount ? "amber" : "slate"}
           giaTri={o.discount_amount ? formatMoney(o.discount_amount) : "-"}
+          phu={o.discount_note ?? undefined}
         />
       </HangChiSo>
 
@@ -175,7 +181,16 @@ export default async function OrderPage({ params }: { params: Promise<{ store: s
               <dd className="text-right tabular-nums">-{formatMoney(o.discount_amount)}</dd>
               <dt className="font-semibold">Tổng đơn</dt>
               <dd className="text-right font-semibold tabular-nums">{formatMoney(o.total)}</dd>
+              {o.platform_fee > 0 && (
+                <>
+                  <dt>Phí sàn Shopee</dt>
+                  <dd className="text-right tabular-nums">-{formatMoney(o.platform_fee)}</dd>
+                  <dt className="font-semibold">Shopee trả về</dt>
+                  <dd className="text-right font-semibold tabular-nums">{formatMoney(o.subtotal - o.discount_amount - o.platform_fee)}</dd>
+                </>
+              )}
             </dl>
+            {o.discount_note && <p className="mt-2">Lý do giảm: {o.discount_note}</p>}
             {shopeeDelivered && payout && (
               <Link href={`/${store.code}/orders/payouts/${payout.id}`} className="mt-2 block underline underline-offset-4">
                 Đã nhận tiền đợt {payout.code}
@@ -187,6 +202,13 @@ export default async function OrderPage({ params }: { params: Promise<{ store: s
               </Link>
             )}
           </Khoi>
+
+          {canDelete && (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-destructive/40 px-4 py-3">
+              <p className="text-xs text-muted-foreground">Đơn đã hủy hoặc đã hoàn và nhập lại kho.</p>
+              <DeleteOrder storeCode={store.code} id={o.id} code={o.code} />
+            </div>
+          )}
         </div>
       </div>
     </div>

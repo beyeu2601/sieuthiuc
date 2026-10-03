@@ -11,6 +11,7 @@ import { ProductPicker } from "@/components/product-picker";
 import { MoneyInput } from "@/components/money-input";
 import { LuaChon } from "@/components/lua-chon";
 import { Khoi } from "@/components/khoi";
+import { GoiY } from "@/components/goi-y";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +29,9 @@ export function OrderForm({ storeId, storeCode }: { storeId: string; storeCode: 
     shipping_address: "",
     shipping_fee: null as number | null,
     discount_amount: null as number | null,
+    discount_note: "",
+    payout_amount: null as number | null,
+    deliver: "pending" as "pending" | "delivered",
     payment_method: "transfer" as OrderPayload["payment_method"],
     note: "",
   });
@@ -35,6 +39,10 @@ export function OrderForm({ storeId, storeCode }: { storeId: string; storeCode: 
   const [pending, start] = useTransition();
   const subtotal = lines.reduce((s, l) => s + Math.round(l.qty * (l.unit_price ?? 0)), 0);
   const total = subtotal + (h.shipping_fee ?? 0) - (h.discount_amount ?? 0);
+  const isShopee = h.channel === "shopee";
+  // Phi san = tien hang sau giam gia - tien Shopee tra ve (cung co so voi doi soat)
+  const afterDiscount = subtotal - (h.discount_amount ?? 0);
+  const platformFee = isShopee && h.payout_amount != null ? afterDiscount - h.payout_amount : null;
 
   function add(it: CatalogItem) {
     setLines((ls) => {
@@ -51,6 +59,7 @@ export function OrderForm({ storeId, storeCode }: { storeId: string; storeCode: 
 
   function submit() {
     if (lines.some((l) => !(l.qty > 0) || l.unit_price == null)) return void toast.error("Kiểm tra số lượng và giá từng dòng");
+    if (platformFee != null && platformFee < 0) return void toast.error("Tiền Shopee trả về lớn hơn tiền hàng sau giảm giá");
     start(async () => {
       const res = await createOrder(storeCode, {
         store_id: storeId,
@@ -61,6 +70,9 @@ export function OrderForm({ storeId, storeCode }: { storeId: string; storeCode: 
         shipping_address: h.shipping_address || null,
         shipping_fee: h.shipping_fee ?? 0,
         discount_amount: h.discount_amount ?? 0,
+        discount_note: (h.discount_amount ?? 0) > 0 ? h.discount_note.trim() || null : null,
+        payout_amount: isShopee ? h.payout_amount : null,
+        deliver_now: h.deliver === "delivered",
         payment_method: h.payment_method,
         note: h.note || null,
         items: lines.map((l) => ({ product_id: l.product_id, qty: l.qty, unit_price: l.unit_price ?? 0 })),
@@ -89,6 +101,19 @@ export function OrderForm({ storeId, storeCode }: { storeId: string; storeCode: 
           />
         </div>
         <div className="space-y-1.5">
+          <Label htmlFor="deliver">Trạng thái *</Label>
+          <LuaChon
+            id="deliver"
+            aria-label="Trạng thái"
+            value={h.deliver}
+            onChange={(v) => setH({ ...h, deliver: v as "pending" | "delivered" })}
+            options={[
+              { value: "pending", label: "Chờ giao" },
+              { value: "delivered", label: "Đã giao" },
+            ]}
+          />
+        </div>
+        <div className="space-y-1.5">
           <Label htmlFor="ext">Mã đơn trên sàn</Label>
           <Input id="ext" value={h.external_order_id} onChange={(e) => setH({ ...h, external_order_id: e.target.value })} />
         </div>
@@ -100,7 +125,7 @@ export function OrderForm({ storeId, storeCode }: { storeId: string; storeCode: 
           <Label htmlFor="cphone">Số điện thoại</Label>
           <Input id="cphone" type="tel" inputMode="tel" value={h.customer_phone} onChange={(e) => setH({ ...h, customer_phone: e.target.value })} />
         </div>
-        <div className="space-y-1.5 @md:col-span-2 @3xl:col-span-4">
+        <div className="space-y-1.5 @md:col-span-2 @3xl:col-span-3">
           <Label htmlFor="addr">Địa chỉ giao</Label>
           <Input id="addr" value={h.shipping_address} onChange={(e) => setH({ ...h, shipping_address: e.target.value })} />
         </div>
@@ -150,6 +175,29 @@ export function OrderForm({ storeId, storeCode }: { storeId: string; storeCode: 
           <Label htmlFor="disc">Giảm giá / voucher</Label>
           <MoneyInput id="disc" value={h.discount_amount} onChange={(n) => setH({ ...h, discount_amount: n })} />
         </div>
+        {(h.discount_amount ?? 0) > 0 && (
+          <div className="space-y-1.5">
+            <Label htmlFor="dnote">Lý do giảm</Label>
+            <Input id="dnote" value={h.discount_note} onChange={(e) => setH({ ...h, discount_note: e.target.value })} />
+          </div>
+        )}
+        {isShopee && (
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1">
+              <Label htmlFor="payout">Tiền Shopee trả về</Label>
+              <GoiY label="Tiền Shopee trả về">
+                <p>Số tiền Shopee trả cho đơn này, đã trừ phí sàn.</p>
+                <p>Chênh lệch với tiền hàng sau giảm giá là phí sàn, ghi vào chi phí khi đối soát tiền về. Bỏ trống nếu chưa biết.</p>
+              </GoiY>
+            </div>
+            <MoneyInput id="payout" value={h.payout_amount} onChange={(n) => setH({ ...h, payout_amount: n })} />
+            {platformFee != null && platformFee >= 0 && afterDiscount > 0 && (
+              <p className="text-xs text-muted-foreground tabular-nums">
+                Phí sàn {formatMoney(platformFee)} ({((platformFee / afterDiscount) * 100).toFixed(1).replace(".", ",")}%)
+              </p>
+            )}
+          </div>
+        )}
         <div className="space-y-1.5 @md:col-span-2">
           <Label htmlFor="pm">Thanh toán</Label>
           <LuaChon
@@ -175,14 +223,19 @@ export function OrderForm({ storeId, storeCode }: { storeId: string; storeCode: 
         <div className="text-sm">
           Tiền hàng {formatMoney(subtotal)} + ship {formatMoney(h.shipping_fee ?? 0)} - giảm {formatMoney(h.discount_amount ?? 0)}
           <div className="text-lg font-semibold">Tổng đơn {formatMoney(total)}</div>
+          {platformFee != null && <div className="text-muted-foreground">Shopee trả về {formatMoney(h.payout_amount ?? 0)}</div>}
         </div>
         <Button
           className="h-11 px-6"
           disabled={pending || lines.length === 0}
           onClick={submit}
-          title="Hàng trong đơn được giữ lại cho tới khi giao xong hoặc hủy đơn"
+          title={
+            h.deliver === "delivered"
+              ? "Ghi doanh thu và trừ kho ngay"
+              : "Hàng trong đơn được giữ lại cho tới khi giao xong hoặc hủy đơn"
+          }
         >
-          {pending ? "Đang tạo..." : "Tạo đơn và giữ hàng"}
+          {pending ? "Đang tạo..." : h.deliver === "delivered" ? "Tạo đơn đã giao" : "Tạo đơn và giữ hàng"}
         </Button>
       </div>
     </div>

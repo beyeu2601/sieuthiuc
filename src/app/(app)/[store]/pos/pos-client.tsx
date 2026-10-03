@@ -34,6 +34,7 @@ type Cart = {
   key: string;
   lines: Line[];
   orderDiscount: number;
+  discountNote: string;
   cash: number | null;
   transfer: number | null;
   other: number | null;
@@ -49,6 +50,7 @@ const newCart = (): Cart => ({
   key: crypto.randomUUID(),
   lines: [],
   orderDiscount: 0,
+  discountNote: "",
   cash: null,
   transfer: null,
   other: null,
@@ -186,6 +188,7 @@ export function PosClient({
         discount_amount: cart.orderDiscount,
         approval_id: cart.approvalId,
         note: null,
+        discount_note: manualDiscount > 0 ? cart.discountNote.trim() || null : null,
         items: cart.lines.map((l) => ({ product_id: l.product_id, qty: l.qty, discount_amount: l.discount })),
         payments: methods.map((m) => ({ method: m.method, amount: m.amount!, reference: null, account_id: m.account_id })),
       });
@@ -199,7 +202,7 @@ export function PosClient({
       setCart(newCart());
       document.getElementById("pos-search")?.focus();
     });
-  }, [cart, needApproval, paid, total, storeCode, storeId, shiftId, accounts]);
+  }, [cart, needApproval, manualDiscount, paid, total, storeCode, storeId, shiftId, accounts]);
 
   // Phim tat: F2 tim, F4 thanh toan, F8 giam gia don
   useEffect(() => {
@@ -348,6 +351,12 @@ export function PosClient({
               </p>
             )}
           </div>
+          {manualDiscount > 0 && (
+            <div className="space-y-1">
+              <Label htmlFor="discount-note">Lý do giảm</Label>
+              <Input id="discount-note" value={cart.discountNote} onChange={(e) => set({ discountNote: e.target.value })} />
+            </div>
+          )}
           <div className="flex items-baseline justify-between border-t pt-3">
             <span className="text-lg">Khách trả</span>
             <span className="text-3xl font-bold tabular-nums">{formatMoney(total)}</span>

@@ -13,7 +13,7 @@ export default async function NewPayoutPage({ params }: { params: Promise<{ stor
   const [{ data }, { data: accounts }] = await Promise.all([
     supabase
       .from("orders")
-      .select("id, code, external_order_id, customer_name, subtotal, discount_amount, sales!orders_sale_id_fkey(completed_at)")
+      .select("id, code, external_order_id, customer_name, subtotal, discount_amount, platform_fee, sales!orders_sale_id_fkey(completed_at)")
       .eq("store_id", store.id)
       .eq("channel", "shopee")
       .eq("status", "delivered")
@@ -27,6 +27,7 @@ export default async function NewPayoutPage({ params }: { params: Promise<{ stor
     external_order_id: o.external_order_id,
     customer_name: o.customer_name,
     amount: o.subtotal - o.discount_amount,
+    expected: o.subtotal - o.discount_amount - o.platform_fee,
     delivered_at: (o.sales as unknown as { completed_at: string } | null)?.completed_at ?? null,
   }));
 

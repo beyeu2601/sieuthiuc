@@ -23,7 +23,7 @@ export default async function PayoutsPage({ params }: { params: Promise<{ store:
   const [{ data: unpaid }, { data: payouts }] = await Promise.all([
     supabase
       .from("orders")
-      .select("subtotal, discount_amount")
+      .select("subtotal, discount_amount, platform_fee")
       .eq("store_id", store.id)
       .eq("channel", "shopee")
       .eq("status", "delivered")
@@ -36,7 +36,8 @@ export default async function PayoutsPage({ params }: { params: Promise<{ store:
       .order("created_at", { ascending: false })
       .limit(100),
   ]);
-  const owed = (unpaid ?? []).reduce((s, o) => s + o.subtotal - o.discount_amount, 0);
+  // Tien Shopee se tra: da tru phi san da nhap tren don
+  const owed = (unpaid ?? []).reduce((s, o) => s + o.subtotal - o.discount_amount - o.platform_fee, 0);
   const rows = payouts ?? [];
   const unpaidCount = (unpaid ?? []).length;
   const latest = rows.find((r) => r.status !== "cancelled");
@@ -60,7 +61,7 @@ export default async function PayoutsPage({ params }: { params: Promise<{ store:
           nhan={unpaidCount > 0 ? "Shopee còn nợ" : "Shopee không còn nợ"}
           sac={unpaidCount > 0 ? "amber" : "emerald"}
           giaTri={formatMoney(owed)}
-          phu={`${unpaidCount} đơn đã giao chưa nhận tiền, chưa trừ phí sàn`}
+          phu={`${unpaidCount} đơn đã giao chưa nhận tiền`}
         />
         <ChiSo
           nhan="Đợt tiền về gần nhất"
