@@ -29,6 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProductForm } from "../product-form";
 import { BarcodePanel } from "./barcode-panel";
 import { LabelPreview } from "./label-preview";
+import { storeLine } from "@/app/print/labels/store-line";
 import { ImageGallery } from "./image-gallery";
 import { StockCostPanel } from "./stock-cost-panel";
 import { DeleteProduct } from "./delete-product";
@@ -66,6 +67,7 @@ export default async function ProductDetailPage({
   const canEdit = ctx.profile.role !== "accountant";
   const supabase = await createClient();
   const storeId = ctx.stores[0]?.id ?? null;
+  const labelStoreId = (ctx.stores.find((s) => s.id === ctx.profile.default_store_id) ?? ctx.stores[0])?.id ?? null;
 
   const { data: p } = await supabase
     .from("products")
@@ -89,6 +91,7 @@ export default async function ProductDetailPage({
     defaultMin,
     shortDays,
     longDays,
+    { data: labelStore },
   ] = await Promise.all([
     supabase.from("categories").select("id, name, benefit_pct, description").order("name"),
     supabase.from("brands").select("id, name").order("name"),
@@ -120,6 +123,9 @@ export default async function ProductDetailPage({
     getNumberSetting("inventory.default_min_stock", 5, storeId),
     getNumberSetting("expiry.short_date_days", 15, storeId),
     getNumberSetting("expiry.long_date_days", 60, storeId),
+    labelStoreId
+      ? supabase.from("stores").select("name, phone").eq("id", labelStoreId).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   const bcList = (barcodes ?? []) as { barcode: string; is_primary: boolean }[];
@@ -430,6 +436,7 @@ export default async function ProductDetailPage({
                 hasBarcode={bcList.length > 0}
                 widthMm={labelW || 40}
                 heightMm={labelH || 30}
+                store={storeLine(labelStore)}
               />
               <BarcodePanel productId={p.id} barcodes={barcodes ?? []} canEdit={canEdit} />
             </div>

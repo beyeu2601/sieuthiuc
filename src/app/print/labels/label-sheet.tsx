@@ -20,7 +20,17 @@ function Barcode({ value }: { value: string }) {
   return <svg ref={ref} className="max-w-full" />;
 }
 
-export function LabelSheet({ items, widthMm, heightMm }: { items: LabelItem[]; widthMm: number; heightMm: number }) {
+export function LabelSheet({
+  items,
+  widthMm,
+  heightMm,
+  store,
+}: {
+  items: LabelItem[];
+  widthMm: number;
+  heightMm: number;
+  store: string;
+}) {
   const [copies, setCopies] = useState(1);
   const list = items.flatMap((it) => Array.from({ length: copies }, (_, i) => ({ ...it, key: `${it.id}-${i}` })));
 
@@ -54,7 +64,8 @@ export function LabelSheet({ items, widthMm, heightMm }: { items: LabelItem[]; w
           >
             <div className="line-clamp-2 w-full text-center text-[9px] leading-tight">{it.name}</div>
             <Barcode value={it.barcode} />
-            <div className="text-[11px] font-bold">{formatMoney(it.price)}</div>
+            <div className="text-[11px] leading-tight font-bold">{formatMoney(it.price)}</div>
+            {store && <div className="w-full truncate text-center text-[7px] leading-tight">{store}</div>}
           </div>
         ))}
       </div>

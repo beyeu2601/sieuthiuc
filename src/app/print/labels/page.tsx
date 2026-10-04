@@ -2,19 +2,24 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getSetting } from "@/lib/settings";
 import { LabelSheet, type LabelItem } from "./label-sheet";
+import { storeLine } from "./store-line";
 
 export const metadata = { title: "In tem" };
 
 export default async function LabelsPage({ searchParams }: { searchParams: Promise<{ ids?: string }> }) {
-  await requireRole("sadmin", "admin");
+  const ctx = await requireRole("sadmin", "admin");
+  const home = ctx.stores.find((s) => s.id === ctx.profile.default_store_id) ?? ctx.stores[0];
   const { ids } = await searchParams;
   const idList = (ids ?? "").split(",").filter((x) => /^[0-9a-f-]{36}$/i.test(x)).slice(0, 200);
   const supabase = await createClient();
-  const [{ data }, size] = await Promise.all([
+  const [{ data }, size, { data: store }] = await Promise.all([
     idList.length
       ? supabase.from("products").select("id, sku, name, sell_price, product_barcodes(barcode, is_primary)").in("id", idList)
       : Promise.resolve({ data: [] as never[] }),
     getSetting<string>("label.size", "40x30"),
+    home
+      ? supabase.from("stores").select("name, phone").eq("id", home.id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   const items: LabelItem[] = (data ?? []).map((p) => {
@@ -24,5 +29,5 @@ export default async function LabelsPage({ searchParams }: { searchParams: Promi
   });
   const [w, h] = String(size).split("x").map(Number);
 
-  return <LabelSheet items={items} widthMm={w || 40} heightMm={h || 30} />;
+  return <LabelSheet items={items} widthMm={w || 40} heightMm={h || 30} store={storeLine(store)} />;
 }

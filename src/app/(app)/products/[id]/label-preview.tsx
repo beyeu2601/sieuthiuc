@@ -31,6 +31,7 @@ export function LabelPreview({
   hasBarcode,
   widthMm,
   heightMm,
+  store,
 }: {
   productId: string;
   name: string;
@@ -40,6 +41,7 @@ export function LabelPreview({
   hasBarcode: boolean;
   widthMm: number;
   heightMm: number;
+  store: string;
 }) {
   return (
     <div>
@@ -50,11 +52,12 @@ export function LabelPreview({
         >
           <div className="line-clamp-2 w-full text-center text-[9px] leading-tight">{name}</div>
           <Barcode value={barcode} />
-          <div className="text-[11px] font-bold">{formatMoney(price)}</div>
+          <div className="text-[11px] leading-tight font-bold">{formatMoney(price)}</div>
+          {store && <div className="w-full truncate text-center text-[7px] leading-tight">{store}</div>}
         </div>
         <div className="space-y-2 text-sm">
           <div className="text-xs text-muted-foreground">
-            Tem {widthMm}x{heightMm} mm: tên, mã chính, giá bán
+            Tem {widthMm}x{heightMm} mm: tên, mã chính, giá bán, cửa hàng
           </div>
           {!hasBarcode && (
             <p className="text-xs text-chu-amber">

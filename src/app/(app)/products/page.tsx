@@ -43,7 +43,16 @@ type Row = {
   product_images: { drive_thumb_id: string }[];
 };
 
-type SP = { q?: string; type?: string | string[]; status?: string | string[]; cat?: string | string[]; missing?: string | string[]; page?: string; f?: string };
+type SP = {
+  q?: string;
+  type?: string | string[];
+  status?: string | string[];
+  stock?: string | string[];
+  cat?: string | string[];
+  missing?: string | string[];
+  page?: string;
+  f?: string;
+};
 
 const toArr = (v: string | string[] | undefined) => (Array.isArray(v) ? v : v ? [v] : []);
 
@@ -64,6 +73,8 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const page = Math.max(1, Number(sp.page) || 1);
   // Vao trang lan dau (chua gui form, khong co f) mac dinh loc "Dang ban"; form luon gui f=1 nen bo tick het van la khong loc.
   const statusSel = sp.f ? toArr(sp.status).filter((s) => s === "active" || s === "inactive") : ["active"];
+  // Ton: lan dau mac dinh "Con hang"; chon ca hai la khong loc
+  const stockSel = sp.f ? toArr(sp.stock).filter((s) => s === "in" || s === "out") : ["in"];
   const typeSel = toArr(sp.type).filter((t) => t === "cont" || t === "air");
   const catSel = toArr(sp.cat);
   const missingSel = toArr(sp.missing).filter((m) => m in MISSING_COND);
@@ -77,7 +88,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   let query = supabase
     .from("products")
     .select(
-      "id, sku, name, unit, goods_type, sell_price, cost_price_ref, pricing_method, benefit_pct, status, category_id, categories(name, benefit_pct), product_barcodes(barcode, is_primary), inventory(qty_on_hand, qty_reserved), product_images(drive_thumb_id)",
+      "id, sku, name, unit, goods_type, sell_price, cost_price_ref, pricing_method, benefit_pct, status, category_id, categories(name, benefit_pct), product_barcodes(barcode, is_primary), inventory(qty_on_hand, qty_reserved), instock:inventory(product_id), product_images(drive_thumb_id)",
       { count: "exact" }
     )
     .eq("product_images.is_thumbnail", true)
@@ -94,6 +105,11 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   }
   if (typeSel.length) query = query.in("goods_type", typeSel);
   if (statusSel.length) query = query.in("status", statusSel);
+  if (stockSel.length === 1) {
+    // instock: cac dong ton kha dung > 0 (RLS chi cua hang duoc xem); co dong nao la con hang
+    query = query.gt("instock.qty_available", 0);
+    query = stockSel[0] === "in" ? query.not("instock", "is", null) : query.is("instock", null);
+  }
   if (catSel.length) query = query.in("category_id", catSel);
   if (missingSel.length) query = query.or(missingSel.map((m) => MISSING_COND[m]).join(","));
 
@@ -154,6 +170,11 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
               <span className="mr-1 text-xs font-medium text-muted-foreground">Trạng thái</span>
               <FilterChip name="status" value="active" label="Đang bán" checked={statusSel.includes("active")} />
               <FilterChip name="status" value="inactive" label="Ngừng bán" checked={statusSel.includes("inactive")} />
+            </div>
+            <div role="group" aria-label="Tồn" className="flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 text-xs font-medium text-muted-foreground">Tồn</span>
+              <FilterChip name="stock" value="in" label="Còn hàng" checked={stockSel.includes("in")} />
+              <FilterChip name="stock" value="out" label="Hết hàng" checked={stockSel.includes("out")} />
             </div>
             <div role="group" aria-label="Loại hàng" className="flex flex-wrap items-center gap-1.5">
               <span className="mr-1 text-xs font-medium text-muted-foreground">Loại</span>
@@ -306,7 +327,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         pageSize={PAGE_SIZE}
         total={count ?? 0}
         basePath="/products"
-        params={{ q: sp.q, type: sp.type, status: sp.status, cat: sp.cat, missing: sp.missing, f: sp.f }}
+        params={{ q: sp.q, type: sp.type, status: sp.status, stock: sp.stock, cat: sp.cat, missing: sp.missing, f: sp.f }}
       />
     </div>
   );
