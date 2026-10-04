@@ -191,11 +191,6 @@ export function OrderForm({ storeId, storeCode }: { storeId: string; storeCode: 
               </GoiY>
             </div>
             <MoneyInput id="payout" value={h.payout_amount} onChange={(n) => setH({ ...h, payout_amount: n })} />
-            {platformFee != null && platformFee >= 0 && afterDiscount > 0 && (
-              <p className="text-xs text-muted-foreground tabular-nums">
-                Phí sàn {formatMoney(platformFee)} ({((platformFee / afterDiscount) * 100).toFixed(1).replace(".", ",")}%)
-              </p>
-            )}
           </div>
         )}
         <div className="space-y-1.5 @md:col-span-2">
@@ -220,11 +215,28 @@ export function OrderForm({ storeId, storeCode }: { storeId: string; storeCode: 
 
       {/* Tong va nut tao luon thay khi danh sach dai; dien thoai tru chieu cao thanh tab duoi day */}
       <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4 shadow-sm lg:bottom-0">
-        <div className="text-sm">
-          Tiền hàng {formatMoney(subtotal)} + ship {formatMoney(h.shipping_fee ?? 0)} - giảm {formatMoney(h.discount_amount ?? 0)}
-          <div className="text-lg font-semibold">Tổng đơn {formatMoney(total)}</div>
-          {platformFee != null && <div className="text-muted-foreground">Shopee trả về {formatMoney(h.payout_amount ?? 0)}</div>}
-        </div>
+        {isShopee ? (
+          // Don Shopee: so tien that nhan la tien Shopee tra ve, khong hien tong don
+          <div className="text-sm tabular-nums">
+            Tiền hàng {formatMoney(subtotal)} - giảm {formatMoney(h.discount_amount ?? 0)}
+            {platformFee != null ? (
+              <>
+                <div className="text-2xl font-bold text-chu-brand">Shopee trả về {formatMoney(h.payout_amount ?? 0)}</div>
+                <div className={`text-base font-semibold ${platformFee < 0 ? "text-chu-red" : "text-chu-amber"}`}>
+                  Phí sàn {formatMoney(platformFee)}
+                  {afterDiscount > 0 && ` (${((platformFee / afterDiscount) * 100).toFixed(1).replace(".", ",")}%)`}
+                </div>
+              </>
+            ) : (
+              <div className="text-muted-foreground">Nhập tiền Shopee trả về để tính phí sàn</div>
+            )}
+          </div>
+        ) : (
+          <div className="text-sm">
+            Tiền hàng {formatMoney(subtotal)} + ship {formatMoney(h.shipping_fee ?? 0)} - giảm {formatMoney(h.discount_amount ?? 0)}
+            <div className="text-lg font-semibold">Tổng đơn {formatMoney(total)}</div>
+          </div>
+        )}
         <Button
           className="h-11 px-6"
           disabled={pending || lines.length === 0}

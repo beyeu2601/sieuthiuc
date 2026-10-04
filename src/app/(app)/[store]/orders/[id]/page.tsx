@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ONLINE_CHANNELS, ORDER_STATUS, RETURN_STATUS } from "../labels";
 import { OrderActions } from "./order-actions";
 import { DeleteOrder } from "./delete-order";
+import { EditOrder } from "./edit-order";
 
 const RETURN_SAC: Record<string, SacNguNghia> = { pending_check: "amber", restocked: "emerald", discarded: "red" };
 
@@ -46,6 +47,10 @@ export default async function OrderPage({ params }: { params: Promise<{ store: s
   // Khop dieu kien cua delete_order
   const canDelete =
     isManager && !o.payout_id && (o.status === "cancelled" || (o.status === "returned" && o.return_status === "restocked"));
+  // Khop dieu kien cua update_order
+  const canEdit = ctx.profile.role !== "accountant" && !o.payout_id && ["pending", "shipped", "delivered"].includes(o.status);
+  // platform_fee = 0 khi chua nhap tien Shopee tra ve
+  const payoutAmount = o.channel === "shopee" && o.platform_fee > 0 ? o.subtotal - o.discount_amount - o.platform_fee : null;
 
   return (
     <div className="space-y-4">
@@ -69,14 +74,40 @@ export default async function OrderPage({ params }: { params: Promise<{ store: s
         }
         actions={
           ctx.profile.role !== "accountant" && (
-            <OrderActions
-              storeCode={store.code}
-              id={o.id}
-              status={o.status}
-              paidOut={!!o.payout_id}
-              returnStatus={o.return_status}
-              isManager={isManager}
-            />
+            <div className="flex flex-wrap gap-2">
+              {canEdit && (
+                <EditOrder
+                  storeCode={store.code}
+                  order={{
+                    id: o.id,
+                    code: o.code,
+                    channel: o.channel,
+                    subtotal: o.subtotal,
+                    sale_id: o.sale_id,
+                    values: {
+                      external_order_id: o.external_order_id,
+                      customer_name: o.customer_name,
+                      customer_phone: o.customer_phone,
+                      shipping_address: o.shipping_address,
+                      shipping_fee: o.shipping_fee,
+                      discount_amount: o.discount_amount,
+                      discount_note: o.discount_note,
+                      payout_amount: payoutAmount,
+                      payment_method: o.payment_method,
+                      note: o.note,
+                    },
+                  }}
+                />
+              )}
+              <OrderActions
+                storeCode={store.code}
+                id={o.id}
+                status={o.status}
+                paidOut={!!o.payout_id}
+                returnStatus={o.return_status}
+                isManager={isManager}
+              />
+            </div>
           )
         }
       />
@@ -94,12 +125,21 @@ export default async function OrderPage({ params }: { params: Promise<{ store: s
       )}
 
       <HangChiSo className="lg:grid-cols-3">
-        <ChiSo
-          nhan={o.status === "cancelled" ? "Tổng đơn - đã hủy" : o.status === "returned" ? "Tổng đơn - hoàn hàng" : "Tổng đơn"}
-          sac={o.status === "cancelled" || o.status === "returned" ? "red" : "brand"}
-          giaTri={formatMoney(o.total)}
-          phu={`Tiền hàng ${formatMoney(o.subtotal)}`}
-        />
+        {payoutAmount != null ? (
+          <ChiSo
+            nhan={o.status === "cancelled" ? "Shopee trả về - đã hủy" : o.status === "returned" ? "Shopee trả về - hoàn hàng" : "Shopee trả về"}
+            sac={o.status === "cancelled" || o.status === "returned" ? "red" : "brand"}
+            giaTri={formatMoney(payoutAmount)}
+            phu={`Phí sàn ${formatMoney(o.platform_fee)}`}
+          />
+        ) : (
+          <ChiSo
+            nhan={o.status === "cancelled" ? "Tổng đơn - đã hủy" : o.status === "returned" ? "Tổng đơn - hoàn hàng" : "Tổng đơn"}
+            sac={o.status === "cancelled" || o.status === "returned" ? "red" : "brand"}
+            giaTri={formatMoney(o.total)}
+            phu={`Tiền hàng ${formatMoney(o.subtotal)}`}
+          />
+        )}
         <ChiSo nhan="Phí ship" sac={o.shipping_fee ? "brand" : "slate"} giaTri={o.shipping_fee ? formatMoney(o.shipping_fee) : "-"} />
         <ChiSo
           nhan={o.discount_amount ? "Giảm giá / voucher" : "Không giảm giá"}
