@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [      
+      "Bash(git filter-branch:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git fetch:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run db:test:*)",
+      "Bash(supabase db push:*)",
+      "Bash(supabase migration list:*)",
+      "Bash(supabase migration repair:*)",
+      "Bash(supabase config push:*)",
+      "Bash(supabase link:*)",
+      "Bash(npx vercel deploy:*)"
+    ]
+  }
+}
