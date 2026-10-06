@@ -47,7 +47,7 @@ Web app (PWA) quản lý bán hàng, kho, công nợ nhà cung cấp, thu chi v�
 
 ```
 src/app/login                    Đăng nhập bằng username
-src/app/(app)/[store]/...        Màn hình theo cửa hàng: pos, sales, shifts, orders, receipts, inventory,
+src/app/(app)/[store]/...        Màn hình theo cửa hàng: pos, sales, shifts, orders, preorders, receipts, inventory,
                                  lookup, expiry, transfers, payables, cash, reconcile, reports
 src/app/(app)/products           Danh mục sản phẩm, gợi ý giá, import Excel
 src/app/(app)/suppliers          Nhà cung cấp
@@ -107,6 +107,8 @@ Cơ chế:
 | `20261013000001` | Góp ý 03/10/2026: `orders.platform_fee` (phí sàn = tiền hàng sau giảm - tiền Shopee trả về), `orders.discount_note`, `sales.discount_note`; `create_order` nhận `payout_amount`, `discount_note`, `deliver_now`; `complete_sale` và `update_order_status` lưu lý do giảm; `delete_order` |
 | `20261014000001` | Một ca cho một két: mỗi cửa hàng chỉ một ca mở (`shifts_one_open_per_store_uq`), `_my_open_shift` trả ca đang mở của cửa hàng; `open_shift` cần quyền `open_shift` (hoặc sadmin); `cancel_sale` cho nhân viên hủy giao dịch của mình trong ca đang mở; nhân viên của cửa hàng xem được ca đang mở (`shifts_select`, `shift_summary`) |
 | `20261015000001` | Sửa đơn online: `update_order` (thông tin khách, mã đơn sàn, ghi chú, thanh toán, phí ship, giảm giá + lý do, tiền Shopee trả về); đơn đã giao cập nhật luôn giao dịch bán; khóa khi đã hủy/hoàn hoặc đã đối soát |
+| `20261016000001` | Kênh bán `preorder` (Đặt trước) trong enum `sale_channel`; file riêng vì giá trị enum mới chỉ dùng được sau khi commit |
+| `20261016000002` | Đơn đặt trước: bảng `preorders`, `preorder_items` (cột `unit_cost` chặn đọc trực tiếp), `preorder_payments` (cọc/hoàn cọc theo tài khoản); nhóm thu hệ thống `Giữ cọc đơn đặt trước`; `create_preorder`, `add_preorder_deposit`, `mark_preorder_arrived`, `deliver_preorder`, `cancel_preorder`, `preorder_costs`, `product_default_costs`; `money_account_balances` và `money_account_ledger` cộng cọc, trừ hoàn cọc |
 
 Các RPC chính theo nghiệp vụ:
 
@@ -114,6 +116,7 @@ Các RPC chính theo nghiệp vụ:
 - Ca: `open_shift`, `close_shift`, `approve_shift`, `adjust_shift_count`, `shift_expected_cash`, `shift_summary`.
 - Kho: `adjust_product_stock`, `save_purchase_receipt`, `confirm_purchase_receipt`, `cancel_purchase_receipt`, `save_transfer`, `send_transfer`, `receive_transfer`, `cancel_transfer`.
 - Đơn online: `create_order`, `update_order`, `update_order_status`, `delete_order` (giao thành công tạo giao dịch bán theo kênh), `reconcile_reservations`, `return_order`, `review_order_return`, `record_platform_payout`, `cancel_platform_payout`.
+- Đặt trước: `create_preorder`, `add_preorder_deposit`, `mark_preorder_arrived`, `deliver_preorder` (tạo giao dịch bán kênh `preorder`), `cancel_preorder`, `preorder_costs`, `product_default_costs`.
 - Tài chính: `record_supplier_payment`, `debt_overview`, `create_cash_transaction`, `review_cash_transaction`, `request_cash_change`, `mark_cash_transaction_paid`, `set_money_account_holder`, `money_accounts_overview`, `money_account_ledger`, `reconcile_report`, `save_reconciliation_note`.
 - Báo cáo: `pnl_report`, `pnl_daily`, `revenue_breakdown`, `cogs_report`, `expense_report`, `best_sellers`, `inventory_status`, `inventory_period`, `lot_expiry`, `stock_movement_list`.
 
@@ -222,6 +225,12 @@ Khác biệt kỹ thuật so với SPEC:
 - Icon và nút (i) (khách yêu cầu 02/10/2026): ô chỉ số và tiêu đề khối có icon minh họa; chỗ có cách tính hoặc logic ẩn (lãi, tồn khả dụng, ngưỡng cận date, chỉnh tồn, mã vạch, cách đặt giá, loại date, quản lý hạn) có nút (i) giải thích. Đã áp ở trang chi tiết và form sản phẩm.
 - Tem mã vạch (khách yêu cầu 04/10/2026): dưới giá bán có dòng tên cửa hàng - số điện thoại (`stores.name`, `stores.phone`, sửa ở Cài đặt > Cửa hàng) của cửa hàng mặc định của người in (không có thì cửa hàng đầu tiên). Cửa hàng chưa nhập điện thoại thì chỉ in tên.
 - Giá cận date: mỗi sản phẩm gán loại date ngắn (ngưỡng 15 ngày) hoặc dài (ngưỡng 60 ngày), mặc định dài. Khi lô còn dưới ngưỡng, màn Hạn sử dụng đề xuất giá bán = giá vốn lô + phụ thu (mặc định 50.000₫); chỉ gợi ý, không tự ghi đè `products.sell_price`. Giá đề xuất ẩn với nhân viên (lộ giá vốn). sadmin sửa ngưỡng 15/60 và phụ thu ở Cài đặt > Cấu hình (nhóm "Cận date và giá giảm"); `inventory.near_expiry_days` không còn dùng cho màn này.
+- Đơn đặt trước (hàng order, khách chốt 06-07/10/2026), màn Bán hàng > Đặt trước:
+  - Đơn gồm khách (tên, SĐT), ngày đặt, ngày hẹn trả, các dòng sản phẩm trong danh mục (hàng chưa có tồn vẫn chọn được) với giá vốn và giá bán. Giá tự điền từ sản phẩm (giá vốn bình quân kho, chưa nhập lần nào thì giá vốn tham chiếu), sửa được. Nhân viên tạo đơn nhưng không thấy giá vốn; RPC bỏ qua giá vốn nhân viên gửi lên.
+  - Cọc theo % tiền hàng hoặc số tiền, ghi ngày cọc và tài khoản nhận; thu thêm cọc nhiều lần, tổng cọc không vượt tiền hàng. Tài khoản tiền mặt (két) bắt buộc có ca mở và cộng vào ca. Cọc là tiền giữ hộ khách: cộng vào số dư và sổ tài khoản, không vào lãi lỗ.
+  - Trạng thái: Chờ hàng -> Hàng đã về (giữ hàng trong kho, báo lỗi nếu kho chưa đủ) -> Đã giao, hoặc Đã hủy. Danh sách mặc định hiện đơn đang mở, hẹn trả gần nhất lên đầu, có nhãn trễ hẹn/hẹn hôm nay.
+  - Giao hàng qua kho như bán thường: giao dịch bán kênh "Đặt trước" (FEFO, giá vốn bình quân kho lúc giao, nên giá vốn trên đơn chỉ để xem lãi dự kiến). Phần cọc ghi dòng thanh toán `other` không gắn tài khoản (tiền đã vào tài khoản lúc cọc); phần còn lại thu vào tài khoản chọn, tiền mặt cần ca mở.
+  - Hủy: đơn chưa cọc ai cũng hủy được; đơn đã cọc chỉ sadmin/admin, chọn hoàn cọc (chi ra từ tài khoản chọn) hoặc giữ cọc (khoản thu nhóm hệ thống "Giữ cọc đơn đặt trước", không gắn tài khoản, vào thu nhập khác). Chưa có sửa đơn; sai thì hủy và tạo lại.
 
 ## 8. Phạm vi P0 đã làm
 
@@ -229,6 +238,7 @@ Khác biệt kỹ thuật so với SPEC:
 |---|---|
 | Bán hàng | POS quét mã, giảm giá dòng và đơn, hạn mức giảm giá + PIN quản lý, thanh toán nhiều phương thức, tiền thối, in hóa đơn 80mm, hủy giao dịch, lịch sử |
 | Đơn online | Tạo đơn Shopee/Facebook/khác, giữ hàng, đang giao, giao thành công ghi doanh thu, hủy trả khả dụng |
+| Đặt trước | Đơn hàng order: ngày đặt, hẹn trả, giá vốn/giá bán, cọc theo % hoặc số tiền vào tài khoản, hàng về giữ kho, giao ghi doanh thu kênh Đặt trước, hủy hoàn hoặc giữ cọc |
 | Sản phẩm | CRUD, mã vạch nhà sản xuất và nội bộ, mã lốc, giá trực tiếp hoặc % Benefit, gợi ý giá, lịch sử giá, import Excel, in tem, tra cứu, hạn sử dụng |
 | Kho | Phiếu nhập nháp/xác nhận, chi phí kèm theo phân bổ, giá vốn bình quân, lô và HSD, tồn hiện tại, nhập xuất tồn theo kỳ, cần nhập thêm, lịch sử biến động, chuyển kho |
 | Công nợ | Tự sinh từ phiếu nhập, hạn theo nhà cung cấp, tổng quan, theo NCC, cần thanh toán, thanh toán phân bổ nhiều khoản, lịch sử số dư trước/sau |

@@ -17,7 +17,7 @@ import { HolderSelect } from "./holder-select";
 
 export const metadata = { title: "Sổ tài khoản" };
 
-const SOURCE: Record<string, string> = { sale: "Bán hàng", cash: "Thu chi", supplier: "Trả NCC" };
+const SOURCE: Record<string, string> = { sale: "Bán hàng", cash: "Thu chi", supplier: "Trả NCC", preorder: "Cọc đặt trước" };
 
 type Entry = { occurred_on: string; source: string; code: string; description: string; amount: number; balance_after: number };
 

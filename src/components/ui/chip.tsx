@@ -273,7 +273,7 @@ export function ChipHan({
 }
 
 /*
- * Kenh ban: tai quay (POS) -> brand, Shopee -> amber, Facebook -> sky,
+ * Kenh ban: tai quay (POS) -> brand, Shopee -> amber, Facebook -> sky, dat truoc -> purple,
  * khac -> slate. Ban duoi khong co ma cung nao rot ve slate.
  */
 const SAC_KENH_BAN: Record<string, SacNguNghia> = {
@@ -282,6 +282,7 @@ const SAC_KENH_BAN: Record<string, SacNguNghia> = {
   shopee: "amber",
   facebook: "sky",
   fb: "sky",
+  preorder: "purple",
 };
 
 export function sacKenhBan(kenh: string | null | undefined): SacNguNghia {

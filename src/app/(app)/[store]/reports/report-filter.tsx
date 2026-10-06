@@ -101,6 +101,7 @@ function FilterBody({
                       { value: "pos", label: "Tại quầy" },
                       { value: "shopee", label: "Shopee" },
                       { value: "facebook", label: "Facebook" },
+                      { value: "preorder", label: "Đặt trước" },
                       { value: "other", label: "Khác" },
                     ]}
                   />

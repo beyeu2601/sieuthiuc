@@ -44,6 +44,7 @@ function refHref(store: string, r: Row) {
   if (r.ref_type === "stock_transfer") return `/${store}/transfers/${r.ref_id}`;
   if (r.ref_type === "sale") return `/${store}/sales/${r.ref_id}`;
   if (r.ref_type === "order") return `/${store}/orders/${r.ref_id}`;
+  if (r.ref_type === "preorder") return `/${store}/preorders/${r.ref_id}`;
   return null;
 }
 

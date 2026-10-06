@@ -14,6 +14,6 @@ export function resolveReport(ctx: SessionContext, store: StoreLite, sp: ReportS
   const canAll = ctx.stores.length > 1;
   const allStores = canAll && sp.all === "1";
   const storeIds = allStores ? ctx.stores.map((s) => s.id) : [store.id];
-  const channel = ["pos", "shopee", "facebook", "other"].includes(sp.channel ?? "") ? sp.channel : undefined;
+  const channel = ["pos", "shopee", "facebook", "preorder", "other"].includes(sp.channel ?? "") ? sp.channel : undefined;
   return { period, preset, canAll, allStores, storeIds, channel };
 }
