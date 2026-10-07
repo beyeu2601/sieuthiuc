@@ -71,9 +71,13 @@ export const NAV_GROUPS: NavGroup[] = [
 ];
 
 // Thanh tab duoi day tren dien thoai: 4 viec hay lam nhat theo vai tro, con lai nam trong "Thêm".
+// sadmin/admin (07/10/2026): 3 tab + nut "Tạo nhanh" o giua (QUICK_CREATE_ROLES), Báo cáo vao "Thêm".
 export const MOBILE_TABS: Record<AppRole, string[]> = {
   staff: ["/{store}", "/{store}/pos", "/{store}/lookup", "/{store}/orders"],
-  admin: ["/{store}", "/{store}/pos", "/{store}/inventory", "/{store}/reports"],
-  sadmin: ["/{store}", "/{store}/pos", "/{store}/inventory", "/{store}/reports"],
+  admin: ["/{store}", "/{store}/pos", "/{store}/inventory"],
+  sadmin: ["/{store}", "/{store}/pos", "/{store}/inventory"],
   accountant: ["/{store}", "/{store}/payables", "/{store}/cash", "/{store}/reports"],
 };
+
+// Vai tro co nut + "Tạo nhanh" giua thanh day dien thoai
+export const QUICK_CREATE_ROLES: AppRole[] = ["sadmin", "admin"];

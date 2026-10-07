@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
-import { ChevronsUpDownIcon, LayoutGridIcon, LogOutIcon, PanelLeftCloseIcon, PanelLeftOpenIcon, SearchIcon, StoreIcon, UserRoundIcon } from "lucide-react";
+import { ChevronsUpDownIcon, LayoutGridIcon, LogOutIcon, PanelLeftCloseIcon, PanelLeftOpenIcon, PlusIcon, SearchIcon, StoreIcon, UserRoundIcon } from "lucide-react";
 import { logout } from "@/app/login/actions";
 import { ROLE_LABEL, type AppRole, type StoreLite } from "@/lib/roles";
-import { MOBILE_TABS, NAV_GROUPS, type NavItem } from "@/lib/nav";
+import { MOBILE_TABS, NAV_GROUPS, QUICK_CREATE_ROLES, type NavItem } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { CommandPalette, openCommandPalette, type PaletteItem } from "@/components/command-palette";
+import { TaoNhanh } from "@/components/tao-nhanh";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ThemeMenuItems } from "@/components/theme";
 import {
@@ -35,6 +36,8 @@ export function AppShell({ fullName, role, stores, defaultStoreCode, children }:
   const pathname = usePathname();
   const router = useRouter();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
+  const quickCreate = QUICK_CREATE_ROLES.includes(role);
   // An thanh ben tren may tinh, nho lua chon qua localStorage
   const [sidebarHidden, setSidebarHidden] = useState(false);
   useEffect(() => {
@@ -264,13 +267,31 @@ export function AppShell({ fullName, role, stores, defaultStoreCode, children }:
           className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
         >
           <ul className="grid grid-cols-5">
-            {tabs.map((t) => (
-              <li key={t.key}>
-                <Link href={t.href} aria-current={t.active ? "page" : undefined} className={tabClass(t.active)}>
-                  <t.icon className="size-6" aria-hidden />
-                  <span className="truncate">{t.label}</span>
-                </Link>
-              </li>
+            {tabs.map((t, i) => (
+              <Fragment key={t.key}>
+                {quickCreate && i === 2 && (
+                  <li className="flex flex-col items-center">
+                    {/* Nut + noi len giua thanh (khuon app 26C), mo tam Tao nhanh */}
+                    <button
+                      type="button"
+                      onClick={() => setQuickOpen(true)}
+                      aria-label="Tạo nhanh"
+                      aria-haspopup="dialog"
+                      aria-expanded={quickOpen}
+                      className="-mt-5 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-4 ring-card transition motion-safe:active:scale-90"
+                    >
+                      <PlusIcon className={cn("size-7 transition-transform duration-300", quickOpen && "rotate-45")} aria-hidden />
+                    </button>
+                    <span className="mt-0.5 text-[11px] font-medium text-muted-foreground">Tạo nhanh</span>
+                  </li>
+                )}
+                <li>
+                  <Link href={t.href} aria-current={t.active ? "page" : undefined} className={tabClass(t.active)}>
+                    <t.icon className="size-6" aria-hidden />
+                    <span className="truncate">{t.label}</span>
+                  </Link>
+                </li>
+              </Fragment>
             ))}
             <li>
               <button type="button" onClick={() => setMoreOpen(true)} className={cn(tabClass(moreActive), "w-full")} aria-haspopup="dialog">
@@ -289,6 +310,8 @@ export function AppShell({ fullName, role, stores, defaultStoreCode, children }:
           {navList(() => setMoreOpen(false))}
         </DialogContent>
       </Dialog>
+
+      {quickCreate && current && <TaoNhanh open={quickOpen} onOpenChange={setQuickOpen} storeCode={current.code} />}
 
       <CommandPalette items={paletteItems} />
     </div>
