@@ -140,6 +140,7 @@ Thành phần giao diện dùng chung (đợt nâng UX/UI 09/2026, chi tiết th
 | Báo kết quả | `src/lib/feedback.ts` (`baoTheoKetQua`) | |
 | Thẻ chỉ số | `KpiCard` + `HangKpi` | Là Link sang màn chi tiết |
 | Ô chỉ số đầu trang (không phải link) | `ChiSo` + `HangChiSo` (`components/ui/chi-so.tsx`) | 2-4 ô, `sac` theo nghĩa, nhãn chữ nói nghĩa, `icon` minh họa, `goiY` cho nút (i). Xem CLAUDE.md mục 8 |
+| Khung thẻ không có tiêu đề | class `rounded-xl border bg-card` (thêm `p-4` khi cần) | Chuẩn chốt 08/10/2026. Không dùng `Card` của shadcn |
 | Khối nội dung có tiêu đề | `Khoi` (`components/khoi.tsx`) | Không câu mô tả; `aside` cho số đếm/nút nhỏ; `icon` (lucide) cạnh tiêu đề; `goiY` cho nút (i) |
 | Giải thích cách tính, logic ẩn | `GoiY` (`components/goi-y.tsx`) | Nút (i) bấm mở (dùng được trên điện thoại), thay cho câu mô tả dài; đặt cạnh `Label` |
 | Chọn một giá trị | `LuaChon` (`components/lua-chon.tsx`) | Từ 3 phương án trở xuống là nút bấm (radio), trên 3 là danh sách. Dùng cả form client (`value`/`onChange`) lẫn bộ lọc (`name`/`defaultValue`) |
