@@ -152,64 +152,6 @@ export function ChipTrangThaiDon({
 }
 
 /*
- * Nhom 2: trang thai ca. dangMo -> emerald, daChot (cho duyet) -> amber,
- * daDuyet -> brand, canKiemTra (lech vuot nguong) -> red.
- */
-export type MaTrangThaiCa = "dangMo" | "daChot" | "daDuyet" | "canKiemTra";
-
-const SAC_TRANG_THAI_CA: Record<MaTrangThaiCa, SacNguNghia> = {
-  dangMo: "emerald",
-  daChot: "amber",
-  daDuyet: "brand",
-  canKiemTra: "red",
-};
-
-export function ChipTrangThaiCa({
-  ma,
-  children,
-  className,
-}: {
-  ma: MaTrangThaiCa;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <ChipSac sac={SAC_TRANG_THAI_CA[ma]} className={className}>
-      {children}
-    </ChipSac>
-  );
-}
-
-/*
- * Nhom 3: phieu nhap / chuyen kho. nhap -> slate, choXacNhan (dang chuyen) ->
- * amber, daXacNhan (da nhan) -> emerald, huy -> red.
- */
-export type MaTrangThaiPhieu = "nhap" | "choXacNhan" | "daXacNhan" | "huy";
-
-const SAC_TRANG_THAI_PHIEU: Record<MaTrangThaiPhieu, SacNguNghia> = {
-  nhap: "slate",
-  choXacNhan: "amber",
-  daXacNhan: "emerald",
-  huy: "red",
-};
-
-export function ChipTrangThaiPhieu({
-  ma,
-  children,
-  className,
-}: {
-  ma: MaTrangThaiPhieu;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <ChipSac sac={SAC_TRANG_THAI_PHIEU[ma]} className={className}>
-      {children}
-    </ChipSac>
-  );
-}
-
-/*
  * Nhom 4: muc ton kho. du -> slate (trung tinh), thap (can nhap) -> amber,
  * het -> red.
  */
@@ -220,10 +162,6 @@ const SAC_TON_KHO: Record<MaTonKho, SacNguNghia> = {
   thap: "amber",
   het: "red",
 };
-
-export function sacTonKho(ma: MaTonKho): SacNguNghia {
-  return SAC_TON_KHO[ma];
-}
 
 export function ChipTonKho({
   ma,
@@ -251,10 +189,6 @@ const SAC_HAN: Record<MaHan, SacNguNghia> = {
   canDate: "amber",
   hetHan: "red",
 };
-
-export function sacHan(ma: MaHan): SacNguNghia {
-  return SAC_HAN[ma];
-}
 
 export function ChipHan({
   ma,

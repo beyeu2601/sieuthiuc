@@ -77,7 +77,26 @@ export default async function TransferPage({ params }: { params: Promise<{ store
 
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
         <Khoi title="Hàng chuyển" className="min-w-0" aside={<span className="text-xs text-muted-foreground tabular-nums">{(items ?? []).length} dòng</span>}>
-          <div className="overflow-x-auto">
+          <ul className="divide-y md:hidden" aria-label="Hàng chuyển">
+            {(items ?? []).map((i) => {
+              const lot = i.stock_lots as unknown as { lot_no: string; expiry_date: string | null } | null;
+              const p = pmap.get(i.product_id);
+              return (
+                <li key={i.id} className="py-2.5 first:pt-0 last:pb-0">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="min-w-0">{p?.name}</span>
+                    <span className="whitespace-nowrap font-medium tabular-nums">
+                      {formatNumber(i.qty)} {p?.unit}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Lô {lot?.lot_no} - HSD {lot?.expiry_date ? new Date(lot.expiry_date).toLocaleDateString("vi-VN") : "-"}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="hidden overflow-x-auto md:block">
             <Table>
               <TableHeader>
                 <TableRow>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { importProducts, type ImportRow } from "../actions";
 import { formatMoney } from "@/lib/format";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -123,7 +124,22 @@ export function ImportForm() {
               Sẵn sàng tạo <strong>{parsed.rows.length}</strong> sản phẩm. Xem trước 20 dòng đầu:
             </p>
           )}
-          <div className="overflow-x-auto rounded-xl border bg-card">
+          <MobileCardList label="Xem trước">
+            {parsed.rows.slice(0, 20).map((r) => (
+              <MobileCard
+                key={r.row}
+                title={r.name || "-"}
+                subtitle={`Dòng ${r.row}${r.barcode ? ` - ${r.barcode}` : ""}`}
+                stats={[
+                  { label: "ĐVT", value: r.unit || "-" },
+                  { label: "Loại", value: r.goods_type || "-" },
+                  { label: "Giá bán", value: formatMoney(r.sell_price) },
+                  { label: "Nhóm", value: r.category ?? "-" },
+                ]}
+              />
+            ))}
+          </MobileCardList>
+          <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
             <Table>
               <TableHeader>
                 <TableRow>

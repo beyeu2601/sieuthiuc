@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/page-header";
 import { ChipSac, sacKenhBan } from "@/components/ui/chip";
 import { ChiSo, HangChiSo } from "@/components/ui/chi-so";
 import { Khoi } from "@/components/khoi";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CHANNEL_LABEL, SALE_STATUS } from "../labels";
@@ -106,7 +107,26 @@ export default async function SalePage({ params }: { params: Promise<{ store: st
       </HangChiSo>
 
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
-        <div className="min-w-0 overflow-x-auto rounded-xl border bg-card">
+        <div className="min-w-0">
+          <MobileCardList label="Dòng hàng">
+            {(items ?? []).map((i) => {
+              const p = pmap.get(i.product_id);
+              return (
+                <MobileCard
+                  key={i.id}
+                  title={`${i.line_no}. ${p?.name ?? ""}`}
+                  subtitle={p?.sku}
+                  stats={[
+                    { label: "SL", value: `${formatNumber(i.qty)} ${p?.unit ?? ""}` },
+                    { label: "Đơn giá", value: formatMoney(i.unit_price) },
+                    { label: "Thành tiền", value: formatMoney(i.line_total), strong: true },
+                    ...(i.discount_amount ? [{ label: "Giảm", value: formatMoney(i.discount_amount) }] : []),
+                  ]}
+                />
+              );
+            })}
+          </MobileCardList>
+          <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -139,6 +159,7 @@ export default async function SalePage({ params }: { params: Promise<{ store: st
               })}
             </TableBody>
           </Table>
+          </div>
         </div>
 
         <Khoi title="Thanh toán" className="text-sm">

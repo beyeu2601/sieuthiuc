@@ -7,6 +7,7 @@ import { applyPriceSuggestions } from "../actions";
 import { formatMoney } from "@/lib/format";
 import { GOODS_TYPE_LABEL } from "@/lib/text";
 import { ChipSac, sacLoaiHang } from "@/components/ui/chip";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -47,7 +48,54 @@ export function SuggestionTable({ rows }: { rows: Suggestion[] }) {
 
   return (
     <div className="space-y-3">
-      <div className="overflow-x-auto rounded-xl border bg-card">
+      <label className="flex min-h-11 items-center gap-2 text-sm md:hidden">
+        <input
+          type="checkbox"
+          className="size-5"
+          checked={all}
+          onChange={() => setSelected(all ? new Set() : new Set(rows.map((r) => r.product_id)))}
+        />
+        Chọn tất cả ({rows.length})
+      </label>
+      <MobileCardList label="Gợi ý giá">
+        {rows.map((r) => {
+          const diff = r.suggested_price - r.current_price;
+          return (
+            <MobileCard
+              key={r.product_id}
+              title={
+                <label className="flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 size-5 shrink-0"
+                    checked={selected.has(r.product_id)}
+                    onChange={() => toggle(r.product_id)}
+                  />
+                  <span>{r.name}</span>
+                </label>
+              }
+              subtitle={r.sku}
+              badge={<ChipSac sac={sacLoaiHang(r.goods_type)}>{GOODS_TYPE_LABEL[r.goods_type]}</ChipSac>}
+              stats={[
+                { label: "Giá hiện tại", value: formatMoney(r.current_price) },
+                { label: "Giá gợi ý", value: formatMoney(r.suggested_price), strong: true },
+                {
+                  label: "Chênh lệch",
+                  value: (
+                    <span className={diff > 0 ? "text-success" : "text-destructive"}>
+                      {diff > 0 ? "+" : ""}
+                      {formatMoney(diff)}
+                    </span>
+                  ),
+                },
+                { label: "Giá vốn TC", value: formatMoney(r.cost_price_ref) },
+                { label: "% Benefit", value: `${r.benefit_pct}%` },
+              ]}
+            />
+          );
+        })}
+      </MobileCardList>
+      <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
         <Table>
           <TableHeader>
             <TableRow>

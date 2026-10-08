@@ -116,7 +116,15 @@ export default async function OrdersPage({ params, searchParams }: { params: Pro
                     </Link>
                   }
                   subtitle={`${formatDateTime(o.created_at)}${o.external_order_id ? ` - ${o.external_order_id}` : ""}`}
-                  badge={<ChipSac sac={st.sac}>{st.label}</ChipSac>}
+                  badge={
+                    <div className="text-right">
+                      <ChipSac sac={st.sac}>{st.label}</ChipSac>
+                      {o.channel === "shopee" && o.status === "delivered" && (
+                        <div className="mt-0.5 text-xs text-muted-foreground">{o.payout_id ? "Đã nhận tiền" : "Chờ Shopee trả"}</div>
+                      )}
+                      {o.return_status === "pending_check" && <div className="mt-0.5 text-xs text-muted-foreground">Chờ kiểm hàng</div>}
+                    </div>
+                  }
                   stats={[
                     { label: "Tổng", value: formatMoney(o.total), strong: true },
                     { label: "Kênh", value: ONLINE_CHANNELS[o.channel as keyof typeof ONLINE_CHANNELS] },

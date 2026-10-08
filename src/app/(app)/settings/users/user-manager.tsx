@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { createUser, resetUserPassword, updateUser, type UserInput } from "../actions";
 import { ROLE_LABEL, type AppRole, type StoreLite } from "@/lib/roles";
 import { LuaChon } from "@/components/lua-chon";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { ChipSac } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -49,7 +50,46 @@ export function UserManager({
       <div className="flex justify-end">
         <Button onClick={() => setMode({ kind: "create" })}>Thêm người dùng</Button>
       </div>
-      <div className="overflow-x-auto rounded-xl border bg-card">
+      <MobileCardList label="Người dùng">
+        {users.map((u) => (
+          <MobileCard
+            key={u.id}
+            title={u.full_name}
+            subtitle={[u.username, u.phone].filter(Boolean).join(" - ")}
+            badge={<ChipSac sac={u.is_active ? "emerald" : "slate"}>{u.is_active ? "Hoạt động" : "Đã khóa"}</ChipSac>}
+            stats={[
+              { label: "Vai trò", value: ROLE_LABEL[u.role] },
+              {
+                label: "Cửa hàng",
+                value: u.role === "sadmin" ? "Tất cả" : u.store_ids.map((s) => storeCode.get(s) ?? "?").join(", ") || "-",
+              },
+              {
+                label: "Quyền thêm",
+                value:
+                  [
+                    u.confirm_receipt && u.role === "staff" ? "Xác nhận phiếu nhập" : null,
+                    u.open_shift && u.role !== "sadmin" ? "Mở ca" : null,
+                  ]
+                    .filter(Boolean)
+                    .join(", ") || "-",
+              },
+            ]}
+            footer={
+              canManage(u) && (
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setMode({ kind: "edit", user: u })}>
+                    Sửa
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setMode({ kind: "password", user: u })}>
+                    Đặt mật khẩu
+                  </Button>
+                </div>
+              )
+            }
+          />
+        ))}
+      </MobileCardList>
+      <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
         <Table>
           <TableHeader>
             <TableRow>

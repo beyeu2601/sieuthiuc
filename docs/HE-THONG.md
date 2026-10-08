@@ -146,7 +146,7 @@ Thành phần giao diện dùng chung (đợt nâng UX/UI 09/2026, chi tiết th
 | Tiến độ x/y | `ThanhTienDo` | Luôn in kèm số x/y |
 | Biểu đồ | `DailyBars`, `charts/thanh-co-cau.tsx` (`ThanhCoCau`) | Không thêm thư viện biểu đồ |
 | Bộ lọc danh sách | `AutoSubmitForm` > `FilterBar` (`search`, `ignore`) | Không thêm nút Lọc/Xem |
-| Bảng trên điện thoại | `MobileCardList` + `MobileCard`, bảng bọc `hidden md:block` | Nút thao tác của dòng đặt ở `footer` |
+| Bảng trên điện thoại | `MobileCardList` + `MobileCard`, bảng bọc `hidden md:block` | Nút thao tác của dòng đặt ở `footer`. Bảng nằm trong khối hoặc tab có viền thì dùng danh sách dòng `ul.divide-y md:hidden` (dòng chính tên + số, dòng phụ `text-xs`) để không lồng thẻ trong thẻ |
 | Trạng thái chứng từ | `ChipSac` với `sac` khai trong `labels.ts` của miền | Không dùng `Badge` cho trạng thái |
 | Phân trang | `Pagination` qua `?page=` | Số dòng mỗi trang cố định ở server (`PAGE_SIZE`) |
 | Hộp thoại | `DialogContent` > `DialogHeader` / `DialogBody` / `DialogFooter` | Chỉ `DialogBody` cuộn; nằm trong `<form>` thì form `flex min-h-0 flex-col` |

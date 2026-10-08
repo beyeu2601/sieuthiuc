@@ -313,7 +313,31 @@ export default async function ProductDetailPage({
                 {lotRows.length === 0 ? (
                   <p className="py-4 text-muted-foreground">Chưa có lô nào còn hàng.</p>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <>
+                  <ul className="divide-y md:hidden" aria-label="Lô còn hàng">
+                    {lotRows.map((l) => (
+                      <li key={l.id} className="py-2.5 last:pb-0">
+                        <div className="flex items-baseline justify-between gap-3">
+                          <span className="min-w-0 font-mono text-xs">
+                            {multiStore && `${(l.stores as unknown as { code: string } | null)?.code} - `}
+                            {l.lot_no}
+                          </span>
+                          <span className="whitespace-nowrap font-medium tabular-nums">Tồn {formatNumber(l.qty_on_hand)}</span>
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                          {l.ma ? (
+                            <ChipHan ma={l.ma}>
+                              {formatDateVN(String(l.expiry_date))} - {l.days! < 0 ? `quá ${-l.days!} ngày` : `còn ${l.days} ngày`}
+                            </ChipHan>
+                          ) : (
+                            <span>Không có HSD</span>
+                          )}
+                          <span className="tabular-nums">Giá vốn {formatMoney(l.unit_cost)}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="hidden overflow-x-auto md:block">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -348,13 +372,46 @@ export default async function ProductDetailPage({
                       </TableBody>
                     </Table>
                   </div>
+                  </>
                 )}
               </TabsContent>
               <TabsContent value="history" className="pt-2">
                 {(history ?? []).length === 0 ? (
                   <p className="py-4 text-muted-foreground">Chưa có thay đổi giá.</p>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <>
+                  <ul className="divide-y md:hidden" aria-label="Lịch sử giá">
+                    {(history ?? []).map((h) => {
+                      const oldN = Number(h.old_value);
+                      const newN = Number(h.new_value);
+                      const delta =
+                        h.field === "sell_price" && h.old_value != null && h.new_value != null && oldN > 0 ? Math.round(((newN - oldN) / oldN) * 100) : null;
+                      return (
+                        <li key={h.id} className="py-2.5 last:pb-0">
+                          <div className="flex items-baseline justify-between gap-3">
+                            <span>{FIELD_LABEL[h.field] ?? h.field}</span>
+                            <span className="whitespace-nowrap tabular-nums">
+                              <span className="text-muted-foreground line-through">{showValue(h.field, h.old_value)}</span>
+                              {" -> "}
+                              <span className="font-medium">{showValue(h.field, h.new_value)}</span>
+                            </span>
+                          </div>
+                          <div className="mt-0.5 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                            <span>
+                              {formatDateTime(h.changed_at)} - {(h.profiles as unknown as { full_name: string } | null)?.full_name ?? "Hệ thống"}
+                            </span>
+                            {delta != null && delta !== 0 && (
+                              <ChipSac sac={delta > 0 ? "emerald" : "rose"}>
+                                {delta > 0 ? "+" : ""}
+                                {delta}%
+                              </ChipSac>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <div className="hidden overflow-x-auto md:block">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -392,6 +449,7 @@ export default async function ProductDetailPage({
                       </TableBody>
                     </Table>
                   </div>
+                  </>
                 )}
               </TabsContent>
             </Tabs>

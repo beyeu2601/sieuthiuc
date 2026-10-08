@@ -163,7 +163,29 @@ export default async function ShiftPage({ params }: { params: Promise<{ store: s
                 {saleRows.length === 0 ? (
                   <p className="py-4 text-muted-foreground">Chưa có giao dịch.</p>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <>
+                  <ul className="divide-y md:hidden" aria-label="Giao dịch">
+                    {saleRows.map((x) => (
+                      <li key={x.id} className="py-2.5 last:pb-0">
+                        <div className="flex items-baseline justify-between gap-3">
+                          <Link href={`/${store.code}/sales/${x.id}`} className="font-medium underline-offset-4 hover:underline">
+                            {x.code}
+                          </Link>
+                          <span className="whitespace-nowrap font-medium tabular-nums">{formatMoney(x.total)}</span>
+                        </div>
+                        <div className="mt-0.5 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                          <span>
+                            {formatDateTime(x.completed_at)} -{" "}
+                            {(x.sale_payments as { method: keyof typeof PAYMENT_METHOD_LABEL; amount: number }[])
+                              .map((p) => PAYMENT_METHOD_LABEL[p.method])
+                              .join(", ")}
+                          </span>
+                          {x.status === "cancelled" ? <ChipSac sac="red">Đã hủy</ChipSac> : <ChipSac sac="emerald">Hoàn tất</ChipSac>}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="hidden overflow-x-auto md:block">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -197,13 +219,29 @@ export default async function ShiftPage({ params }: { params: Promise<{ store: s
                       </TableBody>
                     </Table>
                   </div>
+                  </>
                 )}
               </TabsContent>
               <TabsContent value="moves" className="pt-2">
                 {moveRows.length === 0 ? (
                   <p className="py-4 text-muted-foreground">Chưa có khoản thu chi tiền mặt trong ca.</p>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <>
+                  <ul className="divide-y md:hidden" aria-label="Thu chi trong ca">
+                    {moveRows.map((m) => (
+                      <li key={m.id} className="py-2.5 last:pb-0">
+                        <div className="flex items-baseline justify-between gap-3">
+                          <span className="min-w-0">{m.reason}</span>
+                          <span className="flex shrink-0 items-center gap-2">
+                            <ChipSac sac={m.kind === "income" ? "emerald" : "rose"}>{m.kind === "income" ? "Thu" : "Chi"}</ChipSac>
+                            <span className="font-medium tabular-nums">{formatMoney(m.amount)}</span>
+                          </span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">{formatDateTime(m.created_at)}</div>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="hidden overflow-x-auto md:block">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -227,6 +265,7 @@ export default async function ShiftPage({ params }: { params: Promise<{ store: s
                       </TableBody>
                     </Table>
                   </div>
+                  </>
                 )}
               </TabsContent>
             </Tabs>

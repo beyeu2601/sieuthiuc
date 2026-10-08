@@ -182,6 +182,4 @@ Thanh dính đáy (tổng tiền, nút lưu) trên điện thoại đặt cách 
 ## 8. Việc còn lại
 
 - Logo trên hóa đơn đã dùng bản đen thuần nhưng chưa thử trên máy in nhiệt thật (cửa hàng chưa có máy in).
-- Các bảng còn cuộn ngang trên điện thoại, chuyển sang thẻ bằng `MobileCard` khi cần: chi tiết giao dịch bán, ca, đơn online, chuyển kho; đối soát; người dùng; chi tiết sản phẩm; gợi ý giá; import Excel. Danh sách bán hàng, ca, đơn online, đối soát Shopee, chuyển kho, thu chi, hạn sử dụng, cần nhập thêm, biến động kho, nhà cung cấp đã có thẻ (02/10/2026).
-- Thẻ đơn online trên điện thoại chưa hiện dòng phụ "Chờ Shopee trả" / "Chờ kiểm hàng" như bảng; mở chi tiết đơn để xem.
-- Helper chip chưa trang nào dùng: `ChipTrangThaiCa`, `ChipTrangThaiPhieu`, `sacTonKho`, `sacHan`, `sacTheoNhan`. Các màn trạng thái gọi thẳng `ChipSac` với sắc khai trong `labels.ts`, cùng bảng ánh xạ ở mục 2.
+- Bảng còn cuộn ngang trên điện thoại: sổ tài khoản tiền, chi tiết đợt đối soát Shopee, chi tiết đơn đặt trước. Các màn khác đã có thẻ hoặc danh sách dòng (08/10/2026: chi tiết giao dịch bán, ca, đơn online, chuyển kho; đối soát; người dùng; chi tiết sản phẩm; gợi ý giá; import Excel).

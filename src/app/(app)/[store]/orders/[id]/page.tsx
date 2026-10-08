@@ -161,7 +161,23 @@ export default async function OrderPage({ params }: { params: Promise<{ store: s
               </TabsTrigger>
             </TabsList>
             <TabsContent value="items" className="pt-2">
-              <div className="overflow-x-auto">
+              <ul className="divide-y md:hidden" aria-label="Sản phẩm">
+                {itemRows.map((i) => {
+                  const p = pmap.get(i.product_id);
+                  return (
+                    <li key={i.id} className="py-2.5 last:pb-0">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <span className="min-w-0">{p?.name}</span>
+                        <span className="whitespace-nowrap font-medium tabular-nums">{formatMoney(Math.round(Number(i.qty) * i.unit_price))}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground tabular-nums">
+                        {formatNumber(i.qty)} {p?.unit} x {formatMoney(i.unit_price)}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="hidden overflow-x-auto md:block">
                 <Table>
                   <TableHeader>
                     <TableRow>

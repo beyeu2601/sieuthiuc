@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ChiSo, HangChiSo } from "@/components/ui/chi-so";
 import type { SacNguNghia } from "@/components/ui/chip";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { MobileCard, MobileCardList } from "@/components/mobile-card";
 import { cn } from "@/lib/utils";
 import { BankCell } from "./bank-cell";
 
@@ -96,7 +97,34 @@ export default async function ReconcilePage({
               />
             </HangChiSo>
           )}
-          <div className="overflow-x-auto rounded-xl border bg-card">
+          {rows.length === 0 ? (
+            <p className="rounded-xl border bg-card py-8 text-center text-sm text-muted-foreground md:hidden">Không có phát sinh trong kỳ</p>
+          ) : (
+            <MobileCardList label="Đối soát theo ngày">
+              {rows.map((r) => (
+                <MobileCard
+                  key={r.day}
+                  title={formatDateVN(r.day)}
+                  subtitle={`${r.sales_count} giao dịch`}
+                  stats={[
+                    { label: "Doanh thu", value: formatMoney(r.revenue), strong: true },
+                    { label: "Tiền mặt (bán)", value: formatMoney(r.cash_sales) },
+                    { label: "Tiền mặt (theo ca)", value: r.shift_cash == null ? "Chưa chốt ca" : formatMoney(r.shift_cash) },
+                    { label: "Lệch tiền mặt", value: <Diff v={r.cash_diff} /> },
+                    { label: "Chuyển khoản", value: formatMoney(r.transfer_sales) },
+                    { label: "Lệch CK", value: <Diff v={r.transfer_diff} /> },
+                  ]}
+                  footer={
+                    <>
+                      <div className="text-xs text-muted-foreground">Sao kê ngân hàng / ghi chú</div>
+                      <BankCell storeCode={store.code} storeId={store.id} day={r.day} bank={r.bank_amount} note={r.note} />
+                    </>
+                  }
+                />
+              ))}
+            </MobileCardList>
+          )}
+          <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
             <Table>
               <TableHeader>
                 <TableRow>
