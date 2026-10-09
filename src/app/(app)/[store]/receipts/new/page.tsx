@@ -70,7 +70,7 @@ export default async function NewReceiptPage({
         canCreateProduct={["sadmin", "admin"].includes(ctx.profile.role)}
         canCreateSupplier={["sadmin", "admin", "accountant"].includes(ctx.profile.role)}
         canConfirm={ctx.profile.role !== "staff" || hasPerm(ctx, "confirm_receipt")}
-        initial={{ supplier_id: "", receipt_date: today(), invoice_no: "", due_date: "", note: "", lines, costs: [] }}
+        initial={{ supplier_id: "", receipt_date: today(), invoice_no: "", due_date: "", note: "", lines, costs: [], discount_amount: null, discount_note: "" }}
       />
     </div>
   );

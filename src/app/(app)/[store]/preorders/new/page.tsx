@@ -21,6 +21,7 @@ export default async function NewPreorderPage({ params }: { params: Promise<{ st
         accounts={(accounts ?? []) as MoneyAccount[]}
         today={todayVN()}
         showCost={ctx.profile.role !== "staff"}
+        canCreateProduct={ctx.profile.role === "sadmin" || ctx.profile.role === "admin"}
       />
     </div>
   );

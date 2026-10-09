@@ -36,6 +36,8 @@ export type DebtCardData = {
   remaining: number;
   items: DebtItem[];
   extra_cost: number;
+  discount: number;
+  note: string | null;
   paid_at_receipt: number;
 };
 
@@ -223,7 +225,7 @@ function DebtCard({
                 {d.receipt_code}
               </Link>
             ) : (
-              "Không gắn phiếu nhập"
+              d.note ?? "Không gắn phiếu nhập"
             )}{" "}
             - {d.code}
           </div>
@@ -233,7 +235,7 @@ function DebtCard({
       {/* Mat hang */}
       <div className="min-w-0 rounded-lg bg-muted/50 px-3 py-2 text-sm md:bg-transparent md:p-0">
         {d.items.length === 0 ? (
-          <p className="text-muted-foreground">Không có chi tiết mặt hàng.</p>
+          <p className="text-muted-foreground">{d.receipt_id ? "Không có chi tiết mặt hàng." : "Nợ ghi tay, không có chi tiết mặt hàng."}</p>
         ) : (
           <ul className="space-y-0.5">
             {d.items.slice(0, ITEMS_SHOWN).map((it, i) => (
@@ -251,12 +253,18 @@ function DebtCard({
             </ul>
           </details>
         )}
-        {(d.extra_cost > 0 || d.paid_at_receipt > 0) && (
+        {(d.extra_cost > 0 || d.discount > 0 || d.paid_at_receipt > 0) && (
           <div className="mt-1 space-y-0.5 border-t pt-1 text-xs text-muted-foreground">
             {d.extra_cost > 0 && (
               <div className="flex justify-between gap-2">
                 <span>Chi phí kèm theo</span>
                 <span className="tabular-nums">{formatMoney(d.extra_cost)}</span>
+              </div>
+            )}
+            {d.discount > 0 && (
+              <div className="flex justify-between gap-2">
+                <span>Chiết khấu / thưởng NCC</span>
+                <span className="tabular-nums">-{formatMoney(d.discount)}</span>
               </div>
             )}
             {d.paid_at_receipt > 0 && (

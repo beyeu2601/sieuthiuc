@@ -42,6 +42,9 @@ type Cart = {
   cashAcc: string | null;
   transferAcc: string | null;
   otherAcc: string | null;
+  debt: number | null;
+  debtName: string;
+  debtPhone: string;
   approvalId: string | null;
   approvedBy: string | null;
 };
@@ -58,6 +61,9 @@ const newCart = (): Cart => ({
   cashAcc: null,
   transferAcc: null,
   otherAcc: null,
+  debt: null,
+  debtName: "",
+  debtPhone: "",
   approvalId: null,
   approvedBy: null,
 });
@@ -110,7 +116,7 @@ export function PosClient({
   const subtotal = useMemo(() => cart.lines.reduce((s, l) => s + Math.round(l.qty * l.price) - l.discount, 0), [cart.lines]);
   const lineDiscount = useMemo(() => cart.lines.reduce((s, l) => s + l.discount, 0), [cart.lines]);
   const total = Math.max(0, subtotal - cart.orderDiscount);
-  const paid = (cart.cash ?? 0) + (cart.transfer ?? 0) + (cart.other ?? 0);
+  const paid = (cart.cash ?? 0) + (cart.transfer ?? 0) + (cart.other ?? 0) + (cart.debt ?? 0);
   const change = cart.given != null && cart.cash != null ? cart.given - cart.cash : null;
   const manualDiscount = lineDiscount + cart.orderDiscount;
   const needApproval = maxDiscountPct != null && manualDiscount > (subtotal * maxDiscountPct) / 100 && !cart.approvalId;
@@ -168,13 +174,15 @@ export function PosClient({
     if (cart.lines.some((l) => !(l.qty > 0))) return void toast.error("Có dòng số lượng bằng 0");
     if (needApproval) return setApprovalOpen(true);
     // bat buoc chon phuong thuc: khong con mac dinh tien mat toan bo
-    if (paid === 0) return void toast.error("Chọn phương thức thanh toán (tiền mặt, chuyển khoản hoặc khác)");
+    if (paid === 0) return void toast.error("Chọn phương thức thanh toán (tiền mặt, chuyển khoản, khác hoặc ghi nợ)");
+    const debt = cart.debt ?? 0;
+    if (debt > 0 && !cart.debtName.trim()) return void toast.error("Nhập tên khách ghi nợ");
     const methods = [
       { method: "cash" as const, amount: cart.cash, account_id: cart.cashAcc },
       { method: "transfer" as const, amount: cart.transfer, account_id: cart.transferAcc },
       { method: "other" as const, amount: cart.other, account_id: cart.otherAcc },
     ].filter((m) => (m.amount ?? 0) > 0);
-    const sum = methods.reduce((s, m) => s + (m.amount ?? 0), 0);
+    const sum = methods.reduce((s, m) => s + (m.amount ?? 0), 0) + debt;
     if (sum !== total) return void toast.error(`Tiền thanh toán ${formatMoney(sum)} chưa bằng tổng ${formatMoney(total)}`);
     if (accounts.length > 0 && methods.some((m) => !m.account_id))
       return void toast.error("Chọn tài khoản giữ tiền cho từng phương thức");
@@ -191,6 +199,7 @@ export function PosClient({
         discount_note: manualDiscount > 0 ? cart.discountNote.trim() || null : null,
         items: cart.lines.map((l) => ({ product_id: l.product_id, qty: l.qty, discount_amount: l.discount })),
         payments: methods.map((m) => ({ method: m.method, amount: m.amount!, reference: null, account_id: m.account_id })),
+        debt: debt > 0 ? { amount: debt, customer_name: cart.debtName.trim(), customer_phone: cart.debtPhone.trim() || null } : null,
       });
       if (!res.ok) {
         printWin?.close();
@@ -369,7 +378,7 @@ export function PosClient({
               type="button"
               variant="outline"
               className="flex-1"
-              onClick={() => set({ cash: total, transfer: null, other: null, cashAcc: cart.cashAcc ?? pickAcc("cash") })}
+              onClick={() => set({ cash: total, transfer: null, other: null, debt: null, cashAcc: cart.cashAcc ?? pickAcc("cash") })}
             >
               Tất cả tiền mặt
             </Button>
@@ -377,7 +386,7 @@ export function PosClient({
               type="button"
               variant="outline"
               className="flex-1"
-              onClick={() => set({ cash: null, transfer: total, other: null, given: null, transferAcc: cart.transferAcc ?? pickAcc("transfer") })}
+              onClick={() => set({ cash: null, transfer: total, other: null, debt: null, given: null, transferAcc: cart.transferAcc ?? pickAcc("transfer") })}
             >
               Tất cả chuyển khoản
             </Button>
@@ -414,6 +423,22 @@ export function PosClient({
               Khách đưa (tiền mặt)
               <MoneyInput value={cart.given} onChange={(n) => set({ given: n })} />
             </label>
+            <label className="space-y-1 text-sm" title="Khách chưa trả, ghi nợ để thu sau ở màn Công nợ hoặc chi tiết hóa đơn">
+              Ghi nợ (trả sau)
+              <MoneyInput value={cart.debt} onChange={(n) => set({ debt: n })} />
+            </label>
+            {(cart.debt ?? 0) > 0 && (
+              <>
+                <label className="space-y-1 text-sm">
+                  Tên khách nợ *
+                  <Input value={cart.debtName} onChange={(e) => set({ debtName: e.target.value })} autoComplete="off" />
+                </label>
+                <label className="col-span-2 space-y-1 text-sm">
+                  Điện thoại khách
+                  <Input type="tel" inputMode="tel" value={cart.debtPhone} onChange={(e) => set({ debtPhone: e.target.value })} />
+                </label>
+              </>
+            )}
           </div>
           <dl className="grid grid-cols-2 gap-y-1 text-sm">
             <dt>Đã nhập thanh toán</dt>

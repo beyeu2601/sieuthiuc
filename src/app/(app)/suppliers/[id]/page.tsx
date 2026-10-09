@@ -9,6 +9,7 @@ import { ChipSac } from "@/components/ui/chip";
 import { ChiSo, HangChiSo } from "@/components/ui/chi-so";
 import { Khoi } from "@/components/khoi";
 import { SupplierForm } from "../supplier-form";
+import { DeleteOpeningDebt, OpeningDebtButton } from "./opening-debt";
 
 export default async function SupplierDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -25,7 +26,7 @@ export default async function SupplierDetailPage({ params }: { params: Promise<{
     // Chi doc de hien so: khoan no con lai cua NCC o cac cua hang nguoi dung xem duoc
     supabase
       .from("supplier_debts")
-      .select("id, code, due_date, remaining, store_id")
+      .select("id, code, due_date, remaining, paid_amount, store_id, receipt_id, note")
       .eq("supplier_id", id)
       .in(
         "store_id",
@@ -79,7 +80,16 @@ export default async function SupplierDetailPage({ params }: { params: Promise<{
           <SupplierForm id={supplierId} readOnly={false} initial={initial} />
         </Khoi>
 
-        <Khoi title="Khoản nợ đang mở" className="min-w-0" aside={<span className="text-xs text-muted-foreground tabular-nums">{openDebts.length}</span>}>
+        <Khoi
+          title="Khoản nợ đang mở"
+          className="min-w-0"
+          aside={
+            <span className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground tabular-nums">{openDebts.length}</span>
+              {ctx.stores.length > 0 && <OpeningDebtButton supplierId={supplierId} termsDays={s.payment_terms_days} stores={ctx.stores} today={today} />}
+            </span>
+          }
+        >
           {openDebts.length === 0 ? (
             <p className="text-sm text-muted-foreground">Không còn khoản nợ nào.</p>
           ) : (
@@ -102,9 +112,13 @@ export default async function SupplierDetailPage({ params }: { params: Promise<{
                         <span className="text-xs text-muted-foreground">{d.due_date ? `Hạn ${formatDateVN(String(d.due_date))}` : "Chưa có hạn"}</span>
                       )}
                       {multiStore && <ChipSac sac="slate">{storeCode(d.store_id)}</ChipSac>}
+                      {!d.receipt_id && <span className="text-xs text-muted-foreground">{d.note ?? "Nợ ghi tay"}</span>}
                     </div>
                   </div>
-                  <span className="shrink-0 font-medium tabular-nums">{formatMoney(d.remaining)}</span>
+                  <span className="flex shrink-0 items-center gap-1">
+                    <span className="font-medium tabular-nums">{formatMoney(d.remaining)}</span>
+                    {!d.receipt_id && Number(d.paid_amount) === 0 && <DeleteOpeningDebt supplierId={supplierId} debtId={d.id} code={d.code} />}
+                  </span>
                 </li>
               ))}
             </ul>

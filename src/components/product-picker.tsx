@@ -19,11 +19,14 @@ export function ProductPicker({
   camera,
   id,
   onNotFound,
+  onCreateNew,
 }: {
   storeId: string;
   onPick: (item: CatalogItem) => void;
   // Enter/quet ma khong ra ket qua nao. Tra ve true neu da xu ly (an thong bao "Khong tim thay").
   onNotFound?: (term: string) => boolean;
+  // Co thi thong bao "Khong tim thay" kem nut tao san pham moi voi ten vua go
+  onCreateNew?: (term: string) => void;
   placeholder?: string;
   autoFocus?: boolean;
   showStock?: boolean;
@@ -157,7 +160,23 @@ export function ProductPicker({
       {error && <p className="mt-1 text-sm text-destructive">{error}</p>}
       {items && (
         <div className="absolute z-30 mt-1 max-h-80 w-full overflow-y-auto rounded-lg border bg-popover shadow-lg">
-          {items.length === 0 ? (
+          {items.length === 0 && onCreateNew ? (
+            <div className="space-y-2 px-3 py-3 text-sm">
+              <p className="text-muted-foreground">Không tìm thấy sản phẩm &quot;{q}&quot;.</p>
+              <button
+                type="button"
+                className="min-h-11 font-medium text-primary underline underline-offset-2"
+                onClick={() => {
+                  const t = q.trim();
+                  setQ("");
+                  setItems(null);
+                  onCreateNew(t);
+                }}
+              >
+                + Thêm sản phẩm mới &quot;{q.trim()}&quot;
+              </button>
+            </div>
+          ) : items.length === 0 ? (
             <p className="px-3 py-3 text-sm text-muted-foreground">
               Không tìm thấy sản phẩm &quot;{q}&quot;. Nếu là hàng mới, nhờ quản lý tạo sản phẩm và gán mã vạch.
             </p>

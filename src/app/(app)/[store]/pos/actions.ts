@@ -14,6 +14,7 @@ export type SalePayload = {
   discount_note: string | null;
   items: { product_id: string; qty: number; discount_amount: number }[];
   payments: { method: "cash" | "transfer" | "other"; amount: number; reference: string | null; account_id: string | null }[];
+  debt: { amount: number; customer_name: string; customer_phone: string | null } | null;
 };
 
 export async function completeSale(storeCode: string, p: SalePayload): Promise<ActionResult<{ id: string; code: string; total: number }>> {

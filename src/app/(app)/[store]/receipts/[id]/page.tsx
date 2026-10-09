@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReceiptEditor, type EditorLine } from "../receipt-editor";
 import { ReopenButton } from "../reopen-button";
+import { DiscountButton } from "../discount-button";
 import { ALLOCATION_LABEL, COST_TYPE_LABEL, RECEIPT_STATUS, PAYMENT_METHOD_LABEL } from "../labels";
 
 type Item = {
@@ -48,7 +49,7 @@ export default async function ReceiptPage({
   const { data: r } = await supabase
     .from("purchase_receipts")
     .select(
-      "id, code, store_id, supplier_id, receipt_date, invoice_no, status, subtotal, extra_cost_total, total, paid_amount, payment_method, due_date, note, confirmed_at, cancel_reason, created_at, suppliers(name, code), confirmer:confirmed_by(full_name), creator:created_by(full_name)"
+      "id, code, store_id, supplier_id, receipt_date, invoice_no, status, subtotal, extra_cost_total, discount_amount, discount_note, total, paid_amount, payment_method, due_date, note, confirmed_at, cancel_reason, created_at, suppliers(name, code), confirmer:confirmed_by(full_name), creator:created_by(full_name)"
     )
     .eq("id", id)
     .eq("store_id", store.id)
@@ -122,6 +123,8 @@ export default async function ReceiptPage({
               allocation: c.allocation as "by_value" | "by_qty",
               note: c.note ?? "",
             })),
+            discount_amount: r.discount_amount || null,
+            discount_note: r.discount_note ?? "",
           }}
         />
       </div>
@@ -157,7 +160,14 @@ export default async function ReceiptPage({
             )}
           </span>
         }
-        actions={canReopen ? <ReopenButton storeCode={store.code} receiptId={r.id} /> : undefined}
+        actions={
+          canReopen ? (
+            <div className="flex flex-wrap gap-2">
+              <DiscountButton storeCode={store.code} receiptId={r.id} total={r.total} remaining={remaining} />
+              <ReopenButton storeCode={store.code} receiptId={r.id} />
+            </div>
+          ) : undefined
+        }
       />
       {r.status === "cancelled" && (
         <p className="rounded-lg border border-vien-red bg-nen-red px-3 py-2 text-sm text-chu-red">Đã hủy. Lý do: {r.cancel_reason}</p>
@@ -168,7 +178,7 @@ export default async function ReceiptPage({
           nhan="Tổng phiếu"
           sac="brand"
           giaTri={formatMoney(r.total)}
-          phu={`Hàng ${formatMoney(r.subtotal)} + chi phí ${formatMoney(r.extra_cost_total)}`}
+          phu={`Hàng ${formatMoney(r.subtotal)} + chi phí ${formatMoney(r.extra_cost_total)}${r.discount_amount > 0 ? ` - CK ${formatMoney(r.discount_amount)}` : ""}`}
         />
         <ChiSo
           nhan={!confirmed ? "Công nợ" : remaining <= 0 ? "Đã trả đủ" : overdue ? "Còn nợ: quá hạn" : "Còn nợ"}
@@ -284,6 +294,13 @@ export default async function ReceiptPage({
               <dd className="text-right tabular-nums">{formatMoney(r.subtotal)}</dd>
               <dt>Chi phí kèm theo</dt>
               <dd className="text-right tabular-nums">{formatMoney(r.extra_cost_total)}</dd>
+              {r.discount_amount > 0 && (
+                <>
+                  <dt title={r.discount_note ?? undefined}>Chiết khấu / thưởng</dt>
+                  <dd className="text-right tabular-nums">-{formatMoney(r.discount_amount)}</dd>
+                  {r.discount_note && <dd className="col-span-2 text-xs text-muted-foreground">{r.discount_note}</dd>}
+                </>
+              )}
               <dt className="font-medium">Tổng phiếu</dt>
               <dd className="text-right font-medium tabular-nums">{formatMoney(r.total)}</dd>
               {confirmed && (

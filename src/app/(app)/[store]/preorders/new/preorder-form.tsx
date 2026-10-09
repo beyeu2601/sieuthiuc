@@ -3,12 +3,13 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { TrashIcon } from "lucide-react";
+import { PlusIcon, TrashIcon } from "lucide-react";
 import { createPreorder, defaultCosts } from "../actions";
 import { accountLabel, type MoneyAccount } from "../labels";
 import type { CatalogItem } from "../../catalog-actions";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { ProductPicker } from "@/components/product-picker";
+import { QuickProductDialog } from "@/components/quick-product-dialog";
 import { MoneyInput } from "@/components/money-input";
 import { LuaChon } from "@/components/lua-chon";
 import { Khoi } from "@/components/khoi";
@@ -25,6 +26,7 @@ export function PreorderForm({
   accounts,
   today,
   showCost,
+  canCreateProduct,
 }: {
   storeId: string;
   storeCode: string;
@@ -32,6 +34,7 @@ export function PreorderForm({
   today: string;
   // nhan vien khong thay gia von; he thong tu lay gia von mac dinh
   showCost: boolean;
+  canCreateProduct: boolean;
 }) {
   const router = useRouter();
   const [h, setH] = useState({
@@ -47,6 +50,8 @@ export function PreorderForm({
     note: "",
   });
   const [lines, setLines] = useState<Line[]>([]);
+  // null = dong; chuoi = ten dien san (rong khi bam nut Them san pham)
+  const [newName, setNewName] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const subtotal = lines.reduce((s, l) => s + Math.round(l.qty * (l.unit_price ?? 0)), 0);
   const costTotal = lines.reduce((s, l) => s + Math.round(l.qty * (l.unit_cost ?? 0)), 0);
@@ -124,7 +129,14 @@ export function PreorderForm({
       </Khoi>
 
       <Khoi title="Sản phẩm" className="space-y-3" aside={<span className="text-xs text-muted-foreground tabular-nums">{lines.length}</span>}>
-        <ProductPicker storeId={storeId} onPick={add} />
+        <ProductPicker storeId={storeId} onPick={add} onCreateNew={canCreateProduct ? (t) => setNewName(t) : undefined} />
+        {canCreateProduct && (
+          <div>
+            <Button type="button" variant="outline" size="sm" onClick={() => setNewName("")}>
+              <PlusIcon /> Thêm sản phẩm
+            </Button>
+          </div>
+        )}
         {lines.length === 0 && <p className="text-sm text-muted-foreground">Tìm sản phẩm khách đặt. Hàng chưa có trong kho vẫn chọn được.</p>}
         {lines.map((l) => (
           <div
@@ -248,6 +260,21 @@ export function PreorderForm({
           {pending ? "Đang tạo..." : deposit > 0 ? "Tạo đơn và ghi cọc" : "Tạo đơn"}
         </Button>
       </div>
+
+      {canCreateProduct && (
+        <QuickProductDialog
+          open={newName != null}
+          onOpenChange={(o) => !o && setNewName(null)}
+          initialName={newName ?? ""}
+          submitLabel="Tạo và thêm vào đơn"
+          onCreated={(p) =>
+            setLines((ls) => [
+              ...ls,
+              { product_id: p.product_id, name: p.name, unit: p.unit, onHand: 0, qty: 1, unit_price: p.sell_price, unit_cost: showCost ? 0 : null },
+            ])
+          }
+        />
+      )}
     </div>
   );
 }

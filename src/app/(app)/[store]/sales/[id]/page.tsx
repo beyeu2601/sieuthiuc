@@ -13,6 +13,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CHANNEL_LABEL, SALE_STATUS } from "../labels";
 import { PAYMENT_METHOD_LABEL } from "../../receipts/labels";
 import { CancelSaleButton } from "./cancel-button";
+import { EditSale, type SaleEditValues } from "./edit-sale";
+import { CollectDebtButton, type MoneyAccount } from "../collect-debt";
+import { todayVN } from "@/lib/dates";
 
 export default async function SalePage({ params }: { params: Promise<{ store: string; id: string }> }) {
   const { store: code, id } = await params;
@@ -27,10 +30,18 @@ export default async function SalePage({ params }: { params: Promise<{ store: st
     .eq("store_id", store.id)
     .maybeSingle();
   if (!s) notFound();
-  const [{ data: items }, { data: payments }] = await Promise.all([
+  const [{ data: items }, { data: payments }, { data: debt }, { data: accountRows }] = await Promise.all([
     supabase.from("sale_items").select("id, line_no, product_id, qty, unit_price, discount_amount, line_total").eq("sale_id", id).order("line_no"),
-    supabase.from("sale_payments").select("id, method, amount, reference").eq("sale_id", id),
+    supabase.from("sale_payments").select("id, method, amount, reference, account_id").eq("sale_id", id),
+    supabase
+      .from("customer_debts")
+      .select("id, code, customer_name, customer_phone, amount, paid_amount, remaining, customer_debt_payments(id, amount, paid_on, money_accounts(name))")
+      .eq("sale_id", id)
+      .maybeSingle(),
+    supabase.from("money_accounts").select("id, name, kind").eq("is_active", true).order("sort_order").order("name"),
   ]);
+  const accounts = (accountRows ?? []) as MoneyAccount[];
+  const debtPayments = (debt?.customer_debt_payments ?? []) as unknown as { id: string; amount: number; paid_on: string; money_accounts: { name: string } | null }[];
   const ids = [...new Set((items ?? []).map((i) => i.product_id))];
   const { data: prods } = ids.length ? await supabase.rpc("catalog_by_ids", { p_ids: ids }) : { data: [] };
   const pmap = new Map(((prods ?? []) as { product_id: string; name: string; sku: string; unit: string }[]).map((p) => [p.product_id, p]));
@@ -43,6 +54,27 @@ export default async function SalePage({ params }: { params: Promise<{ store: st
     (isManager || (ctx.profile.role === "staff" && s.created_by === ctx.profile.id && shift?.status === "open"));
   const approverName = (s.approver as unknown as { full_name: string } | null)?.full_name;
   const lineCount = (items ?? []).length;
+  // Khop update_sale: ban tai quay, ca con mo; nhan vien chi sua giao dich cua minh
+  const canEdit =
+    s.status === "completed" &&
+    s.channel === "pos" &&
+    shift?.status === "open" &&
+    (isManager || (ctx.profile.role === "staff" && s.created_by === ctx.profile.id));
+  const isDebtPay = (p: { reference: string | null }) => p.reference === "Ghi nợ";
+  const lineDiscount = (items ?? []).reduce((t, i) => t + (i.discount_amount ?? 0), 0);
+  const payOf = (m: "cash" | "transfer" | "other") => {
+    const ps = (payments ?? []).filter((p) => p.method === m && !isDebtPay(p));
+    return { amount: ps.length ? ps.reduce((t, p) => t + p.amount, 0) : null, account: ps[0]?.account_id ?? "" };
+  };
+  const editValues: SaleEditValues = {
+    orderDiscount: s.discount_amount - lineDiscount,
+    discountNote: s.discount_note ?? "",
+    note: s.note ?? "",
+    pay: { cash: payOf("cash"), transfer: payOf("transfer"), other: payOf("other") },
+    debt: debt?.amount ?? null,
+    debtName: debt?.customer_name ?? "",
+    debtPhone: debt?.customer_phone ?? "",
+  };
 
   return (
     <div className="space-y-4">
@@ -68,6 +100,13 @@ export default async function SalePage({ params }: { params: Promise<{ store: st
             <Button variant="outline" render={<Link href={`/print/receipt/${s.id}`} target="_blank" />}>
               In lại hóa đơn
             </Button>
+            {canEdit && (
+              <EditSale
+                storeCode={store.code}
+                sale={{ id: s.id, code: s.code, subtotal: s.subtotal, lineDiscount, debtPaid: debt?.paid_amount ?? 0, values: editValues }}
+                accounts={accounts}
+              />
+            )}
             {canCancel && <CancelSaleButton storeCode={store.code} saleId={s.id} />}
           </>
         }
@@ -162,22 +201,60 @@ export default async function SalePage({ params }: { params: Promise<{ store: st
           </div>
         </div>
 
-        <Khoi title="Thanh toán" className="text-sm">
-          <dl className="grid grid-cols-2 gap-y-1">
-            <dt>Tiền hàng</dt>
-            <dd className="text-right tabular-nums">{formatMoney(s.subtotal)}</dd>
-            <dt>Giảm giá</dt>
-            <dd className="text-right tabular-nums">-{formatMoney(s.discount_amount)}</dd>
-            <dt className="text-base font-semibold">Tổng</dt>
-            <dd className="text-right text-base font-semibold tabular-nums">{formatMoney(s.total)}</dd>
-            {(payments ?? []).map((p) => (
-              <div key={p.id} className="contents">
-                <dt className="text-muted-foreground">{PAYMENT_METHOD_LABEL[p.method as keyof typeof PAYMENT_METHOD_LABEL]}</dt>
-                <dd className="text-right tabular-nums text-muted-foreground">{formatMoney(p.amount)}</dd>
-              </div>
-            ))}
-          </dl>
-        </Khoi>
+        <div className="min-w-0 space-y-4">
+          <Khoi title="Thanh toán" className="text-sm">
+            <dl className="grid grid-cols-2 gap-y-1">
+              <dt>Tiền hàng</dt>
+              <dd className="text-right tabular-nums">{formatMoney(s.subtotal)}</dd>
+              <dt>Giảm giá</dt>
+              <dd className="text-right tabular-nums">-{formatMoney(s.discount_amount)}</dd>
+              <dt className="text-base font-semibold">Tổng</dt>
+              <dd className="text-right text-base font-semibold tabular-nums">{formatMoney(s.total)}</dd>
+              {(payments ?? []).map((p) => (
+                <div key={p.id} className="contents">
+                  <dt className="text-muted-foreground">
+                    {isDebtPay(p) ? "Ghi nợ" : PAYMENT_METHOD_LABEL[p.method as keyof typeof PAYMENT_METHOD_LABEL]}
+                  </dt>
+                  <dd className="text-right tabular-nums text-muted-foreground">{formatMoney(p.amount)}</dd>
+                </div>
+              ))}
+            </dl>
+            {s.note && <p className="mt-2 border-t pt-2 text-muted-foreground whitespace-pre-line">{s.note}</p>}
+          </Khoi>
+
+        {debt && (
+          <Khoi
+            title={`Khách nợ: ${debt.customer_name}`}
+            className="text-sm"
+            aside={
+              debt.remaining > 0 && s.status === "completed" ? (
+                <CollectDebtButton storeCode={store.code} debt={debt} accounts={accounts} today={todayVN()} size="sm" />
+              ) : (
+                <ChipSac sac={debt.remaining > 0 ? "amber" : "emerald"}>{debt.remaining > 0 ? "Còn nợ" : "Đã trả đủ"}</ChipSac>
+              )
+            }
+          >
+            <dl className="grid grid-cols-2 gap-y-1 tabular-nums">
+              <dt className="text-muted-foreground">
+                {debt.code}
+                {debt.customer_phone ? ` - ${debt.customer_phone}` : ""}
+              </dt>
+              <dd className="text-right">Ghi nợ {formatMoney(debt.amount)}</dd>
+              {debtPayments.map((p) => (
+                <div key={p.id} className="contents text-muted-foreground">
+                  <dt>
+                    Thu {new Date(`${p.paid_on}T00:00:00`).toLocaleDateString("vi-VN")}
+                    {p.money_accounts ? ` - ${p.money_accounts.name}` : ""}
+                  </dt>
+                  <dd className="text-right">-{formatMoney(p.amount)}</dd>
+                </div>
+              ))}
+              <dt className="font-medium">Còn nợ</dt>
+              <dd className={`text-right font-semibold ${debt.remaining > 0 ? "text-chu-amber" : ""}`}>{formatMoney(debt.remaining)}</dd>
+            </dl>
+          </Khoi>
+        )}
+        </div>
       </div>
     </div>
   );

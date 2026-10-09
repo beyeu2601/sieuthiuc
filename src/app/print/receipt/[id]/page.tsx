@@ -28,7 +28,7 @@ export default async function ReceiptPrintPage({
   if (!s) notFound();
   const [{ data: items }, { data: payments }] = await Promise.all([
     supabase.from("sale_items").select("id, product_id, qty, unit_price, discount_amount, line_total").eq("sale_id", id).order("line_no"),
-    supabase.from("sale_payments").select("method, amount").eq("sale_id", id),
+    supabase.from("sale_payments").select("method, amount, reference").eq("sale_id", id),
   ]);
   const ids = [...new Set((items ?? []).map((i) => i.product_id))];
   const { data: prods } = ids.length ? await supabase.rpc("catalog_by_ids", { p_ids: ids }) : { data: [] };
@@ -86,7 +86,7 @@ export default async function ReceiptPrintPage({
       </div>
       {(payments ?? []).map((p, i) => (
         <div key={i} className="flex justify-between">
-          <span>{METHOD[p.method as keyof typeof METHOD]}</span>
+          <span>{p.reference === "Ghi nợ" ? "Ghi nợ" : METHOD[p.method as keyof typeof METHOD]}</span>
           <span>{formatMoney(p.amount)}</span>
         </div>
       ))}

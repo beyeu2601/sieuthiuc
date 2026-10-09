@@ -4,11 +4,12 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PlusIcon, TrashIcon } from "lucide-react";
-import { cancelReceipt, confirmReceipt, quickCreateProduct, quickCreateSupplier, saveReceipt, type ReceiptPayload } from "./actions";
+import { cancelReceipt, confirmReceipt, quickCreateSupplier, saveReceipt, type ReceiptPayload } from "./actions";
 import type { CatalogItem } from "../catalog-actions";
 import { formatMoney } from "@/lib/format";
 import { GOODS_TYPE_LABEL } from "@/lib/text";
 import { ProductPicker } from "@/components/product-picker";
+import { QuickProductDialog } from "@/components/quick-product-dialog";
 import { MoneyInput } from "@/components/money-input";
 import { LuaChon } from "@/components/lua-chon";
 import { Button } from "@/components/ui/button";
@@ -66,6 +67,8 @@ export function ReceiptEditor({
     note: string;
     lines: EditorLine[];
     costs: EditorCost[];
+    discount_amount: number | null;
+    discount_note: string;
   };
   canConfirm: boolean;
   autoOpenConfirm?: boolean;
@@ -82,6 +85,8 @@ export function ReceiptEditor({
   });
   const [lines, setLines] = useState<EditorLine[]>(initial.lines);
   const [costs, setCosts] = useState<EditorCost[]>(initial.costs);
+  const [discount, setDiscount] = useState<number | null>(initial.discount_amount);
+  const [discountNote, setDiscountNote] = useState(initial.discount_note);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(autoOpenConfirm && canConfirm);
@@ -164,6 +169,8 @@ export function ReceiptEditor({
       costs: costs
         .filter((c) => (c.amount ?? 0) > 0)
         .map((c) => ({ cost_type: c.cost_type, amount: c.amount!, allocation: c.allocation, note: c.note || null })),
+      discount_amount: discount ?? 0,
+      discount_note: (discount ?? 0) > 0 ? discountNote.trim() || null : null,
     };
   }
 
@@ -175,6 +182,7 @@ export function ReceiptEditor({
       if (l.unit_cost == null) return `${l.name}: nhập đơn giá nhập`;
       if (forConfirm && l.expiry_level === "lot" && !l.expiry_date) return `${l.name}: nhập hạn sử dụng`;
     }
+    if ((discount ?? 0) > subtotal) return "Chiết khấu lớn hơn tiền hàng";
     return null;
   }
 
@@ -205,7 +213,7 @@ export function ReceiptEditor({
     }
     return null;
   })();
-  const total = subtotal + extra;
+  const total = subtotal + extra - (discount ?? 0);
   const termsDays = supplier?.payment_terms_days ?? 0;
   const missingExpiry = lines.filter((l) => l.expiry_level === "lot" && !l.expiry_date);
 
@@ -296,6 +304,15 @@ export function ReceiptEditor({
                 </li>
               ))}
           </ul>
+        </div>
+      )}
+      {(discount ?? 0) > 0 && (
+        <div className="flex justify-between gap-3">
+          <span>
+            Chiết khấu / thưởng NCC
+            {discountNote.trim() ? ` - ${discountNote.trim()}` : ""}
+          </span>
+          <span className="tabular-nums">-{formatMoney(discount)}</span>
         </div>
       )}
       {canConfirm && missingExpiry.length > 0 && (
@@ -444,6 +461,17 @@ export function ReceiptEditor({
           </Button>
         </div>
       ))}
+      <div className="grid grid-cols-2 gap-2 border-t pt-3 @2xl:grid-cols-[150px_160px_1fr] @2xl:items-end">
+        <Label
+          htmlFor="rdisc"
+          className="col-span-2 @2xl:col-span-1 @2xl:pb-3"
+          title="Thưởng chương trình, chiết khấu NCC trừ vào tổng phiếu và trừ vào giá vốn từng dòng hàng theo giá trị"
+        >
+          Chiết khấu / thưởng NCC
+        </Label>
+        <MoneyInput id="rdisc" aria-label="Số tiền chiết khấu" value={discount} onChange={setDiscount} />
+        <Input aria-label="Lý do chiết khấu" placeholder="Lý do (vd thưởng chương trình)" value={discountNote} onChange={(e) => setDiscountNote(e.target.value)} />
+      </div>
     </section>
   );
 
@@ -477,6 +505,7 @@ export function ReceiptEditor({
               Tổng phiếu <strong className="text-base tabular-nums">{formatMoney(total)}</strong>
               <div className="text-xs text-muted-foreground">
                 Hàng {formatMoney(subtotal)} + chi phí {formatMoney(extra)}
+                {(discount ?? 0) > 0 && <> - CK {formatMoney(discount)}</>}
               </div>
             </div>
           }
@@ -506,6 +535,12 @@ export function ReceiptEditor({
             <dd className="text-right tabular-nums">{formatMoney(subtotal)}</dd>
             <dt className="text-muted-foreground">Chi phí</dt>
             <dd className="text-right tabular-nums">{formatMoney(extra)}</dd>
+            {(discount ?? 0) > 0 && (
+              <>
+                <dt className="text-muted-foreground">Chiết khấu</dt>
+                <dd className="text-right tabular-nums">-{formatMoney(discount)}</dd>
+              </>
+            )}
             <dt className="font-medium">Tổng phiếu</dt>
             <dd className="text-right text-base font-semibold tabular-nums">{formatMoney(total)}</dd>
           </dl>
@@ -527,7 +562,7 @@ export function ReceiptEditor({
           onOpenChange={setConfirmOpen}
           storeCode={storeCode}
           receiptId={receiptId}
-          total={subtotal + extra}
+          total={total}
           termsDays={supplier?.payment_terms_days ?? 0}
           receiptDate={h.receipt_date}
           accounts={accounts}
@@ -642,118 +677,6 @@ function QuickSupplierDialog({
             </Button>
             <Button type="submit" disabled={pending || !name.trim()}>
               {pending ? "Đang tạo..." : "Tạo và chọn"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function QuickProductDialog({
-  open,
-  onOpenChange,
-  onCreated,
-}: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-  onCreated: (p: {
-    product_id: string;
-    sku: string;
-    name: string;
-    unit: string;
-    goods_type: "cont" | "air";
-    expiry_level: "none" | "product" | "lot";
-    sell_price: number;
-  }) => void;
-}) {
-  const [name, setName] = useState("");
-  const [goodsType, setGoodsType] = useState<"cont" | "air">("air");
-  const [unit, setUnit] = useState("");
-  const [sellPrice, setSellPrice] = useState<number | null>(null);
-  const [dateType, setDateType] = useState<"short" | "long">("long");
-  const [error, setError] = useState<string | null>(null);
-  const [pending, start] = useTransition();
-
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    start(async () => {
-      const res = await quickCreateProduct({ name, goods_type: goodsType, unit, sell_price: sellPrice ?? 0, date_type: dateType });
-      if (!res.ok) return setError(res.error);
-      onCreated({ ...res.data!, sell_price: sellPrice ?? 0 });
-      toast.success(`Đã thêm sản phẩm ${res.data!.sku}`);
-      setName("");
-      setUnit("");
-      setSellPrice(null);
-      setDateType("long");
-      onOpenChange(false);
-    });
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <form onSubmit={submit} className="flex min-h-0 flex-col gap-3">
-          <DialogHeader>
-            <DialogTitle>Thêm sản phẩm mới</DialogTitle>
-            <DialogDescription>Sản phẩm chưa có trong danh mục. SKU tự sinh.</DialogDescription>
-          </DialogHeader>
-          <DialogBody className="space-y-3">
-            {error && (
-              <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {error}
-              </p>
-            )}
-            <div className="space-y-1.5">
-              <Label htmlFor="qp-name">Tên sản phẩm *</Label>
-              <Input id="qp-name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="qp-type">Loại hàng</Label>
-                <LuaChon
-                  id="qp-type"
-                  aria-label="Loại hàng"
-                  value={goodsType}
-                  onChange={(v) => setGoodsType(v as "cont" | "air")}
-                  options={[
-                    { value: "air", label: "Air" },
-                    { value: "cont", label: "Cont" },
-                  ]}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="qp-unit">Đơn vị tính *</Label>
-                <Input id="qp-unit" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="Hộp, Lon, Cái..." />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="qp-price">Giá bán</Label>
-              <MoneyInput id="qp-price" value={sellPrice} onChange={setSellPrice} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="qp-date" title="Date dài giảm giá khi tới ngưỡng dài, date ngắn giảm giá khi tới ngưỡng ngắn">
-                Loại date (cận date)
-              </Label>
-              <LuaChon
-                id="qp-date"
-                aria-label="Loại date"
-                value={dateType}
-                onChange={(v) => setDateType(v as "short" | "long")}
-                options={[
-                  { value: "long", label: "Date dài" },
-                  { value: "short", label: "Date ngắn" },
-                ]}
-              />
-            </div>
-          </DialogBody>
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Hủy
-            </Button>
-            <Button type="submit" disabled={pending || !name.trim() || !unit.trim()}>
-              {pending ? "Đang tạo..." : "Tạo và thêm vào phiếu"}
             </Button>
           </DialogFooter>
         </form>

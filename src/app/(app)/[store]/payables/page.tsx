@@ -14,8 +14,9 @@ import { cn } from "@/lib/utils";
 import { PAYMENT_METHOD_LABEL } from "../receipts/labels";
 import { DUE } from "./labels";
 import { DebtBoard, type DebtCardData } from "./debt-board";
+import { CollectDebtButton, type MoneyAccount } from "../sales/collect-debt";
 
-export const metadata = { title: "Công nợ nhà cung cấp" };
+export const metadata = { title: "Công nợ" };
 
 type Overview = {
   total_amount: number;
@@ -42,10 +43,12 @@ type Debt = {
   paid_amount: number;
   remaining: number;
   status: string;
+  note: string | null;
   suppliers: { name: string } | null;
   purchase_receipts: {
     code: string;
     extra_cost_total: number;
+    discount_amount: number;
     paid_amount: number;
     purchase_receipt_items: { line_no: number; qty: number; unit: string; unit_cost: number; line_total: number; products: { name: string } | null }[];
   } | null;
@@ -63,11 +66,11 @@ export default async function PayablesPage({
   const tab = sp.tab ?? "due";
   const { store } = await requireStore(code, "sadmin", "admin", "accountant");
   const supabase = await createClient();
-  const [{ data: ov }, { data: debts }, { data: payments }, dueSoonDays, { data: accounts }] = await Promise.all([
+  const [{ data: ov }, { data: debts }, { data: payments }, dueSoonDays, { data: accounts }, { data: customerDebts }] = await Promise.all([
     supabase.rpc("debt_overview", { p_store_ids: [store.id] }),
     supabase
       .from("supplier_debts")
-      .select("id, code, supplier_id, receipt_id, issued_date, due_date, total_amount, paid_amount, remaining, status, suppliers(name), purchase_receipts(code, extra_cost_total, paid_amount, purchase_receipt_items(line_no, qty, unit, unit_cost, line_total, products(name)))")
+      .select("id, code, supplier_id, receipt_id, issued_date, due_date, total_amount, paid_amount, remaining, status, suppliers(name), note, purchase_receipts(code, extra_cost_total, discount_amount, paid_amount, purchase_receipt_items(line_no, qty, unit, unit_cost, line_total, products(name)))")
       .eq("store_id", store.id)
       .order("due_date", { ascending: true, nullsFirst: false })
       .limit(1000),
@@ -81,6 +84,13 @@ export default async function PayablesPage({
       : Promise.resolve({ data: [] as never[] }),
     getNumberSetting("debt.due_soon_days", 3, store.id),
     supabase.from("money_accounts").select("id, name, kind").eq("is_active", true).order("sort_order").order("name"),
+    supabase
+      .from("customer_debts")
+      .select("id, code, sale_id, customer_name, customer_phone, amount, paid_amount, remaining, created_at, sales(code)")
+      .eq("store_id", store.id)
+      .gt("remaining", 0)
+      .order("created_at")
+      .limit(500),
   ]);
   const o = ov as Overview | null;
   const today = todayVN();
@@ -104,12 +114,13 @@ export default async function PayablesPage({
     { k: "supplier", label: "Theo nhà cung cấp" },
     { k: "all", label: "Tất cả khoản nợ" },
     { k: "payments", label: "Lịch sử thanh toán" },
+    { k: "customers", label: `Khách nợ (${(customerDebts ?? []).length})` },
   ];
 
   return (
     <div className="space-y-4">
       <PageHeader
-        title="Công nợ nhà cung cấp"
+        title="Công nợ"
         actions={<Button render={<Link href={`/${store.code}/payables/pay${sp.supplier ? `?supplier=${sp.supplier}` : ""}`} />}>Ghi thanh toán</Button>}
       />
       {o && (
@@ -237,6 +248,34 @@ export default async function PayablesPage({
             </div>
           </>
         )
+      ) : tab === "customers" ? (
+        (customerDebts ?? []).length === 0 ? (
+          <EmptyState title="Không có khách nào đang nợ" />
+        ) : (
+          <ul className="divide-y rounded-xl border bg-card">
+            {(customerDebts ?? []).map((d) => (
+              <li key={d.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                <div className="min-w-0">
+                  <div className="font-medium">
+                    {d.customer_name}
+                    {d.customer_phone && <span className="font-normal text-muted-foreground"> - {d.customer_phone}</span>}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    <Link href={`/${store.code}/sales/${d.sale_id}`} className="underline underline-offset-4 hover:text-foreground">
+                      {(d.sales as unknown as { code: string } | null)?.code}
+                    </Link>{" "}
+                    - {formatDateTime(d.created_at)}
+                    {d.paid_amount > 0 && ` - đã trả ${formatMoney(d.paid_amount)} / ${formatMoney(d.amount)}`}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-lg font-semibold tabular-nums">{formatMoney(d.remaining)}</span>
+                  <CollectDebtButton storeCode={store.code} debt={d} accounts={(accounts ?? []) as MoneyAccount[]} today={today} size="sm" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )
       ) : tab === "payments" ? (
         (payments ?? []).length === 0 ? (
           <EmptyState title="Chưa có thanh toán nào" />
@@ -362,6 +401,8 @@ function toCard(d: Debt, due: keyof typeof DUE, today: string): DebtCardData {
       .sort((a, b) => a.line_no - b.line_no)
       .map((i) => ({ name: i.products?.name ?? "?", qty: Number(i.qty), unit: i.unit, unit_cost: i.unit_cost, line_total: i.line_total })),
     extra_cost: r?.extra_cost_total ?? 0,
+    discount: r?.discount_amount ?? 0,
+    note: d.note,
     paid_at_receipt: r?.paid_amount ?? 0,
   };
 }

@@ -14,6 +14,8 @@ export type ReceiptPayload = {
   note: string | null;
   items: { product_id: string; qty: number; unit_cost: number; lot_no: string | null; expiry_date: string | null; sell_price: number | null }[];
   costs: { cost_type: string; amount: number; allocation: "by_value" | "by_qty"; note: string | null }[];
+  discount_amount: number;
+  discount_note: string | null;
 };
 
 export async function saveReceipt(storeCode: string, p: ReceiptPayload): Promise<ActionResult<{ id: string; code: string }>> {
@@ -120,6 +122,19 @@ export async function reopenReceipt(storeCode: string, id: string): Promise<Acti
   revalidatePath(`/${storeCode}/receipts`);
   revalidatePath(`/${storeCode}/receipts/${id}`);
   revalidatePath(`/${storeCode}/inventory`);
+  return { ok: true };
+}
+
+// Ghi chiet khau cho phieu da xac nhan: giam no, hoac giam khoan tra khi nhap (sadmin/admin)
+export async function addReceiptDiscount(storeCode: string, id: string, amount: number, note: string): Promise<ActionResult> {
+  if (!(amount > 0)) return { ok: false, error: "Nhập số tiền chiết khấu" };
+  if (!note.trim()) return { ok: false, error: "Nhập lý do chiết khấu" };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("add_receipt_discount", { p_receipt_id: id, p_amount: amount, p_note: note });
+  if (error) return { ok: false, error: errorMessage(error) };
+  revalidatePath(`/${storeCode}/receipts`);
+  revalidatePath(`/${storeCode}/receipts/${id}`);
+  revalidatePath(`/${storeCode}/payables`);
   return { ok: true };
 }
 
