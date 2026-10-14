@@ -30,10 +30,12 @@ export async function createOrder(storeCode: string, p: OrderPayload): Promise<A
   return { ok: true, data: data as { id: string; code: string } };
 }
 
-export type OrderEditPayload = Omit<OrderPayload, "store_id" | "channel" | "deliver_now" | "items">;
+export type OrderEditPayload = Omit<OrderPayload, "store_id" | "deliver_now">;
 
-// Sua thong tin va tien cua don chua huy/hoan, chua doi soat; don da giao cap nhat ca giao dich ban
+// Sua thong tin, kenh, dong san pham va tien cua don chua huy/hoan, chua doi soat; don da giao chi doi gia dong
+// va cap nhat ca giao dich ban
 export async function updateOrder(storeCode: string, id: string, p: OrderEditPayload): Promise<ActionResult> {
+  if (p.items.length === 0) return { ok: false, error: "Thêm ít nhất một sản phẩm" };
   const supabase = await createClient();
   const { error } = await supabase.rpc("update_order", { p_order_id: id, p });
   if (error) return { ok: false, error: errorMessage(error) };

@@ -2,11 +2,14 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { PencilIcon } from "lucide-react";
+import { toast } from "sonner";
+import { PencilIcon, TrashIcon } from "lucide-react";
 import { updateOrder, type OrderEditPayload } from "../actions";
+import type { CatalogItem } from "../../catalog-actions";
 import { baoThanhCong } from "@/lib/feedback";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatNumber } from "@/lib/format";
 import { MoneyInput } from "@/components/money-input";
+import { ProductPicker } from "@/components/product-picker";
 import { LuaChon } from "@/components/lua-chon";
 import { GoiY } from "@/components/goi-y";
 import { Button } from "@/components/ui/button";
@@ -15,42 +18,70 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
+// available chi co voi dong vua them (tu o tim); dong cu de RPC kiem tra kha dung
+type Line = { product_id: string; name: string; unit: string; qty: number; unit_price: number | null; available?: number };
+
 export type EditableOrder = {
   id: string;
   code: string;
-  channel: string;
-  subtotal: number;
+  status: string;
+  storeId: string;
   sale_id: string | null;
-  values: OrderEditPayload;
+  lines: Line[];
+  values: Omit<OrderEditPayload, "items">;
 };
 
 export function EditOrder({ storeCode, order }: { storeCode: string; order: EditableOrder }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [h, setH] = useState(order.values);
+  const [lines, setLines] = useState(order.lines);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
-  const isShopee = order.channel === "shopee";
-  const dirty = JSON.stringify(h) !== JSON.stringify(order.values);
-  const afterDiscount = order.subtotal - (h.discount_amount ?? 0);
+  // Don da giao: kho da xuat theo lo, chi doi duoc gia ban (khop update_order)
+  const priceOnly = order.status === "delivered";
+  const isShopee = h.channel === "shopee";
+  const dirty = JSON.stringify(h) !== JSON.stringify(order.values) || JSON.stringify(lines) !== JSON.stringify(order.lines);
+  const subtotal = lines.reduce((s, l) => s + Math.round(l.qty * (l.unit_price ?? 0)), 0);
+  const afterDiscount = subtotal - (h.discount_amount ?? 0);
   const platformFee = isShopee && h.payout_amount != null ? afterDiscount - h.payout_amount : null;
 
   function onOpenChange(o: boolean) {
     if (o) {
       setH(order.values);
+      setLines(order.lines);
       setError(null);
     }
     setOpen(o);
   }
 
+  function setLine(id: string, patch: Partial<Line>) {
+    setLines((ls) => ls.map((x) => (x.product_id === id ? { ...x, ...patch } : x)));
+  }
+
+  function add(it: CatalogItem) {
+    setLines((ls) => {
+      const i = ls.findIndex((l) => l.product_id === it.product_id);
+      if (i >= 0) return ls.map((l, j) => (j === i ? { ...l, qty: l.qty + it.pack_qty } : l));
+      if (it.pack_qty > it.qty_available) {
+        toast.error(`${it.name}: chỉ còn ${formatNumber(it.qty_available)}`);
+        return ls;
+      }
+      return [...ls, { product_id: it.product_id, name: it.name, unit: it.unit, qty: it.pack_qty, unit_price: it.sell_price, available: it.qty_available }];
+    });
+  }
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (lines.length === 0) return setError("Thêm ít nhất một sản phẩm");
+    if (lines.some((l) => !(l.qty > 0) || l.unit_price == null)) return setError("Kiểm tra số lượng và giá từng dòng");
     if (platformFee != null && platformFee < 0) return setError("Tiền Shopee trả về lớn hơn tiền hàng sau giảm giá");
     start(async () => {
       const res = await updateOrder(storeCode, order.id, {
         ...h,
         discount_note: (h.discount_amount ?? 0) > 0 ? h.discount_note : null,
         payout_amount: isShopee ? h.payout_amount : null,
+        items: lines.map((l) => ({ product_id: l.product_id, qty: l.qty, unit_price: l.unit_price ?? 0 })),
       });
       if (!res.ok) return setError(res.error);
       baoThanhCong(`Đã sửa đơn ${order.code}`);
@@ -78,6 +109,20 @@ export function EditOrder({ storeCode, order }: { storeCode: string; order: Edit
                 </p>
               )}
               <div className="grid gap-x-4 gap-y-3 @md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="e-channel">Kênh</Label>
+                  <LuaChon
+                    id="e-channel"
+                    aria-label="Kênh"
+                    value={h.channel}
+                    onChange={(v) => setH({ ...h, channel: v as OrderEditPayload["channel"] })}
+                    options={[
+                      { value: "shopee", label: "Shopee" },
+                      { value: "facebook", label: "Facebook" },
+                      { value: "other", label: "Khác" },
+                    ]}
+                  />
+                </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="e-ext">Mã đơn trên sàn</Label>
                   <Input id="e-ext" value={h.external_order_id ?? ""} onChange={(e) => setH({ ...h, external_order_id: e.target.value })} />
@@ -150,7 +195,57 @@ export function EditOrder({ storeCode, order }: { storeCode: string; order: Edit
                   <Textarea id="e-note" rows={2} value={h.note ?? ""} onChange={(e) => setH({ ...h, note: e.target.value })} />
                 </div>
               </div>
-              {order.sale_id && <p className="text-xs text-muted-foreground">Đơn đã giao: giao dịch bán cập nhật theo giảm giá và thanh toán mới.</p>}
+              <div className="space-y-2 border-t pt-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm font-medium">Sản phẩm ({lines.length})</span>
+                    {priceOnly && (
+                      <GoiY label="Sửa sản phẩm đơn đã giao">
+                        <p>Đơn đã giao chỉ sửa được giá bán vì hàng đã xuất kho theo lô và đã ghi giá vốn.</p>
+                        <p>Sai sản phẩm hoặc số lượng thì hoàn hàng rồi tạo đơn mới.</p>
+                      </GoiY>
+                    )}
+                  </div>
+                  <span className="text-sm tabular-nums">Tiền hàng {formatMoney(subtotal)}</span>
+                </div>
+                {!priceOnly && <ProductPicker storeId={order.storeId} onPick={add} />}
+                <ul className="divide-y">
+                  {lines.map((l) => (
+                    <li key={l.product_id} className="grid grid-cols-2 items-end gap-2 py-2 @md:grid-cols-[1fr_90px_140px_auto]">
+                      <div className="col-span-2 text-sm @md:col-span-1">
+                        {l.name}
+                        <div className="text-xs text-muted-foreground tabular-nums">
+                          {priceOnly ? `${formatNumber(l.qty)} ${l.unit}` : l.available != null ? `Còn ${formatNumber(l.available)} ${l.unit}` : l.unit}
+                          {" - "}
+                          {formatMoney(Math.round(l.qty * (l.unit_price ?? 0)))}
+                        </div>
+                      </div>
+                      {!priceOnly && (
+                        <label className="text-xs text-muted-foreground">
+                          SL
+                          <Input type="number" min={1} value={l.qty} onChange={(e) => setLine(l.product_id, { qty: Number(e.target.value) })} />
+                        </label>
+                      )}
+                      <label className={`text-xs text-muted-foreground ${priceOnly ? "col-span-2 @md:col-span-3" : ""}`}>
+                        Giá bán
+                        <MoneyInput value={l.unit_price} onChange={(n) => setLine(l.product_id, { unit_price: n })} />
+                      </label>
+                      {!priceOnly && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Xóa ${l.name}`}
+                          onClick={() => setLines((ls) => ls.filter((x) => x.product_id !== l.product_id))}
+                        >
+                          <TrashIcon />
+                        </Button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              {order.sale_id && <p className="text-xs text-muted-foreground">Đơn đã giao: giao dịch bán cập nhật theo giá, giảm giá và thanh toán mới.</p>}
             </DialogBody>
             <DialogFooter className="items-center">
               {dirty && <span className="text-xs text-chu-amber sm:mr-auto">Có thay đổi chưa lưu</span>}
