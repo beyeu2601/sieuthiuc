@@ -38,8 +38,7 @@ export function EditOrder({ storeCode, order }: { storeCode: string; order: Edit
   const [lines, setLines] = useState(order.lines);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
-  // Don da giao: kho da xuat theo lo, chi doi duoc gia ban (khop update_order)
-  const priceOnly = order.status === "delivered";
+  const delivered = order.status === "delivered";
   const isShopee = h.channel === "shopee";
   const dirty = JSON.stringify(h) !== JSON.stringify(order.values) || JSON.stringify(lines) !== JSON.stringify(order.lines);
   const subtotal = lines.reduce((s, l) => s + Math.round(l.qty * (l.unit_price ?? 0)), 0);
@@ -199,53 +198,49 @@ export function EditOrder({ storeCode, order }: { storeCode: string; order: Edit
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1">
                     <span className="text-sm font-medium">Sản phẩm ({lines.length})</span>
-                    {priceOnly && (
+                    {delivered && (
                       <GoiY label="Sửa sản phẩm đơn đã giao">
-                        <p>Đơn đã giao chỉ sửa được giá bán vì hàng đã xuất kho theo lô và đã ghi giá vốn.</p>
-                        <p>Sai sản phẩm hoặc số lượng thì hoàn hàng rồi tạo đơn mới.</p>
+                        <p>Đổi sản phẩm hoặc số lượng: hàng cũ trả về đúng lô đã xuất, hàng mới xuất theo lô hạn gần nhất, giá vốn tính theo giá vốn hiện tại.</p>
+                        <p>Giao dịch bán giữ mã và ngày giao, cập nhật tiền hàng, giá vốn và thanh toán.</p>
                       </GoiY>
                     )}
                   </div>
                   <span className="text-sm tabular-nums">Tiền hàng {formatMoney(subtotal)}</span>
                 </div>
-                {!priceOnly && <ProductPicker storeId={order.storeId} onPick={add} />}
+                <ProductPicker storeId={order.storeId} onPick={add} />
                 <ul className="divide-y">
                   {lines.map((l) => (
                     <li key={l.product_id} className="grid grid-cols-2 items-end gap-2 py-2 @md:grid-cols-[1fr_90px_140px_auto]">
                       <div className="col-span-2 text-sm @md:col-span-1">
                         {l.name}
                         <div className="text-xs text-muted-foreground tabular-nums">
-                          {priceOnly ? `${formatNumber(l.qty)} ${l.unit}` : l.available != null ? `Còn ${formatNumber(l.available)} ${l.unit}` : l.unit}
+                          {l.available != null ? `Còn ${formatNumber(l.available)} ${l.unit}` : l.unit}
                           {" - "}
                           {formatMoney(Math.round(l.qty * (l.unit_price ?? 0)))}
                         </div>
                       </div>
-                      {!priceOnly && (
-                        <label className="text-xs text-muted-foreground">
-                          SL
-                          <Input type="number" min={1} value={l.qty} onChange={(e) => setLine(l.product_id, { qty: Number(e.target.value) })} />
-                        </label>
-                      )}
-                      <label className={`text-xs text-muted-foreground ${priceOnly ? "col-span-2 @md:col-span-3" : ""}`}>
+                      <label className="text-xs text-muted-foreground">
+                        SL
+                        <Input type="number" min={1} value={l.qty} onChange={(e) => setLine(l.product_id, { qty: Number(e.target.value) })} />
+                      </label>
+                      <label className="text-xs text-muted-foreground">
                         Giá bán
                         <MoneyInput value={l.unit_price} onChange={(n) => setLine(l.product_id, { unit_price: n })} />
                       </label>
-                      {!priceOnly && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`Xóa ${l.name}`}
-                          onClick={() => setLines((ls) => ls.filter((x) => x.product_id !== l.product_id))}
-                        >
-                          <TrashIcon />
-                        </Button>
-                      )}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Xóa ${l.name}`}
+                        onClick={() => setLines((ls) => ls.filter((x) => x.product_id !== l.product_id))}
+                      >
+                        <TrashIcon />
+                      </Button>
                     </li>
                   ))}
                 </ul>
               </div>
-              {order.sale_id && <p className="text-xs text-muted-foreground">Đơn đã giao: giao dịch bán cập nhật theo giá, giảm giá và thanh toán mới.</p>}
+              {order.sale_id && <p className="text-xs text-muted-foreground">Đơn đã giao: tồn kho, giao dịch bán, giá vốn và thanh toán cập nhật theo đơn mới.</p>}
             </DialogBody>
             <DialogFooter className="items-center">
               {dirty && <span className="text-xs text-chu-amber sm:mr-auto">Có thay đổi chưa lưu</span>}
