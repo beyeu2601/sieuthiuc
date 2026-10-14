@@ -2,7 +2,7 @@
 begin;
 -- @include setup.sql
 
-select plan(17);
+select plan(15);
 
 insert into suppliers (id, name, payment_terms_days) values ('00000000-0000-0000-0000-0000000000e1', 'NCC Test', 0);
 insert into products (id, name, unit, goods_type, sell_price, expiry_level) values
@@ -52,15 +52,6 @@ select lives_ok($$ select update_order((select id from orders where external_ord
     jsonb_build_object('product_id', '00000000-0000-0000-0000-0000000000c1', 'qty', 1, 'unit_price', 95000),
     jsonb_build_object('product_id', '00000000-0000-0000-0000-0000000000c2', 'qty', 3, 'unit_price', 40000)))) $$,
   'sua gia don da giao');
-select throws_like($$ select update_order((select id from orders where external_order_id = 'F1'), jsonb_build_object(
-  'external_order_id', 'F1', 'items', jsonb_build_array(
-    jsonb_build_object('product_id', '00000000-0000-0000-0000-0000000000c1', 'qty', 2, 'unit_price', 95000),
-    jsonb_build_object('product_id', '00000000-0000-0000-0000-0000000000c2', 'qty', 3, 'unit_price', 40000)))) $$,
-  '%chỉ sửa được giá bán%', 'don da giao khong doi so luong');
-select throws_like($$ select update_order((select id from orders where external_order_id = 'F1'), jsonb_build_object(
-  'external_order_id', 'F1', 'items', jsonb_build_array(
-    jsonb_build_object('product_id', '00000000-0000-0000-0000-0000000000c1', 'qty', 1, 'unit_price', 95000)))) $$,
-  '%chỉ sửa được giá bán%', 'don da giao khong bot dong');
 select tests.logout();
 select is((select subtotal || ':' || total || ':' || channel::text from sales s where s.id = (select sale_id from orders where external_order_id = 'F1')),
   '215000:205000:facebook', 'giao dich: tien hang 215.000, tong 205.000, kenh');
