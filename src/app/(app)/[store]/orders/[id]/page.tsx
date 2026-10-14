@@ -81,10 +81,18 @@ export default async function OrderPage({ params }: { params: Promise<{ store: s
                   order={{
                     id: o.id,
                     code: o.code,
-                    channel: o.channel,
-                    subtotal: o.subtotal,
+                    status: o.status,
+                    storeId: store.id,
                     sale_id: o.sale_id,
+                    lines: itemRows.map((i) => ({
+                      product_id: i.product_id,
+                      name: pmap.get(i.product_id)?.name ?? "",
+                      unit: pmap.get(i.product_id)?.unit ?? "",
+                      qty: Number(i.qty),
+                      unit_price: i.unit_price,
+                    })),
                     values: {
+                      channel: o.channel,
                       external_order_id: o.external_order_id,
                       customer_name: o.customer_name,
                       customer_phone: o.customer_phone,

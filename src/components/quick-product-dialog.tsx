@@ -2,7 +2,10 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { PlusIcon } from "lucide-react";
 import { quickCreateProduct } from "@/app/(app)/[store]/receipts/actions";
+import { QuickBrandDialog } from "@/app/(app)/products/product-form";
+import { createClient } from "@/lib/supabase/client";
 import { MoneyInput } from "@/components/money-input";
 import { LuaChon } from "@/components/lua-chon";
 import { Button } from "@/components/ui/button";
@@ -39,6 +42,9 @@ export function QuickProductDialog({
   const [unit, setUnit] = useState("");
   const [sellPrice, setSellPrice] = useState<number | null>(null);
   const [dateType, setDateType] = useState<"short" | "long">("long");
+  const [brands, setBrands] = useState<{ id: string; name: string }[] | null>(null);
+  const [brandId, setBrandId] = useState("");
+  const [brandOpen, setBrandOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -47,11 +53,21 @@ export function QuickProductDialog({
     if (open && initialName) setName(initialName);
   }, [open, initialName]);
 
+  // Danh sach thuong hieu tai mot lan khi mo hop thoai lan dau
+  useEffect(() => {
+    if (!open || brands) return;
+    createClient()
+      .from("brands")
+      .select("id, name")
+      .order("name")
+      .then(({ data }) => setBrands(data ?? []));
+  }, [open, brands]);
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     start(async () => {
-      const res = await quickCreateProduct({ name, goods_type: goodsType, unit, sell_price: sellPrice ?? 0, date_type: dateType });
+      const res = await quickCreateProduct({ name, goods_type: goodsType, unit, sell_price: sellPrice ?? 0, date_type: dateType, brand_id: brandId || null });
       if (!res.ok) return setError(res.error);
       onCreated({ ...res.data!, sell_price: sellPrice ?? 0 });
       toast.success(`Đã thêm sản phẩm ${res.data!.sku}`);
@@ -59,6 +75,7 @@ export function QuickProductDialog({
       setUnit("");
       setSellPrice(null);
       setDateType("long");
+      setBrandId("");
       onOpenChange(false);
     });
   }
@@ -101,6 +118,22 @@ export function QuickProductDialog({
               </div>
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="qp-brand">Thương hiệu</Label>
+              <div className="flex gap-2">
+                <LuaChon
+                  id="qp-brand"
+                  aria-label="Thương hiệu"
+                  value={brandId}
+                  onChange={setBrandId}
+                  disabled={!brands}
+                  options={[{ value: "", label: brands ? "Không có" : "Đang tải..." }, ...(brands ?? []).map((b) => ({ value: b.id, label: b.name }))]}
+                />
+                <Button type="button" variant="outline" className="shrink-0" disabled={!brands} onClick={() => setBrandOpen(true)}>
+                  <PlusIcon /> Thêm
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="qp-price">Giá bán</Label>
               <MoneyInput id="qp-price" value={sellPrice} onChange={setSellPrice} />
             </div>
@@ -129,6 +162,15 @@ export function QuickProductDialog({
             </Button>
           </DialogFooter>
         </form>
+        <QuickBrandDialog
+          open={brandOpen}
+          onOpenChange={setBrandOpen}
+          brands={brands ?? []}
+          onPicked={(b) => {
+            setBrands((ls) => (ls ?? []).some((x) => x.id === b.id) ? ls : [...(ls ?? []), b].sort((x, y) => x.name.localeCompare(y.name, "vi")));
+            setBrandId(b.id);
+          }}
+        />
       </DialogContent>
     </Dialog>
   );
