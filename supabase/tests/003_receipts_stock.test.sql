@@ -84,12 +84,11 @@ select is((select count(*) from supplier_debts where receipt_id = (select id fro
 select is((select amount from supplier_payments where receipt_id = (select id from purchase_receipts where code like '%0003')),
   500001::bigint, 'tra du: ghi 1 khoan thanh toan');
 
--- HSD bat buoc voi san pham quan ly theo lo
+-- HSD khong con bat buoc (gop y 17/10/2026, xac nhan khi thieu HSD kiem tra o 023): phieu nhap van luu, roi huy
 select lives_ok($$ select save_purchase_receipt('{"store_id":"00000000-0000-0000-0000-00000000000a",
     "supplier_id":"00000000-0000-0000-0000-0000000000e1",
     "items":[{"product_id":"00000000-0000-0000-0000-0000000000c1","qty":1,"unit_cost":1}]}') $$, 'tao phieu thieu HSD');
-select throws_like($$ select confirm_purchase_receipt((select id from purchase_receipts where status = 'draft')) $$,
-  '%hạn sử dụng%', 'xac nhan phieu thieu HSD bi chan');
+select is((select count(*) from purchase_receipts where status = 'draft'), 1::bigint, 'phieu thieu HSD luu nhap');
 select lives_ok($$ select cancel_purchase_receipt((select id from purchase_receipts where status = 'draft'), 'Nhập sai') $$,
   'huy phieu nhap');
 

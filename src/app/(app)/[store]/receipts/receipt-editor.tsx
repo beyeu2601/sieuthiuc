@@ -161,7 +161,7 @@ export function ReceiptEditor({
       items: lines.map((l) => ({
         product_id: l.product_id,
         qty: l.qty,
-        unit_cost: l.unit_cost ?? 0,
+        unit_cost: l.unit_cost,
         lot_no: l.lot_no || null,
         expiry_date: l.expiry_date || null,
         sell_price: l.sell_price,
@@ -174,20 +174,19 @@ export function ReceiptEditor({
     };
   }
 
-  function validate(forConfirm: boolean): string | null {
+  // Gia von va HSD khong bat buoc (bo sung sau o chi tiet phieu), chi to vang de nhac
+  function validate(): string | null {
     if (!h.supplier_id) return "Chọn nhà cung cấp";
     if (lines.length === 0) return "Thêm ít nhất một dòng hàng";
     for (const l of lines) {
       if (!(l.qty > 0)) return `${l.name}: số lượng phải lớn hơn 0`;
-      if (l.unit_cost == null) return `${l.name}: nhập đơn giá nhập`;
-      if (forConfirm && l.expiry_level === "lot" && !l.expiry_date) return `${l.name}: nhập hạn sử dụng`;
     }
     if ((discount ?? 0) > subtotal) return "Chiết khấu lớn hơn tiền hàng";
     return null;
   }
 
   function save(thenConfirm: boolean) {
-    const invalid = validate(thenConfirm);
+    const invalid = validate();
     if (invalid) return setError(invalid);
     setError(null);
     start(async () => {
@@ -204,18 +203,29 @@ export function ReceiptEditor({
     });
   }
 
-  // Ly do buoc "Hang nhap" chua di tiep duoc; cung dieu kien voi validate(false)
+  // Ly do buoc "Hang nhap" chua di tiep duoc; cung dieu kien voi validate()
   const lineIssue = (() => {
     if (lines.length === 0) return "Thêm ít nhất một dòng hàng";
     for (const l of lines) {
       if (!(l.qty > 0)) return `${l.name}: số lượng phải lớn hơn 0`;
-      if (l.unit_cost == null) return `${l.name}: nhập đơn giá nhập`;
     }
     return null;
   })();
   const total = subtotal + extra - (discount ?? 0);
   const termsDays = supplier?.payment_terms_days ?? 0;
+  const missingCost = lines.filter((l) => l.unit_cost == null);
   const missingExpiry = lines.filter((l) => l.expiry_level === "lot" && !l.expiry_date);
+  const missingNote =
+    missingCost.length + missingExpiry.length > 0 ? (
+      <p role="status" className="rounded-lg border border-vien-amber bg-nen-amber px-3 py-2 text-sm text-chu-amber">
+        Còn thiếu
+        {missingCost.length > 0 && ` giá vốn ${missingCost.length} dòng`}
+        {missingCost.length > 0 && missingExpiry.length > 0 && ","}
+        {missingExpiry.length > 0 && ` hạn sử dụng ${missingExpiry.length} dòng`}. Vẫn lưu và nhập kho được, bổ sung sau ở chi tiết phiếu.
+      </p>
+    ) : null;
+  // To vang o con thieu (mau kem chu "chua co" o nhan, khong dung mau lam tin hieu duy nhat)
+  const thieu = "border-vien-amber bg-nen-amber";
 
   const headerStep = (
     <section className="@container rounded-xl border bg-card p-4">
@@ -278,11 +288,15 @@ export function ReceiptEditor({
                 <span className="min-w-0">
                   {i + 1}. {l.name}
                   <span className="block text-xs text-muted-foreground">
-                    {l.qty} {l.unit} x {formatMoney(l.unit_cost ?? 0)}
-                    {l.expiry_date ? ` - HSD ${new Date(`${l.expiry_date}T00:00:00`).toLocaleDateString("vi-VN")}` : ""}
+                    {l.qty} {l.unit} x {l.unit_cost == null ? <span className="text-chu-amber">chưa có giá vốn</span> : formatMoney(l.unit_cost)}
+                    {l.expiry_date ? (
+                      ` - HSD ${new Date(`${l.expiry_date}T00:00:00`).toLocaleDateString("vi-VN")}`
+                    ) : l.expiry_level === "lot" ? (
+                      <span className="text-chu-amber"> - chưa có HSD</span>
+                    ) : null}
                   </span>
                 </span>
-                <span className="shrink-0 tabular-nums">{formatMoney(Math.round(l.qty * (l.unit_cost ?? 0)))}</span>
+                <span className="shrink-0 tabular-nums">{l.unit_cost == null ? "-" : formatMoney(Math.round(l.qty * l.unit_cost))}</span>
               </li>
             ))}
           </ul>
@@ -315,11 +329,7 @@ export function ReceiptEditor({
           <span className="tabular-nums">-{formatMoney(discount)}</span>
         </div>
       )}
-      {canConfirm && missingExpiry.length > 0 && (
-        <p className="rounded-lg border border-vien-amber bg-nen-amber px-3 py-2 text-chu-amber">
-          Cần nhập hạn sử dụng trước khi xác nhận nhập kho: {missingExpiry.map((l) => l.name).join(", ")}. Lưu nháp vẫn được.
-        </p>
-      )}
+      {missingNote}
       {receiptId && (
         <div className="border-t pt-3">
           <CancelButton storeCode={storeCode} receiptId={receiptId} />
@@ -339,6 +349,7 @@ export function ReceiptEditor({
           </Button>
         </div>
       )}
+      {missingNote}
       {lines.length === 0 ? (
         <p className="text-xs text-muted-foreground">Quét mã vạch hoặc tìm tên. Quét lại cùng mã sẽ tăng số lượng.</p>
       ) : (
@@ -371,8 +382,8 @@ export function ReceiptEditor({
                     />
                   </label>
                   <label className="space-y-1 text-xs text-muted-foreground">
-                    Đơn giá nhập
-                    <MoneyInput value={l.unit_cost} onChange={(n) => upd(l.key, { unit_cost: n })} />
+                    Đơn giá nhập{l.unit_cost == null && <span className="text-chu-amber"> (chưa có)</span>}
+                    <MoneyInput className={l.unit_cost == null ? thieu : ""} value={l.unit_cost} onChange={(n) => upd(l.key, { unit_cost: n })} />
                   </label>
                   <label className="space-y-1 text-xs text-muted-foreground">
                     Giá bán
@@ -383,8 +394,13 @@ export function ReceiptEditor({
                     <Input value={l.lot_no} placeholder="Theo mã phiếu" onChange={(e) => upd(l.key, { lot_no: e.target.value })} />
                   </label>
                   <label className="space-y-1 text-xs text-muted-foreground">
-                    Hạn sử dụng{l.expiry_level === "lot" ? " *" : ""}
-                    <Input type="date" value={l.expiry_date} onChange={(e) => upd(l.key, { expiry_date: e.target.value })} />
+                    Hạn sử dụng{l.expiry_level === "lot" && !l.expiry_date && <span className="text-chu-amber"> (chưa có)</span>}
+                    <Input
+                      type="date"
+                      className={l.expiry_level === "lot" && !l.expiry_date ? thieu : ""}
+                      value={l.expiry_date}
+                      onChange={(e) => upd(l.key, { expiry_date: e.target.value })}
+                    />
                   </label>
                   <Button
                     type="button"

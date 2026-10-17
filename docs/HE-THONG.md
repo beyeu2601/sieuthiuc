@@ -113,12 +113,13 @@ Cơ chế:
 | `20261017000002` | Khách ghi nợ tại quầy: bảng `customer_debts`, `customer_debt_payments`; `complete_sale` nhận `debt`; `collect_customer_debt`; `cancel_sale` chặn khi khách đã trả một phần nợ; sửa giao dịch tại quầy `update_sale`; `money_account_balances` và `money_account_ledger` cộng tiền thu nợ |
 | `20261018000001` | `update_order` nhận thêm `channel` và `items`: đơn chờ giao/đang giao thay dòng sản phẩm (bỏ giữ cũ, giữ lại theo dòng mới); đơn đã giao chỉ đổi giá bán, cập nhật dòng, tiền hàng, tổng, kênh của giao dịch bán; trước/sau ghi `audit_logs` (`order.update`) |
 | `20261019000001` | `update_order`: đơn đã giao đổi được sản phẩm và số lượng. Hàng cũ trả về đúng lô đã xuất (`sale_return`), dòng mới xuất FEFO (`sale`) theo giá vốn bình quân hiện tại; giao dịch bán giữ mã và ngày giao, ghi lại dòng, giá vốn, tiền hàng, tổng, thanh toán. Cùng sản phẩm và số lượng thì chỉ đổi giá như trước |
+| `20261020000001` | Nhập kho khi chưa có giá vốn / HSD: `purchase_receipt_items.unit_cost` cho phép rỗng; `save_purchase_receipt`, `confirm_purchase_receipt` bỏ bắt buộc đơn giá và HSD; `complete_receipt_item` bổ sung giá vốn và/hoặc HSD cho dòng của phiếu đã nhập kho |
 
 Các RPC chính theo nghiệp vụ:
 
 - Bán hàng: `complete_sale` (idempotent theo khóa, giá lấy từ DB, FEFO, khóa tồn theo thứ tự sản phẩm), `update_sale`, `cancel_sale`, `request_discount_approval`, `collect_customer_debt`.
 - Ca: `open_shift`, `close_shift`, `approve_shift`, `adjust_shift_count`, `shift_expected_cash`, `shift_summary`.
-- Kho: `adjust_product_stock`, `save_purchase_receipt`, `confirm_purchase_receipt`, `add_receipt_discount`, `cancel_purchase_receipt`, `save_transfer`, `send_transfer`, `receive_transfer`, `cancel_transfer`.
+- Kho: `adjust_product_stock`, `save_purchase_receipt`, `confirm_purchase_receipt`, `complete_receipt_item`, `add_receipt_discount`, `cancel_purchase_receipt`, `save_transfer`, `send_transfer`, `receive_transfer`, `cancel_transfer`.
 - Đơn online: `create_order`, `update_order`, `update_order_status`, `delete_order` (giao thành công tạo giao dịch bán theo kênh), `reconcile_reservations`, `return_order`, `review_order_return`, `record_platform_payout`, `cancel_platform_payout`.
 - Đặt trước: `create_preorder`, `add_preorder_deposit`, `mark_preorder_arrived`, `deliver_preorder` (tạo giao dịch bán kênh `preorder`), `cancel_preorder`, `preorder_costs`, `product_default_costs`.
 - Tài chính: `record_supplier_payment`, `create_supplier_opening_debt`, `delete_supplier_opening_debt`, `debt_overview`, `create_cash_transaction`, `review_cash_transaction`, `request_cash_change`, `mark_cash_transaction_paid`, `set_money_account_holder`, `money_accounts_overview`, `money_account_ledger`, `reconcile_report`, `save_reconciliation_note`.
@@ -158,6 +159,8 @@ Thành phần giao diện dùng chung (đợt nâng UX/UI 09/2026, chi tiết th
 | Form nhiều bước | `FormWizard` (+ `Stepper`) | Mọi bước đều mount; đang dùng ở phiếu nhập |
 | Thanh dính đáy | `sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] lg:bottom-0` | Tránh bị tab dưới đáy điện thoại che |
 | Chuyển động | tiện ích `tw-animate-css` với `motion-safe:` | Không viết keyframes riêng |
+
+Giá vốn (đơn giá nhập) và hạn sử dụng trên phiếu nhập không bắt buộc (khách yêu cầu 17/10/2026, nhiều hàng về chưa có giá ngay). Ô còn thiếu tô vàng kèm chữ "(chưa có)", bước Hàng nhập và Kiểm tra có dòng báo "Còn thiếu giá vốn n dòng, hạn sử dụng m dòng"; vẫn lưu và nhập kho được. Dòng chưa có giá: thành tiền 0, hàng vào kho với giá vốn 0 (cộng chi phí phân bổ nếu có). Phiếu đã nhập kho còn thiếu: danh sách Nhập hàng có chip "Thiếu giá vốn n" / "Thiếu HSD n", trang chi tiết có chip đầu trang, dòng tô vàng và nút "Bổ sung" (sadmin/admin) mở hộp thoại nhập đơn giá và/hoặc HSD (`complete_receipt_item`, mỗi trường chỉ bổ sung một lần). Bổ sung giá vốn: cộng tiền hàng vào tổng phiếu và công nợ NCC của phiếu (phiếu chưa có nợ thì tạo khoản nợ mới, hạn theo hạn phiếu hoặc số ngày được nợ); giá vốn lô và giá vốn bình quân kho tính lại cho phần hàng của dòng còn tồn; giao dịch đã bán trước đó giữ giá vốn cũ (lãi kỳ đó cao hơn thực tế). Bổ sung HSD: ghi vào dòng và lô.
 
 Phiếu nhập (mới và sửa nháp) đi theo 4 bước: Nhà cung cấp -> Hàng nhập -> Chi phí -> Kiểm tra. "Lưu nháp" có ở mọi bước; phiếu nháp mở lại vào thẳng bước Kiểm tra. Thanh toán và hạn nợ vẫn chọn ở hộp thoại Xác nhận nhập kho vì RPC xác nhận cần phiếu đã lưu. Ô tìm sản phẩm (`ProductPicker`) nhận phím lên/xuống và Enter chọn dòng đang sáng; khi chưa chọn dòng nào, Enter vẫn tìm và tự chọn khi khớp đúng mã (máy quét không đổi).
 

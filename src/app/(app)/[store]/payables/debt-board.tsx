@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
-export type DebtItem = { name: string; qty: number; unit: string; unit_cost: number; line_total: number };
+export type DebtItem = { name: string; qty: number; unit: string; unit_cost: number | null; line_total: number };
 
 export type DebtCardData = {
   id: string;

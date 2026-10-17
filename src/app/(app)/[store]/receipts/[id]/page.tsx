@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReceiptEditor, type EditorLine } from "../receipt-editor";
 import { ReopenButton } from "../reopen-button";
 import { DiscountButton } from "../discount-button";
+import { CompleteItemButton } from "../complete-item";
 import { ALLOCATION_LABEL, COST_TYPE_LABEL, RECEIPT_STATUS, PAYMENT_METHOD_LABEL } from "../labels";
 
 type Item = {
@@ -24,7 +25,7 @@ type Item = {
   goods_type: "cont" | "air";
   qty: number;
   unit: string;
-  unit_cost: number;
+  unit_cost: number | null;
   line_total: number;
   allocated_cost: number;
   landed_unit_cost: number | null;
@@ -140,6 +141,21 @@ export default async function ReceiptPage({
   const costRows = costs ?? [];
   const productCount = ids.length;
   const methodLabel = r.payment_method ? PAYMENT_METHOD_LABEL[r.payment_method as keyof typeof PAYMENT_METHOD_LABEL] : null;
+  // Gia von / HSD con thieu (nhap kho khi chua co, bo sung sau)
+  const needCost = (i: Item) => i.unit_cost == null;
+  const needExpiry = (i: Item) => i.products?.expiry_level === "lot" && !i.expiry_date;
+  const missingCost = rows.filter(needCost).length;
+  const missingExpiry = rows.filter(needExpiry).length;
+  const canComplete = confirmed && ["sadmin", "admin"].includes(ctx.profile.role);
+  const completeBtn = (i: Item) =>
+    canComplete && (needCost(i) || needExpiry(i)) ? (
+      <CompleteItemButton
+        storeCode={store.code}
+        receiptId={r.id}
+        item={{ id: i.id, name: i.products?.name ?? "", qty: Number(i.qty), unit: i.unit, needCost: needCost(i), needExpiry: !i.expiry_date }}
+      />
+    ) : null;
+  const chuaCo = <span className="text-chu-amber">Chưa có</span>;
   const creator = (r.creator as unknown as { full_name: string } | null)?.full_name ?? "-";
   const confirmer = (r.confirmer as unknown as { full_name: string } | null)?.full_name ?? "-";
 
@@ -158,6 +174,8 @@ export default async function ReceiptPage({
                 Quá hạn trả
               </ChipSac>
             )}
+            {missingCost > 0 && <ChipSac sac="amber">Thiếu giá vốn {missingCost} dòng</ChipSac>}
+            {missingExpiry > 0 && <ChipSac sac="amber">Thiếu HSD {missingExpiry} dòng</ChipSac>}
           </span>
         }
         actions={
@@ -215,12 +233,13 @@ export default async function ReceiptPage({
                     subtitle={`${i.products?.sku} - ${GOODS_TYPE_LABEL[i.goods_type]} - Lô ${i.lot_no ?? r.code}`}
                     stats={[
                       { label: "SL", value: `${formatNumber(i.qty)} ${i.unit}`, strong: true },
-                      { label: "Đơn giá", value: formatMoney(i.unit_cost) },
+                      { label: "Đơn giá", value: needCost(i) ? chuaCo : formatMoney(i.unit_cost) },
                       { label: "Thành tiền", value: formatMoney(i.line_total) },
                       { label: "CP phân bổ", value: formatMoney(i.allocated_cost) },
                       { label: "Giá vốn nhập", value: formatMoney(i.landed_unit_cost) },
-                      { label: "HSD", value: i.expiry_date ? new Date(i.expiry_date).toLocaleDateString("vi-VN") : "-" },
+                      { label: "HSD", value: i.expiry_date ? new Date(i.expiry_date).toLocaleDateString("vi-VN") : needExpiry(i) ? chuaCo : "-" },
                     ]}
+                    footer={completeBtn(i)}
                   />
                 ))}
               </MobileCardList>
@@ -237,11 +256,12 @@ export default async function ReceiptPage({
                       <TableHead className="text-right">Giá vốn nhập</TableHead>
                       <TableHead>Lô</TableHead>
                       <TableHead>HSD</TableHead>
+                      {canComplete && (missingCost > 0 || missingExpiry > 0) && <TableHead />}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {rows.map((i) => (
-                      <TableRow key={i.id}>
+                      <TableRow key={i.id} className={needCost(i) || needExpiry(i) ? "bg-nen-amber" : undefined}>
                         <TableCell>{i.line_no}</TableCell>
                         <TableCell className="min-w-56 whitespace-normal">
                           {i.products?.name}
@@ -252,12 +272,13 @@ export default async function ReceiptPage({
                         <TableCell className="text-right tabular-nums">
                           {formatNumber(i.qty)} {i.unit}
                         </TableCell>
-                        <TableCell className="text-right tabular-nums">{formatMoney(i.unit_cost)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{needCost(i) ? chuaCo : formatMoney(i.unit_cost)}</TableCell>
                         <TableCell className="text-right tabular-nums">{formatMoney(i.line_total)}</TableCell>
                         <TableCell className="text-right tabular-nums">{formatMoney(i.allocated_cost)}</TableCell>
                         <TableCell className="text-right tabular-nums">{formatMoney(i.landed_unit_cost)}</TableCell>
                         <TableCell>{i.lot_no ?? r.code}</TableCell>
-                        <TableCell>{i.expiry_date ? new Date(i.expiry_date).toLocaleDateString("vi-VN") : "-"}</TableCell>
+                        <TableCell>{i.expiry_date ? new Date(i.expiry_date).toLocaleDateString("vi-VN") : needExpiry(i) ? chuaCo : "-"}</TableCell>
+                        {canComplete && (missingCost > 0 || missingExpiry > 0) && <TableCell>{completeBtn(i)}</TableCell>}
                       </TableRow>
                     ))}
                   </TableBody>

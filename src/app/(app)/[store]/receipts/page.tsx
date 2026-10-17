@@ -31,7 +31,7 @@ export default async function ReceiptsPage({ params, searchParams }: { params: P
   const { data: suppliers } = await supabase.from("suppliers").select("id, name").order("name");
   let q = supabase
     .from("purchase_receipts")
-    .select("id, code, receipt_date, invoice_no, status, total, paid_amount, suppliers(name)", { count: "exact" })
+    .select("id, code, receipt_date, invoice_no, status, total, paid_amount, suppliers(name), purchase_receipt_items(unit_cost, expiry_date, products(expiry_level))", { count: "exact" })
     .eq("store_id", store.id)
     .order("receipt_date", { ascending: false })
     .order("code", { ascending: false })
@@ -43,6 +43,18 @@ export default async function ReceiptsPage({ params, searchParams }: { params: P
   const { data, count } = await q;
   const rows = data ?? [];
   const canCreate = ctx.profile.role !== "accountant";
+  // Dong con thieu gia von / HSD (nhap kho truoc, bo sung sau)
+  const thieu = (r: (typeof rows)[number]) => {
+    const its = (r.purchase_receipt_items ?? []) as unknown as { unit_cost: number | null; expiry_date: string | null; products: { expiry_level: string } | null }[];
+    const gia = its.filter((i) => i.unit_cost == null).length;
+    const hsd = its.filter((i) => i.products?.expiry_level === "lot" && !i.expiry_date).length;
+    return (
+      <>
+        {gia > 0 && <ChipSac sac="amber">Thiếu giá vốn {gia}</ChipSac>}
+        {hsd > 0 && <ChipSac sac="amber">Thiếu HSD {hsd}</ChipSac>}
+      </>
+    );
+  };
 
   return (
     <div>
@@ -92,7 +104,12 @@ export default async function ReceiptsPage({ params, searchParams }: { params: P
                     </Link>
                   }
                   subtitle={`${new Date(r.receipt_date).toLocaleDateString("vi-VN")} - ${(r.suppliers as unknown as { name: string } | null)?.name ?? ""}`}
-                  badge={<ChipSac sac={st.sac}>{st.label}</ChipSac>}
+                  badge={
+                    <span className="flex flex-wrap justify-end gap-1">
+                      <ChipSac sac={st.sac}>{st.label}</ChipSac>
+                      {thieu(r)}
+                    </span>
+                  }
                   stats={[
                     { label: "Tổng", value: formatMoney(r.total), strong: true },
                     { label: "Còn nợ", value: r.status === "confirmed" ? formatMoney(r.total - r.paid_amount) : "-" },
@@ -133,7 +150,10 @@ export default async function ReceiptsPage({ params, searchParams }: { params: P
                         {r.status === "confirmed" ? formatMoney(r.total - r.paid_amount) : "-"}
                       </TableCell>
                       <TableCell>
-                        <ChipSac sac={st.sac}>{st.label}</ChipSac>
+                        <span className="flex flex-wrap gap-1">
+                          <ChipSac sac={st.sac}>{st.label}</ChipSac>
+                          {thieu(r)}
+                        </span>
                       </TableCell>
                     </TableRow>
                   );

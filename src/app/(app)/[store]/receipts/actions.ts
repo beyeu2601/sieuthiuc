@@ -12,7 +12,7 @@ export type ReceiptPayload = {
   invoice_no: string | null;
   due_date: string | null;
   note: string | null;
-  items: { product_id: string; qty: number; unit_cost: number; lot_no: string | null; expiry_date: string | null; sell_price: number | null }[];
+  items: { product_id: string; qty: number; unit_cost: number | null; lot_no: string | null; expiry_date: string | null; sell_price: number | null }[];
   costs: { cost_type: string; amount: number; allocation: "by_value" | "by_qty"; note: string | null }[];
   discount_amount: number;
   discount_note: string | null;
@@ -137,6 +137,24 @@ export async function addReceiptDiscount(storeCode: string, id: string, amount: 
   revalidatePath(`/${storeCode}/receipts`);
   revalidatePath(`/${storeCode}/receipts/${id}`);
   revalidatePath(`/${storeCode}/payables`);
+  return { ok: true };
+}
+
+// Bo sung gia von / HSD cho dong con thieu cua phieu da nhap kho (sadmin/admin)
+export async function completeReceiptItem(
+  storeCode: string,
+  receiptId: string,
+  itemId: string,
+  p: { unit_cost: number | null; expiry_date: string | null }
+): Promise<ActionResult> {
+  if (p.unit_cost == null && !p.expiry_date) return { ok: false, error: "Nhập giá vốn hoặc hạn sử dụng" };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("complete_receipt_item", { p_item_id: itemId, p });
+  if (error) return { ok: false, error: errorMessage(error) };
+  revalidatePath(`/${storeCode}/receipts`);
+  revalidatePath(`/${storeCode}/receipts/${receiptId}`);
+  revalidatePath(`/${storeCode}/payables`);
+  revalidatePath(`/${storeCode}/inventory`);
   return { ok: true };
 }
 

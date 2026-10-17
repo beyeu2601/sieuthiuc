@@ -50,7 +50,7 @@ type Debt = {
     extra_cost_total: number;
     discount_amount: number;
     paid_amount: number;
-    purchase_receipt_items: { line_no: number; qty: number; unit: string; unit_cost: number; line_total: number; products: { name: string } | null }[];
+    purchase_receipt_items: { line_no: number; qty: number; unit: string; unit_cost: number | null; line_total: number; products: { name: string } | null }[];
   } | null;
 };
 
